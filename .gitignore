@@ -1,0 +1,21 @@
+# CEOS data - don't commit operational data to public repo
+data/scorecard/weeks/
+data/rocks/
+data/issues/
+data/todos/
+data/meetings/
+data/people/
+data/conversations/
+data/annual/
+data/quarterly/
+data/checkups/
+data/delegate/
+data/clarity/
+data/processes/
+
+# Internal tooling
+.ceos
+eos-system-diagram.html
+
+# OS
+.DS_Store

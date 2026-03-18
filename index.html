@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How EOS Works at Recess</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-alt: #f4f5f7;
+    --border: #e2e4ea;
+    --text: #1a1d27;
+    --text-dim: #6b7084;
+    --text-light: #9199ad;
+    --blue: #4361ee;
+    --blue-bg: #eef1fd;
+    --blue-border: #c7d2f9;
+    --green: #10b981;
+    --green-bg: #ecfdf5;
+    --green-border: #a7f3d0;
+    --orange: #f59e0b;
+    --orange-bg: #fffbeb;
+    --orange-border: #fde68a;
+    --purple: #8b5cf6;
+    --purple-bg: #f3f0ff;
+    --purple-border: #ddd6fe;
+    --red: #ef4444;
+    --red-bg: #fef2f2;
+    --pink: #ec4899;
+    --pink-bg: #fdf2f8;
+    --cyan: #06b6d4;
+    --cyan-bg: #ecfeff;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  .hero {
+    background: linear-gradient(135deg, #1e1b4b, #312e81, #4338ca);
+    color: white;
+    padding: 3.5rem 2rem 3rem;
+    text-align: center;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: 0.3rem 0.9rem;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1rem;
+  }
+
+  .hero h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .hero p {
+    font-size: 1.05rem;
+    opacity: 0.85;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    overflow-x: auto;
+  }
+
+  .nav a {
+    padding: 0.85rem 1rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .nav a:hover { color: var(--text); }
+  .nav a.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* ── Main ── */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  section {
+    padding: 3rem 0 2rem;
+  }
+
+  section + section {
+    border-top: 1px solid var(--border);
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.01em;
+  }
+
+  h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .section-sub {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  p { margin-bottom: 1rem; font-size: 0.92rem; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-body {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ── Cascade Diagram ── */
+  .cascade {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 1.5rem 0;
+  }
+
+  .cascade-level {
+    position: relative;
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    border: 2px solid;
+    margin-bottom: -1px;
+  }
+
+  .cascade-level.company {
+    background: var(--blue-bg);
+    border-color: var(--blue-border);
+    z-index: 3;
+  }
+
+  .cascade-level.dept {
+    background: var(--purple-bg);
+    border-color: var(--purple-border);
+    margin-left: 2rem;
+    z-index: 2;
+  }
+
+  .cascade-level.individual {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+    margin-left: 4rem;
+    z-index: 1;
+  }
+
+  .cascade-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.4rem;
+  }
+
+  .cascade-tag.company { background: var(--blue); color: white; }
+  .cascade-tag.dept { background: var(--purple); color: white; }
+  .cascade-tag.individual { background: var(--green); color: white; }
+
+  .cascade-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+
+  .cascade-meta {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  .cascade-connector {
+    width: 2px;
+    height: 20px;
+    background: var(--border);
+    margin-left: 2.5rem;
+  }
+
+  .cascade-connector.dept-to-ind {
+    margin-left: 4.5rem;
+  }
+
+  /* ── Flow arrows ── */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+  }
+
+  .flow-node {
+    flex: 1;
+    min-width: 140px;
+    padding: 1rem;
+    border-radius: var(--radius);
+    text-align: center;
+    position: relative;
+  }
+
+  .flow-node .flow-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .flow-node .flow-label { font-size: 0.82rem; font-weight: 600; }
+  .flow-node .flow-desc { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.15rem; }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 0.25rem;
+    color: var(--text-light);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  /* ── Rhythm Grid ── */
+  .rhythm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+
+  .rhythm-card {
+    padding: 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid;
+    text-align: center;
+  }
+
+  .rhythm-card .freq {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.3rem;
+  }
+
+  .rhythm-card .rhythm-icon { font-size: 1.75rem; margin-bottom: 0.35rem; }
+  .rhythm-card .rhythm-name { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.15rem; }
+  .rhythm-card .rhythm-desc { font-size: 0.78rem; color: var(--text-dim); }
+
+  .rhythm-card.daily { background: var(--green-bg); border-color: var(--green-border); }
+  .rhythm-card.daily .freq { color: var(--green); }
+  .rhythm-card.weekly { background: var(--blue-bg); border-color: var(--blue-border); }
+  .rhythm-card.weekly .freq { color: var(--blue); }
+  .rhythm-card.quarterly { background: var(--orange-bg); border-color: var(--orange-border); }
+  .rhythm-card.quarterly .freq { color: var(--orange); }
+  .rhythm-card.annual { background: var(--purple-bg); border-color: var(--purple-border); }
+  .rhythm-card.annual .freq { color: var(--purple); }
+
+  /* ── Rules list ── */
+  .rules {
+    list-style: none;
+    margin: 1rem 0;
+  }
+
+  .rules li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--surface-alt);
+    font-size: 0.9rem;
+  }
+
+  .rules li:last-child { border-bottom: none; }
+
+  .rule-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  .rule-icon.do { background: var(--green-bg); }
+  .rule-icon.dont { background: var(--red-bg); }
+
+  /* ── Scoring ── */
+  .score-example {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+
+  .score-card {
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    border: 2px solid;
+  }
+
+  .score-card.done {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+  }
+
+  .score-card.not-done {
+    background: var(--red-bg);
+    border-color: #fecaca;
+  }
+
+  .score-card .score-icon { font-size: 1.25rem; margin-bottom: 0.25rem; }
+  .score-card .score-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .score-card .score-title { font-size: 0.88rem; font-weight: 500; margin-top: 0.25rem; }
+  .score-card .score-owner { font-size: 0.78rem; color: var(--text-dim); }
+
+  .score-card.done .score-label { color: var(--green); }
+  .score-card.not-done .score-label { color: var(--red); }
+
+  /* ── Callout ── */
+  .callout {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    margin: 1.25rem 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    align-items: flex-start;
+  }
+
+  .callout.tip { background: var(--blue-bg); border: 1px solid var(--blue-border); }
+  .callout.warn { background: var(--orange-bg); border: 1px solid var(--orange-border); }
+  .callout.key { background: var(--purple-bg); border: 1px solid var(--purple-border); }
+
+  .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+
+  .callout strong { font-weight: 600; }
+
+  /* ── Table ── */
+  .tracking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 1rem 0;
+  }
+
+  .tracking-table th {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    background: var(--surface-alt);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .tracking-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--surface-alt);
+  }
+
+  .tracking-table tr:last-child td { border-bottom: none; }
+
+  .tag {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .tag.on { background: var(--green-bg); color: var(--green); }
+  .tag.off { background: var(--red-bg); color: var(--red); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.6rem; }
+    .cascade-level.dept { margin-left: 1rem; }
+    .cascade-level.individual { margin-left: 2rem; }
+    .cascade-connector { margin-left: 1.5rem !important; }
+    .cascade-connector.dept-to-ind { margin-left: 2.5rem !important; }
+    .score-example { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; align-items: center; }
+    .flow-arrow { transform: rotate(90deg); padding: 0.25rem 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <div class="hero-badge">Recess Operating System</div>
+  <h1>How EOS Works</h1>
+  <p>A visual guide to how we set priorities, track progress, and stay aligned as a team.</p>
+</div>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <a href="#big-picture" class="active">Big Picture</a>
+  <a href="#rocks">Rocks</a>
+  <a href="#cascade">The Cascade</a>
+  <a href="#tracking">Tracking</a>
+  <a href="#scoring">Scoring</a>
+  <a href="#rhythm">The Rhythm</a>
+  <a href="#rules">Key Rules</a>
+</nav>
+
+<div class="container">
+
+  <!-- ═══ BIG PICTURE ═══ -->
+  <section id="big-picture">
+    <h2><span class="num" style="background: var(--blue-bg); color: var(--blue);">1</span> The Big Picture</h2>
+    <p class="section-sub">EOS gives us a shared language and rhythm for running the company.</p>
+
+    <p>The <strong>Entrepreneurial Operating System (EOS)</strong> strengthens six components of our business: Vision, People, Data, Issues, Process, and Traction. When all six are healthy, we move fast and stay aligned.</p>
+
+    <p>The most visible parts of EOS for everyone on the team are:</p>
+
+    <div class="rhythm-grid">
+      <div class="rhythm-card quarterly">
+        <div class="freq">Every 90 days</div>
+        <div class="rhythm-icon">&#127956;</div>
+        <div class="rhythm-name">Rocks</div>
+        <div class="rhythm-desc">Our top 3-7 priorities for the quarter. Clear outcomes, one owner each.</div>
+      </div>
+      <div class="rhythm-card weekly">
+        <div class="freq">Every week</div>
+        <div class="rhythm-icon">&#128203;</div>
+        <div class="rhythm-name">L10 Meeting</div>
+        <div class="rhythm-desc">Structured 90-min meeting. Same agenda every week. Scorecard, Rocks, Issues.</div>
+      </div>
+      <div class="rhythm-card weekly">
+        <div class="freq">Every week</div>
+        <div class="rhythm-icon">&#128202;</div>
+        <div class="rhythm-name">Scorecard</div>
+        <div class="rhythm-desc">5-15 numbers that tell us if the business is healthy. Reviewed weekly.</div>
+      </div>
+      <div class="rhythm-card daily">
+        <div class="freq">Ongoing</div>
+        <div class="rhythm-icon">&#9989;</div>
+        <div class="rhythm-name">To-Dos</div>
+        <div class="rhythm-desc">7-day action items. Created in meetings, due next week. Target: 90%+ done.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ROCKS ═══ -->
+  <section id="rocks">
+    <h2><span class="num" style="background: var(--orange-bg); color: var(--orange);">2</span> What Are Rocks?</h2>
+    <p class="section-sub">The 3-7 most important things we must accomplish this quarter.</p>
+
+    <p>The name comes from a metaphor: imagine a jar. If you put in sand (small tasks) first, there's no room for big rocks (priorities). But if you place the <strong>big rocks first</strong>, the sand fills in around them.</p>
+
+    <p>Rocks are <strong>not</strong> a project list. They're not everything we're working on. They're the vital few things that, if we accomplished nothing else this quarter, would make it a great quarter.</p>
+
+    <div class="callout key">
+      <span class="callout-icon">&#128161;</span>
+      <div>
+        <strong>A good Rock has three things:</strong><br>
+        1. <strong>One owner</strong> &mdash; a single person accountable (not a team)<br>
+        2. <strong>A measurable outcome</strong> &mdash; what "done" looks like, specifically<br>
+        3. <strong>A due date</strong> &mdash; always the last day of the quarter
+      </div>
+    </div>
+
+    <h3>Examples of Good vs. Bad Rocks</h3>
+    <div class="score-example">
+      <div class="score-card done">
+        <div class="score-icon">&#9989;</div>
+        <div class="score-label">Good Rock</div>
+        <div class="score-title">"Launch self-serve onboarding with 50 activated accounts by June 30"</div>
+        <div class="score-owner">Specific. Measurable. Clear "done."</div>
+      </div>
+      <div class="score-card not-done">
+        <div class="score-icon">&#10060;</div>
+        <div class="score-label">Bad Rock</div>
+        <div class="score-title">"Improve the onboarding experience"</div>
+        <div class="score-owner">Vague. When is it done? How do you know?</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CASCADE ═══ -->
+  <section id="cascade">
+    <h2><span class="num" style="background: var(--purple-bg); color: var(--purple);">3</span> The Rock Cascade</h2>
+    <p class="section-sub">Company Rocks flow down to departments, then to individuals. Alignment from top to bottom.</p>
+
+    <p>Rocks cascade <strong>downward</strong>. Leadership sets company priorities first. Then each department asks: "What do we need to deliver to make this happen?" Then individuals do the same.</p>
+
+    <div class="cascade">
+      <div class="cascade-level company">
+        <span class="cascade-tag company">Company Rock</span>
+        <div class="cascade-title">"Launch self-serve onboarding for mid-market"</div>
+        <div class="cascade-meta">Owner: Deuce &bull; Due: June 30 &bull; Set by leadership team</div>
+      </div>
+
+      <div class="cascade-connector"></div>
+
+      <div class="cascade-level dept">
+        <span class="cascade-tag dept">Department Rock</span>
+        <div class="cascade-title">"Build onboarding flow v1 with 3 key integrations"</div>
+        <div class="cascade-meta">Owner: Eng Lead &bull; Due: June 15 &bull; Supports company Rock above</div>
+      </div>
+
+      <div class="cascade-connector dept-to-ind"></div>
+
+      <div class="cascade-level individual">
+        <span class="cascade-tag individual">Individual Rock</span>
+        <div class="cascade-title">"Ship onboarding UI with self-serve sign-up flow"</div>
+        <div class="cascade-meta">Owner: Frontend Engineer &bull; Due: May 15</div>
+      </div>
+
+      <div style="height: 0.75rem"></div>
+
+      <div class="cascade-level dept">
+        <span class="cascade-tag dept">Department Rock</span>
+        <div class="cascade-title">"Generate 50 qualified self-serve leads"</div>
+        <div class="cascade-meta">Owner: Danny &bull; Due: June 20 &bull; Supports company Rock above</div>
+      </div>
+
+      <div class="cascade-connector dept-to-ind"></div>
+
+      <div class="cascade-level individual">
+        <span class="cascade-tag individual">Individual Rock</span>
+        <div class="cascade-title">"Write and launch 12 nurture emails for self-serve segment"</div>
+        <div class="cascade-meta">Owner: Marketing &bull; Due: May 30</div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">&#128073;</span>
+      <div>
+        <strong>Not everyone needs a formal Rock.</strong> Leadership always has Rocks (3-7 each). Department heads may cascade to their teams. Individual contributors often execute through weekly <strong>To-Dos</strong> from L10 meetings rather than formal Rocks.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TRACKING ═══ -->
+  <section id="tracking">
+    <h2><span class="num" style="background: var(--cyan-bg); color: var(--cyan);">4</span> How We Track Rocks</h2>
+    <p class="section-sub">Rocks are tracked at the owner's level. Weekly status is binary: on-track or off-track.</p>
+
+    <p>Every week in the L10 meeting, each Rock owner gives a <strong>one-word update</strong>: on-track or off-track. No stories, no percentages. The whole Rock review takes 5 minutes.</p>
+
+    <table class="tracking-table">
+      <thead>
+        <tr>
+          <th>Rock</th>
+          <th>Owner</th>
+          <th>Status</th>
+          <th>Milestones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Launch self-serve onboarding</td>
+          <td>Deuce</td>
+          <td><span class="tag on">On Track</span></td>
+          <td>2 of 3 complete</td>
+        </tr>
+        <tr>
+          <td>Hit $3M pipeline by Q2 end</td>
+          <td>Danny</td>
+          <td><span class="tag off">Off Track</span></td>
+          <td>1 of 4 complete</td>
+        </tr>
+        <tr>
+          <td>Launch supplier NPS program</td>
+          <td>Ashton</td>
+          <td><span class="tag on">On Track</span></td>
+          <td>3 of 3 complete</td>
+        </tr>
+        <tr>
+          <td>Reduce AR to &lt;40 days</td>
+          <td>Claire</td>
+          <td><span class="tag on">On Track</span></td>
+          <td>2 of 3 complete</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <span class="callout-icon">&#9888;&#65039;</span>
+      <div>
+        <strong>Off-track is not bad &mdash; hiding it is.</strong> When a Rock goes off-track, it drops to the Issues section of the L10 meeting. The team discusses what's blocking it and creates To-Dos to get it back on track. The system only works if people are honest about status.
+      </div>
+    </div>
+
+    <h3>Where Each Level Gets Tracked</h3>
+    <table class="tracking-table">
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Who Reports</th>
+          <th>How Often</th>
+          <th>Where</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag" style="background: var(--blue-bg); color: var(--blue);">Company</span></td>
+          <td>Rock owner (leadership)</td>
+          <td>Weekly</td>
+          <td>Leadership L10, Section 3</td>
+        </tr>
+        <tr>
+          <td><span class="tag" style="background: var(--purple-bg); color: var(--purple);">Department</span></td>
+          <td>Dept head</td>
+          <td>Weekly</td>
+          <td>Department L10</td>
+        </tr>
+        <tr>
+          <td><span class="tag" style="background: var(--green-bg); color: var(--green);">Individual</span></td>
+          <td>The person</td>
+          <td>Weekly / biweekly</td>
+          <td>1-on-1 or dept meeting</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══ SCORING ═══ -->
+  <section id="scoring">
+    <h2><span class="num" style="background: var(--green-bg); color: var(--green);">5</span> Scoring: Done or Not Done</h2>
+    <p class="section-sub">At the end of the quarter, every Rock is scored. No partial credit.</p>
+
+    <p>EOS scoring is <strong>binary</strong>. The measurable outcome was either achieved or it wasn't. An 80% finished Rock is scored <strong>Not Done</strong>. This feels harsh at first, but it forces us to set realistic Rocks and finish what we start.</p>
+
+    <div class="score-example">
+      <div class="score-card done">
+        <div class="score-icon">&#10004;&#65039;</div>
+        <div class="score-label">Done</div>
+        <div class="score-title">Launch self-serve onboarding</div>
+        <div class="score-owner">Deuce &mdash; 50 accounts activated</div>
+      </div>
+      <div class="score-card done">
+        <div class="score-icon">&#10004;&#65039;</div>
+        <div class="score-label">Done</div>
+        <div class="score-title">Supplier NPS program live</div>
+        <div class="score-owner">Ashton &mdash; Survey sent, baseline set</div>
+      </div>
+      <div class="score-card not-done">
+        <div class="score-icon">&#10006;</div>
+        <div class="score-label">Not Done</div>
+        <div class="score-title">$3M pipeline</div>
+        <div class="score-owner">Danny &mdash; Reached $2.1M (70%)</div>
+      </div>
+      <div class="score-card done">
+        <div class="score-icon">&#10004;&#65039;</div>
+        <div class="score-label">Done</div>
+        <div class="score-title">AR under 40 days</div>
+        <div class="score-owner">Claire &mdash; At 37 days</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">&#127919; Quarterly Scorecard: 3/4 = 75%</div>
+      <div class="card-body">
+        <strong>Target: 80%+ completion rate.</strong> Below 80% means either the Rocks were too ambitious or there were execution issues. Either way, it becomes a discussion topic for next quarter's planning. An unfinished Rock can become a new Rock next quarter &mdash; it doesn't disappear, it gets re-prioritized.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ RHYTHM ═══ -->
+  <section id="rhythm">
+    <h2><span class="num" style="background: var(--pink-bg); color: var(--pink);">6</span> The Meeting Rhythm</h2>
+    <p class="section-sub">EOS creates a pulse that keeps the company aligned at every level.</p>
+
+    <div class="flow">
+      <div class="flow-node" style="background: var(--purple-bg); border: 1px solid var(--purple-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#127919;</div>
+        <div class="flow-label">Annual Planning</div>
+        <div class="flow-desc">Refresh vision, set the year's goals</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node" style="background: var(--orange-bg); border: 1px solid var(--orange-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#127956;</div>
+        <div class="flow-label">Set Rocks</div>
+        <div class="flow-desc">3-7 priorities for the quarter</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node" style="background: var(--blue-bg); border: 1px solid var(--blue-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#128203;</div>
+        <div class="flow-label">Weekly L10</div>
+        <div class="flow-desc">Scorecard, Rocks, IDS, To-Dos</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node" style="background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#9989;</div>
+        <div class="flow-label">Score Rocks</div>
+        <div class="flow-desc">Done / Not Done, then repeat</div>
+      </div>
+    </div>
+
+    <h3>The L10 Meeting (90 min)</h3>
+    <p>The Level 10 meeting is the weekly heartbeat. Same agenda, every week, no exceptions.</p>
+
+    <table class="tracking-table">
+      <thead>
+        <tr>
+          <th style="width: 60px;">Time</th>
+          <th>Section</th>
+          <th>What Happens</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>5 min</td>
+          <td><strong>Segue</strong></td>
+          <td>Share personal or professional good news</td>
+        </tr>
+        <tr>
+          <td>5 min</td>
+          <td><strong>Scorecard</strong></td>
+          <td>Review weekly numbers. Only discuss off-track metrics.</td>
+        </tr>
+        <tr>
+          <td>5 min</td>
+          <td><strong>Rock Review</strong></td>
+          <td>Each owner: on-track or off-track. No discussion yet.</td>
+        </tr>
+        <tr>
+          <td>5 min</td>
+          <td><strong>Headlines</strong></td>
+          <td>Customer and employee news. Good or bad.</td>
+        </tr>
+        <tr>
+          <td>5 min</td>
+          <td><strong>To-Do Review</strong></td>
+          <td>Done or not done. Target 90%+. No excuses.</td>
+        </tr>
+        <tr>
+          <td>60 min</td>
+          <td><strong>IDS</strong></td>
+          <td><strong>Identify</strong> the real issue, <strong>Discuss</strong> root cause, <strong>Solve</strong> it. This is where the real work happens.</td>
+        </tr>
+        <tr>
+          <td>5 min</td>
+          <td><strong>Conclude</strong></td>
+          <td>Recap new To-Dos, cascading messages, rate the meeting 1-10.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══ RULES ═══ -->
+  <section id="rules">
+    <h2><span class="num" style="background: var(--orange-bg); color: var(--orange);">7</span> The Key Rules</h2>
+    <p class="section-sub">These keep the system honest.</p>
+
+    <ul class="rules">
+      <li>
+        <div class="rule-icon do">&#9989;</div>
+        <div>
+          <strong>One owner per Rock.</strong> If two people "co-own" it, nobody owns it. One name. That person can delegate work, but they're accountable for the outcome.
+        </div>
+      </li>
+      <li>
+        <div class="rule-icon do">&#9989;</div>
+        <div>
+          <strong>3-7 Rocks per person, max.</strong> If you have 12 "Rocks," those are projects. Cut to the vital few. What really must happen?
+        </div>
+      </li>
+      <li>
+        <div class="rule-icon do">&#9989;</div>
+        <div>
+          <strong>Binary scoring only.</strong> Done or Not Done. No partial credit, no percentages. This forces realistic goal-setting.
+        </div>
+      </li>
+      <li>
+        <div class="rule-icon do">&#9989;</div>
+        <div>
+          <strong>Rocks must align upward.</strong> Every department Rock should connect to a company Rock. If it doesn't, ask: is this really a priority?
+        </div>
+      </li>
+      <li>
+        <div class="rule-icon dont">&#128683;</div>
+        <div>
+          <strong>Don't solve off-track Rocks in Rock Review.</strong> Just say "off-track" and move on. It goes to the IDS section where the team has 60 minutes to actually solve problems.
+        </div>
+      </li>
+      <li>
+        <div class="rule-icon dont">&#128683;</div>
+        <div>
+          <strong>Don't change Rocks mid-quarter.</strong> Rocks are 90-day commitments. If something truly changes, it gets formally dropped and discussed &mdash; not quietly replaced.
+        </div>
+      </li>
+      <li>
+        <div class="rule-icon dont">&#128683;</div>
+        <div>
+          <strong>Don't skip the meeting.</strong> The L10 happens every week. Same day, same time. Consistency creates the rhythm. Skipping "just this once" breaks the habit.
+        </div>
+      </li>
+    </ul>
+
+    <div class="callout tip">
+      <span class="callout-icon">&#128170;</span>
+      <div>
+        <strong>The 80% target is aspirational, not punitive.</strong> Scoring below 80% isn't failure &mdash; it's data. It tells us we're either overcommitting or under-executing. Both are fixable. The goal is to get better at setting the right Rocks each quarter.
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="footer">
+  Recess &bull; Built on the Entrepreneurial Operating System (EOS) &bull; Updated March 2026
+</div>
+
+<script>
+  // Active nav highlight on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const active = document.querySelector(`.nav a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -80% 0px' });
+
+  sections.forEach(section => observer.observe(section));
+</script>
+
+</body>
+</html>
