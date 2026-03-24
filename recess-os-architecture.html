@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recess OS — System Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --aqua: #14B9D6;
+    --forest: #108DA3;
+    --sea-green: #1FBBA6;
+    --orange: #F27935;
+    --purple: #8b5cf6;
+    --green: #22c55e;
+    --pink: #ec4899;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --bg: #0a0d14;
+    --bg-elevated: #0f1117;
+    --card: #1a1d27;
+    --card-border: #2a2d3a;
+    --card-hover: #222636;
+    --text: #e4e4e7;
+    --text-muted: #9ca3af;
+    --text-bright: #ffffff;
+    --code-bg: #151820;
+    --nav-bg: rgba(10, 13, 20, 0.92);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(16px);
+    background: var(--nav-bg);
+    border-bottom: 1px solid var(--card-border);
+    padding: 14px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  nav .logo { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+  nav .logo span { color: var(--aqua); }
+  nav .nav-links { display: flex; gap: 28px; }
+  nav .nav-links a {
+    color: var(--text-muted); text-decoration: none; font-size: 13px;
+    font-weight: 500; transition: color 0.2s; cursor: pointer;
+  }
+  nav .nav-links a:hover, nav .nav-links a.active { color: var(--aqua); }
+
+  /* Hero */
+  .hero {
+    padding: 80px 48px 60px;
+    max-width: 900px; margin: 0 auto;
+    text-align: center;
+  }
+  .hero .label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--aqua); margin-bottom: 16px; font-weight: 600;
+  }
+  .hero h1 {
+    font-size: 48px; font-weight: 900; letter-spacing: -2px;
+    line-height: 1.1; margin-bottom: 16px;
+  }
+  .hero p {
+    font-size: 18px; color: var(--text-muted);
+    max-width: 620px; margin: 0 auto; line-height: 1.7;
+  }
+  .hero-stats {
+    display: flex; justify-content: center; gap: 32px; margin-top: 32px;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat .num {
+    font-size: 28px; font-weight: 800; color: var(--aqua);
+  }
+  .hero-stat .lbl {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); margin-top: 4px;
+  }
+
+  /* Sections */
+  .section {
+    max-width: 1100px; margin: 0 auto;
+    padding: 60px 48px 40px;
+  }
+  .section-label {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--aqua);
+    margin-bottom: 12px;
+  }
+  .section h2 {
+    font-size: 28px; font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+  .section .subtitle {
+    color: var(--text-muted); font-size: 15px; margin-bottom: 32px;
+    max-width: 700px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .card h3 {
+    font-size: 16px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  /* Mermaid */
+  .mermaid {
+    margin: 24px 0;
+    text-align: center;
+  }
+  .mermaid svg {
+    max-width: 100%;
+  }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px; border-radius: 4px;
+    margin: 2px 2px;
+  }
+  .tag-aqua { background: rgba(20,185,214,0.15); color: var(--aqua); }
+  .tag-orange { background: rgba(242,121,53,0.15); color: var(--orange); }
+  .tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .tag-purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+  .tag-pink { background: rgba(236,72,153,0.15); color: var(--pink); }
+  .tag-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .tag-red { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-muted);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--card-border);
+  }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--card-border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--card-hover); }
+
+  /* Grid */
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .mini-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .mini-card h4 {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .mini-card p {
+    font-size: 12px; color: var(--text-muted); line-height: 1.5;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--aqua);
+  }
+
+  /* Callout */
+  .callout {
+    border-left: 3px solid;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .callout-info { border-color: var(--aqua); background: rgba(20,185,214,0.06); }
+  .callout-warning { border-color: var(--yellow); background: rgba(234,179,8,0.06); }
+  .callout-success { border-color: var(--green); background: rgba(34,197,94,0.06); }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--card-border);
+    margin: 48px auto;
+    max-width: 1100px;
+  }
+
+  /* Skill items */
+  .skill-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 13px;
+  }
+  .skill-item:last-child { border-bottom: none; }
+  .skill-name {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-weight: 600; font-size: 11px; white-space: nowrap;
+    padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+  }
+  .sn-exists { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+  .sn-new { background: rgba(20,185,214,0.12); color: var(--aqua); border: 1px solid rgba(20,185,214,0.25); }
+  .sn-tobuild { background: rgba(242,121,53,0.12); color: var(--orange); border: 1px solid rgba(242,121,53,0.25); }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 60px 0 32px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero { padding: 48px 24px 32px; }
+    .hero h1 { font-size: 32px; }
+    .section { padding: 40px 24px 24px; }
+    nav { padding: 12px 24px; }
+    .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .hero-stats { flex-direction: column; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo"><span>Recess</span> OS</div>
+  <div class="nav-links">
+    <a onclick="document.getElementById('pipeline').scrollIntoView({behavior:'smooth'})" class="active">Pipeline</a>
+    <a onclick="document.getElementById('eos-proddev').scrollIntoView({behavior:'smooth'})">EOS + Product Dev</a>
+    <a onclick="document.getElementById('data-layer').scrollIntoView({behavior:'smooth'})">Data Layer</a>
+    <a onclick="document.getElementById('skills').scrollIntoView({behavior:'smooth'})">Skills Map</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="label">System Architecture</div>
+  <h1>One Front Door. One Pipeline. One Data Layer.</h1>
+  <p>Recess OS unifies EOS, Product Development, and Discovery into a single operating system. Everyone enters through the same door; AI handles the routing.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">18</div><div class="lbl">Team Members</div></div>
+    <div class="hero-stat"><div class="num">5</div><div class="lbl">Request Types</div></div>
+    <div class="hero-stat"><div class="num">26+</div><div class="lbl">AI Skills</div></div>
+    <div class="hero-stat"><div class="num">1</div><div class="lbl">Pipeline</div></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 1: THE PIPELINE -->
+<!-- ============================================================ -->
+<div class="section" id="pipeline">
+  <span class="section-label">Core Architecture</span>
+  <h2>The Single Front Door Pipeline</h2>
+  <p class="subtitle">Everything enters through the Asana intake form. Five request types, one pipeline, automated routing via Asana Rules and AI discovery skills.</p>
+
+  <div class="card">
+    <h3>Pipeline Flow — Intake to Execution</h3>
+    <div class="mermaid">
+graph LR
+  FORM["📋 Asana Form\n5 Request Types"]
+  INTAKE["Intake\nAuto-creates\ndiscovery subtask"]
+  DISC["Discovery\n/quick-discovery\nor /discovery"]
+  PRD["PRD\nLight or Full\nvia /prd"]
+  APPROVE["Approve\nCOO sign-off\nfor M+ items"]
+  READY["Ready\nFully scoped"]
+
+  FORM --> INTAKE
+  INTAKE -->|"Asana Rules\nauto-route"| DISC
+  DISC -->|"XS/S skip PRD"| READY
+  DISC -->|"M-XL"| PRD
+  PRD --> APPROVE
+  APPROVE --> READY
+
+  style FORM fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style INTAKE fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style DISC fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style PRD fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
+  style APPROVE fill:#1a2332,stroke:#eab308,color:#e4e4e7
+  style READY fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Graduation — Ready to Execution</h3>
+    <div class="mermaid">
+graph TB
+  READY["✅ Ready\nFully Scoped"]
+
+  BACKLOG_S["Backlog\nXS/S items"]
+  BACKLOG_M["Backlog\nM items"]
+  FEATURE["Feature Project\nL/XL items"]
+
+  SPRINT["Active Work\nWeekly Sprint Board"]
+  ROADMAP["Product Roadmap\nTimeline View"]
+  GOAL["Asana Goal\nRock Connection"]
+
+  READY -->|"XS/S"| BACKLOG_S
+  READY -->|"M"| BACKLOG_M
+  READY -->|"L/XL"| FEATURE
+
+  BACKLOG_S -->|"Pull weekly"| SPRINT
+  BACKLOG_M -->|"When capacity"| SPRINT
+  FEATURE -->|"Tasks multi-homed"| SPRINT
+  FEATURE --> ROADMAP
+  FEATURE -.->|"If tied to Rock"| GOAL
+
+  style READY fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style BACKLOG_S fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style BACKLOG_M fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style FEATURE fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
+  style SPRINT fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style ROADMAP fill:#1a2332,stroke:#ec4899,color:#e4e4e7
+  style GOAL fill:#1a2332,stroke:#eab308,color:#e4e4e7
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Capacity allocation:</strong> 50% Features (L/XL) &middot; 20% Enhancements (M) &middot; 10% Scoping &middot; 20% Buffer
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Request Type Routing</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Each request type triggers a different Asana Rule that creates a discovery subtask with specific instructions.</p>
+    <table>
+      <thead><tr><th>Request Type</th><th>Auto-Created Subtask</th><th>Assigned To</th><th>Skill</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-red">Bug</span></td>
+          <td>Complete Quick Discovery (Bug)</td>
+          <td>Engineering lead</td>
+          <td><code>/quick-discovery</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-aqua">Feature</span></td>
+          <td>Complete Discovery (Feature)</td>
+          <td>Product / Engineering</td>
+          <td><code>/quick-discovery</code> &rarr; <code>/discovery</code> if L/XL</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-purple">New Project</span></td>
+          <td>Complete Deep Discovery</td>
+          <td>Product lead</td>
+          <td><code>/discovery</code> (full)</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-orange">Issue</span></td>
+          <td>Complete Discovery (Issue)</td>
+          <td>Dept lead / COO</td>
+          <td><code>/quick-discovery</code> with 5 Whys</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-green">Opportunity</span></td>
+          <td>Complete Discovery (Opportunity)</td>
+          <td>Strategy / COO</td>
+          <td><code>/quick-discovery</code> with value estimate</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 2: EOS ↔ PRODUCT DEV -->
+<!-- ============================================================ -->
+<div class="section" id="eos-proddev">
+  <span class="section-label">Integration</span>
+  <h2>EOS + Product Development</h2>
+  <p class="subtitle">EOS provides the strategic layer (why and what). The product pipeline provides the execution layer (how). Data flows both directions.</p>
+
+  <div class="card">
+    <h3>Bidirectional System Flow</h3>
+    <div class="mermaid">
+graph TB
+  subgraph EOS["EOS — Strategy Layer"]
+    VTO["V/TO\n10yr / 3yr / 1yr"]
+    ROCKS["Quarterly Rocks\n3-7 priorities"]
+    SCORE["Scorecard\nWeekly KPIs"]
+    L10["L10 Meeting\nWeekly rhythm"]
+    IDS["IDS\nIssue solving"]
+    TODOS["To-Dos\n7-day actions"]
+  end
+
+  subgraph PIPELINE["Product Dev — Execution Layer"]
+    SCOPING["Scoping Pipeline\nIntake → Ready"]
+    ACTIVE["Active Work\nSprint board"]
+    FEATURES["Feature Projects\nL/XL execution"]
+    BACKLOG["Backlog\nPrioritized queue"]
+    ROADMAP["Product Roadmap\nTimeline view"]
+  end
+
+  subgraph DATA["Data Layer"]
+    BQ["BigQuery\nApp_Recess_OS"]
+    ASANA["Asana\nSource of truth"]
+    GIT["CEOS Git\nStrategy docs"]
+  end
+
+  %% EOS → Pipeline
+  IDS -->|"Issues & Opps\ninto Intake"| SCOPING
+  ROCKS -->|"Product Rocks become\nFeature Projects"| FEATURES
+  TODOS -->|"Quick-solve items"| ACTIVE
+  L10 -->|"Review new\nIntake items"| SCOPING
+
+  %% Pipeline → EOS
+  FEATURES -.->|"Goal progress\nauto-calculated"| ROCKS
+  SCOPING -.->|"Strategic items\ntagged for quarterly"| ROCKS
+  ACTIVE -.->|"Velocity &\ncompletion data"| SCORE
+
+  %% Data flows
+  ASANA -->|"Hourly sync"| BQ
+  GIT -->|"Rock definitions\nScorecard defs"| BQ
+  BQ -->|"/rock-status\n/project-status"| L10
+  BQ -->|"KPI Dashboard\nSlack posts"| SCORE
+
+  style EOS fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style PIPELINE fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style DATA fill:#0f1117,stroke:#8b5cf6,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Rock → Project Connection</h3>
+    <div class="mermaid">
+graph LR
+  subgraph ROCK_TYPES["Rock Types"]
+    NP["Non-Product Rock\ne.g. Drive NRR to 50%"]
+    PR["Product Rock\ne.g. Launch Walmart Tools"]
+    MX["Mixed Rock\ne.g. A2 Paid Media"]
+  end
+
+  EP["Execution Project\nOperational tasks"]
+  FP["Feature Project\nEngineering phases"]
+  BOTH["Rock Project +\nFeature Project"]
+  GOAL["Asana Goal\nProgress auto-calculated"]
+
+  NP -->|"ceos-rock-plans"| EP
+  PR -->|"Feature Project\nIS the execution"| FP
+  MX -->|"Split"| BOTH
+
+  EP --> GOAL
+  FP --> GOAL
+  BOTH --> GOAL
+
+  style NP fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style PR fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
+  style MX fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style EP fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style FP fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
+  style BOTH fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style GOAL fill:#1a2332,stroke:#eab308,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Weekly L10 Meeting &mdash; How It All Connects</h3>
+    <div class="mermaid">
+sequenceDiagram
+  participant BQ as BigQuery
+  participant AI as Claude Code
+  participant L10 as L10 Meeting
+  participant ASANA as Asana
+  participant SLACK as Slack
+
+  Note over BQ,SLACK: Pre-Meeting (Auto)
+  BQ->>AI: Scorecard data (autopull)
+  AI->>AI: /rock-status from Asana/BQ
+  AI->>AI: Pipeline report (new Intake items)
+  AI->>L10: Pre-read populated
+
+  Note over BQ,SLACK: During Meeting
+  L10->>AI: Review Scorecard
+  L10->>AI: Rock Review (on/at risk/off track)
+  L10->>AI: IDS — new Issues from Intake
+  AI->>AI: Quick-solve → create To-Do
+  AI->>AI: Needs work → route through pipeline
+
+  Note over BQ,SLACK: Post-Meeting
+  AI->>ASANA: Push To-Dos to assignee My Tasks
+  AI->>ASANA: Update issue statuses
+  AI->>SLACK: Post L10 summary
+  AI->>SLACK: Post scorecard to #eos-scorecard
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Quarterly Planning → Execution Cycle</h3>
+    <div class="mermaid">
+graph LR
+  PIPE["Pipeline Backlog\nAll 'Target Quarter'\nitems"] -->|"Score:\nPain × (11 − Effort)"| PLAN["Quarterly Planning\nLeadership reviews\ntop-scored items"]
+  PLAN -->|"Becomes Rock"| ROCK["Rock Defined\nceos-rocks"]
+  PLAN -->|"Stays in backlog"| BL["Prioritized\nBacklog"]
+  PLAN -->|"Parked"| PARK["Parked\nNot now"]
+  ROCK -->|"ceos-rock-plans"| EXEC["Execution Plan\nPushed to Asana"]
+  EXEC -->|"Weekly sprints"| SPRINT["Active Work"]
+  SPRINT -->|"/rock-status\nweekly"| REVIEW["L10 Review"]
+  REVIEW -.->|"Off track → IDS\nRecovery plan"| EXEC
+
+  style PIPE fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
+  style PLAN fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style ROCK fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style BL fill:#1a2332,stroke:#9ca3af,color:#e4e4e7
+  style PARK fill:#1a2332,stroke:#9ca3af,color:#e4e4e7
+  style EXEC fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style SPRINT fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style REVIEW fill:#1a2332,stroke:#eab308,color:#e4e4e7
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 3: DATA LAYER -->
+<!-- ============================================================ -->
+<div class="section" id="data-layer">
+  <span class="section-label">Infrastructure</span>
+  <h2>Data Architecture</h2>
+  <p class="subtitle">BigQuery as central hub. Asana syncs hourly. All reporting reads from BQ. Three sources of truth, never duplicated.</p>
+
+  <div class="card">
+    <h3>Data Flow — Sources → BigQuery → Consumers</h3>
+    <div class="mermaid">
+graph LR
+  subgraph SOURCES["Data Sources"]
+    AS["Asana API\nGoals, Projects\nTasks, Sections"]
+    HS["HubSpot / Mongo\nDeals, Pipeline\nContacts"]
+    GIT["CEOS Git\nV/TO, Rock defs\nScorecard defs"]
+    FS["Firestore\nSeller quotas\nDemand goals"]
+  end
+
+  subgraph BQ["BigQuery — App_Recess_OS"]
+    T1["eos_rocks"]
+    T2["eos_rock_tasks"]
+    T3["eos_pipeline_items"]
+    T4["eos_issues"]
+    T5["eos_todos"]
+    V1["v_rock_health"]
+    V2["v_project_status"]
+    V3["v_quarterly_summary"]
+  end
+
+  subgraph CONSUMERS["Consumers"]
+    RS["/rock-status\nStrategic reports"]
+    PS["/project-status\nTactical reports"]
+    KPI["KPI Dashboard\nStreamlit"]
+    PRE["leadership-preread\nL10 prep doc"]
+    SL["Slack Posts\nScorecard, alerts"]
+    CL["ceos-l10\nMeeting facilitation"]
+  end
+
+  AS -->|"Hourly sync\nasana_eos_sync.py"| T1
+  AS --> T2
+  AS --> T3
+  AS --> T4
+  AS --> T5
+  HS -.->|"Existing\nStitch sync"| BQ
+  GIT -.->|"Read-only\nreference"| BQ
+  FS -.->|"KPI dashboard\ndb"| BQ
+
+  T1 --> V1
+  T2 --> V1
+  T2 --> V2
+  T1 --> V3
+
+  V1 --> RS
+  V2 --> PS
+  V1 --> KPI
+  V1 --> PRE
+  V1 --> SL
+  V1 --> CL
+
+  style SOURCES fill:#0f1117,stroke:#F27935,color:#e4e4e7
+  style BQ fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style CONSUMERS fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Source of Truth Matrix</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Each data type has exactly one owner. Never duplicate ownership across systems.</p>
+    <table>
+      <thead><tr><th>Data</th><th>Source of Truth</th><th>Synced To</th></tr></thead>
+      <tbody>
+        <tr><td>V/TO, Accountability Chart</td><td><span class="tag tag-purple">CEOS Git</span></td><td>Google Docs (team reads)</td></tr>
+        <tr><td>Rock definitions (title, outcome, milestones)</td><td><span class="tag tag-purple">CEOS Git</span></td><td>Asana Goals (synced)</td></tr>
+        <tr><td>Rock execution status</td><td><span class="tag tag-orange">Asana</span></td><td>BigQuery (hourly) &rarr; CEOS snapshot</td></tr>
+        <tr><td>Execution tasks, progress, assignments</td><td><span class="tag tag-orange">Asana</span></td><td>BigQuery (hourly)</td></tr>
+        <tr><td>Scorecard values</td><td><span class="tag tag-aqua">BigQuery</span></td><td>CEOS (weekly snapshot)</td></tr>
+        <tr><td>Scorecard definitions</td><td><span class="tag tag-purple">CEOS Git</span></td><td>&mdash;</td></tr>
+        <tr><td>Pipeline items (Intake &rarr; Ready)</td><td><span class="tag tag-orange">Asana</span></td><td>BigQuery (hourly)</td></tr>
+        <tr><td>Issues &amp; Opportunities</td><td><span class="tag tag-orange">Asana</span> (via form)</td><td>BigQuery (hourly)</td></tr>
+        <tr><td>Meeting notes</td><td><span class="tag tag-purple">CEOS Git</span></td><td>Slack (summary)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-warning">
+    <strong>Security boundary:</strong> Cash position and factoring data live in <code>App_KPI_Executive</code> (IAM-restricted), never in <code>App_Recess_OS</code>. The UI PIN gate is for display; BQ dataset IAM is the real security.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 4: SKILLS MAP -->
+<!-- ============================================================ -->
+<div class="section" id="skills">
+  <span class="section-label">Tooling</span>
+  <h2>Skills &amp; Commands Map</h2>
+  <p class="subtitle">Every skill operates at a specific point in the system.
+    <span class="tag tag-green">exists</span>
+    <span class="tag tag-aqua">new</span>
+    <span class="tag tag-orange">to build</span>
+  </p>
+
+  <div class="card">
+    <h3>Which Skill Operates Where</h3>
+    <div class="mermaid">
+graph TB
+  subgraph QUARTERLY["Quarterly — Planning"]
+    QP["ceos-quarterly-planning"]
+    QR["ceos-rocks"]
+    QRP["ceos-rock-plans ★"]
+    QV["ceos-vto"]
+  end
+
+  subgraph WEEKLY["Weekly — Operating Rhythm"]
+    WL["ceos-l10"]
+    WS["ceos-scorecard-autopull"]
+    WRS["/rock-status ★"]
+    WPS["/project-status ★"]
+    WPR["leadership-preread"]
+  end
+
+  subgraph ONDEMAND["On-Demand — Product Dev"]
+    OQD["/quick-discovery ★"]
+    OD["/discovery"]
+    OP["/prd"]
+    OPB["/playbook"]
+    OQA["qa-feedback"]
+  end
+
+  subgraph INFRA["Infrastructure"]
+    IS["asana_eos_sync.py"]
+    ISL["Slack integration"]
+    IAF["Asana form + Rules"]
+  end
+
+  %% Connections showing where skills operate
+  QRP -->|"Creates"| EXEC["Asana Projects"]
+  WRS -->|"Reads"| BQ["BigQuery"]
+  WPS -->|"Reads"| BQ
+  OQD -->|"Updates"| PIPE["Scoping Pipeline"]
+  IS -->|"Syncs to"| BQ
+  WL -->|"Uses"| WS
+  WL -->|"Uses"| WRS
+  WL -->|"Routes to"| OQD
+
+  style QUARTERLY fill:#0f1117,stroke:#8b5cf6,color:#e4e4e7
+  style WEEKLY fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style ONDEMAND fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style INFRA fill:#0f1117,stroke:#F27935,color:#e4e4e7
+  style EXEC fill:#1a2332,stroke:#eab308,color:#e4e4e7
+  style BQ fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style PIPE fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+    </div>
+    <p style="color: var(--text-muted); font-size: 12px; margin-top: 8px;">★ = built in current session</p>
+  </div>
+
+  <div class="grid-3">
+    <!-- Quarterly -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 style="color: var(--purple);">Quarterly</h3>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-quarterly-planning</span><span style="color:var(--text-muted);font-size:12px">Orchestrate planning</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-rocks</span><span style="color:var(--text-muted);font-size:12px">Set, track, score Rocks</span></div>
+      <div class="skill-item"><span class="skill-name sn-new">ceos-rock-plans</span><span style="color:var(--text-muted);font-size:12px">Execution plans &rarr; Asana</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-vto</span><span style="color:var(--text-muted);font-size:12px">Vision/Traction Organizer</span></div>
+    </div>
+
+    <!-- Weekly -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 style="color: var(--aqua);">Weekly</h3>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-l10</span><span style="color:var(--text-muted);font-size:12px">Facilitate L10 meeting</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">scorecard-autopull</span><span style="color:var(--text-muted);font-size:12px">Auto-fill from BQ/MCP</span></div>
+      <div class="skill-item"><span class="skill-name sn-new">/rock-status</span><span style="color:var(--text-muted);font-size:12px">AI Rock status reports</span></div>
+      <div class="skill-item"><span class="skill-name sn-new">/project-status</span><span style="color:var(--text-muted);font-size:12px">Tactical project status</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">leadership-preread</span><span style="color:var(--text-muted);font-size:12px">Populate L10 prep doc</span></div>
+    </div>
+
+    <!-- On-Demand -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 style="color: var(--green);">On-Demand</h3>
+      <div class="skill-item"><span class="skill-name sn-new">/quick-discovery</span><span style="color:var(--text-muted);font-size:12px">Lightweight triage (5 min)</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">/discovery</span><span style="color:var(--text-muted);font-size:12px">Deep multi-session (L/XL)</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">/prd</span><span style="color:var(--text-muted);font-size:12px">Product requirements</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">/playbook</span><span style="color:var(--text-muted);font-size:12px">Behavioral specs</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">qa-feedback</span><span style="color:var(--text-muted);font-size:12px">QA &rarr; Notion &rarr; Asana</span></div>
+    </div>
+  </div>
+
+  <div style="margin-top: 16px;"></div>
+
+  <div class="grid-3">
+    <!-- Infrastructure -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 style="color: var(--orange);">Infrastructure</h3>
+      <div class="skill-item"><span class="skill-name sn-tobuild">asana_eos_sync.py</span><span style="color:var(--text-muted);font-size:12px">Asana &rarr; BQ hourly</span></div>
+      <div class="skill-item"><span class="skill-name sn-tobuild">Slack integration</span><span style="color:var(--text-muted);font-size:12px">Summaries, alerts</span></div>
+      <div class="skill-item"><span class="skill-name sn-tobuild">Asana form + Rules</span><span style="color:var(--text-muted);font-size:12px">Auto-routing subtasks</span></div>
+    </div>
+
+    <!-- EOS Facilitation -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 style="color: var(--yellow);">EOS Facilitation</h3>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-ids</span><span style="color:var(--text-muted);font-size:12px">Identify, Discuss, Solve</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-todos</span><span style="color:var(--text-muted);font-size:12px">Track To-Dos</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-accountability</span><span style="color:var(--text-muted);font-size:12px">Org chart</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-people</span><span style="color:var(--text-muted);font-size:12px">GWC / People Analyzer</span></div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="card" style="margin-bottom: 0;">
+      <h3 style="color: var(--pink);">Analytics</h3>
+      <div class="skill-item"><span class="skill-name sn-exists">recess-bigquery</span><span style="color:var(--text-muted);font-size:12px">Query Recess data</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">kpi-dashboard</span><span style="color:var(--text-muted);font-size:12px">Streamlit + BQ</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-scorecard</span><span style="color:var(--text-muted);font-size:12px">Metric definitions</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">ceos-dashboard</span><span style="color:var(--text-muted);font-size:12px">EOS health snapshot</span></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Implementation Phases -->
+<div class="section">
+  <span class="section-label">Roadmap</span>
+  <h2>Implementation Phases</h2>
+  <p class="subtitle">8-week rollout from front door to full automation.</p>
+
+  <div class="grid-4" style="margin-bottom: 16px;">
+    <div class="mini-card" style="border-left: 3px solid var(--aqua);">
+      <h4 style="color: var(--aqua);">Phase 1 &middot; Weeks 1-2</h4>
+      <p><strong>Front Door + Pipeline</strong><br>Asana form updates, Rules for subtask routing, /quick-discovery skill, pipeline section updates</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--purple);">
+      <h4 style="color: var(--purple);">Phase 2 &middot; Weeks 2-3</h4>
+      <p><strong>Rock &harr; Feature Project</strong><br>Update ceos-rock-plans for product vs non-product Rocks, test with Q2 Rocks</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--orange);">
+      <h4 style="color: var(--orange);">Phase 3 &middot; Weeks 3-4</h4>
+      <p><strong>Data Layer</strong><br>App_Recess_OS dataset, asana_eos_sync.py, /project-status, deploy on Cloud Scheduler</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--green);">
+      <h4 style="color: var(--green);">Phase 4-5 &middot; Weeks 4-8</h4>
+      <p><strong>Automation + Roadmap</strong><br>L10 auto-prep, Slack posts, off-track alerts, Product Roadmap view, quarterly planning integration</p>
+    </div>
+  </div>
+
+  <div class="callout callout-success">
+    <strong>Current status:</strong> Architecture designed. Phase 1 skills built (<code>/quick-discovery</code>, <code>/project-status</code>, <code>asana_eos_sync.py</code>). Ready for Asana form configuration and live testing.
+  </div>
+</div>
+
+<footer>
+  Recess OS Architecture &mdash; Generated 2026-03-24 &mdash; <code>~/Projects/eos/recess-os-architecture.html</code>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1a2332',
+      primaryTextColor: '#e4e4e7',
+      primaryBorderColor: '#14B9D6',
+      lineColor: '#14B9D6',
+      secondaryColor: '#1a1d27',
+      tertiaryColor: '#0f1117',
+      noteBkgColor: '#1a2332',
+      noteTextColor: '#e4e4e7',
+      actorBkg: '#1a2332',
+      actorTextColor: '#14B9D6',
+      actorBorder: '#14B9D6',
+      signalColor: '#e4e4e7',
+      signalTextColor: '#e4e4e7',
+      labelBoxBkgColor: '#1a2332',
+      labelBoxBorderColor: '#14B9D6',
+      labelTextColor: '#e4e4e7',
+      loopTextColor: '#F27935',
+      activationBorderColor: '#14B9D6',
+      activationBkgColor: '#1a2332',
+      sequenceNumberColor: '#0f1117'
+    },
+    sequence: {
+      mirrorActors: false,
+      useMaxWidth: true
+    },
+    flowchart: {
+      useMaxWidth: true,
+      htmlLabels: true,
+      curve: 'basis'
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -17,5 +17,11 @@ data/processes/
 .ceos
 eos-system-diagram.html
 
+# Session context (local only)
+context/
+
+# Claude Code project config
+.claude/
+
 # OS
 .DS_Store
