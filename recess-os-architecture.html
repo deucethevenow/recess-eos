@@ -323,78 +323,212 @@ graph LR
 
   <div class="card">
     <h3>Graduation — Ready to Execution</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">ONE Backlog with properties (Size, Type, Priority). L/XL items also get a Feature Project whose milestones multi-home into Active Work.</p>
     <div class="mermaid">
 graph TB
   READY["✅ Ready\nFully Scoped"]
 
-  BACKLOG_S["Backlog\nXS/S items"]
-  BACKLOG_M["Backlog\nM items"]
-  FEATURE["Feature Project\nL/XL items"]
+  BACKLOG["Backlog\n(single project)\nTagged: Size, Type,\nPriority, Quarter"]
+  FEATURE["Feature Project\nL/XL items\nMilestones as phases"]
 
-  SPRINT["Active Work\nWeekly Sprint Board"]
-  ROADMAP["Product Roadmap\nTimeline View"]
+  ROADMAP["Product Roadmap\nTimeline of Feature Projects\nStrategic 'what is coming'"]
   GOAL["Asana Goal\nRock Connection"]
 
-  READY -->|"XS/S"| BACKLOG_S
-  READY -->|"M"| BACKLOG_M
-  READY -->|"L/XL"| FEATURE
+  SPRINT["Active Work\n(Sprint Board)\nWeekly or bi-weekly"]
 
-  BACKLOG_S -->|"Pull weekly"| SPRINT
-  BACKLOG_M -->|"When capacity"| SPRINT
-  FEATURE -->|"Tasks multi-homed"| SPRINT
+  READY -->|"All sizes"| BACKLOG
+  READY -->|"L/XL also gets"| FEATURE
+
+  BACKLOG -->|"Sprint planning\npulls XS/S/M items"| SPRINT
+  FEATURE -->|"Milestones\nmulti-homed"| SPRINT
   FEATURE --> ROADMAP
+  ROADMAP -->|"Milestone activated\n→ tasks flow in"| SPRINT
+
   FEATURE -.->|"If tied to Rock"| GOAL
+  SPRINT -.->|"Completion feeds\nback to Goal %"| GOAL
+  GOAL -.->|"/rock-status\nreported in L10"| ROCKS["L10 Rock Review"]
 
   style READY fill:#1a2332,stroke:#22c55e,color:#e4e4e7
-  style BACKLOG_S fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
-  style BACKLOG_M fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style BACKLOG fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
   style FEATURE fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
-  style SPRINT fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style SPRINT fill:#1a2332,stroke:#F27935,color:#e4e4e7
   style ROADMAP fill:#1a2332,stroke:#ec4899,color:#e4e4e7
   style GOAL fill:#1a2332,stroke:#eab308,color:#e4e4e7
+  style ROCKS fill:#1a2332,stroke:#eab308,color:#e4e4e7
     </div>
 
     <div class="callout callout-info">
-      <strong>Capacity allocation:</strong> 50% Features (L/XL) &middot; 20% Enhancements (M) &middot; 10% Scoping &middot; 20% Buffer
+      <strong>Capacity allocation:</strong> 50% Features (L/XL milestone tasks) &middot; 20% Enhancements (M) &middot; 10% Scoping &middot; 20% Buffer
     </div>
   </div>
 
   <div class="card">
+    <h3>The Single Backlog — Properties, Not Separate Boards</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Every Ready item lives in ONE Backlog project. Use Asana views to slice by property.</p>
+    <table>
+      <thead><tr><th>Property</th><th>Values</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Size</strong></td><td>XS / S / M / L / XL</td><td>Determines effort and routing</td></tr>
+        <tr><td><strong>Type</strong></td><td>Bug, Feature, Issue, Opportunity</td><td>Request classification</td></tr>
+        <tr><td><strong>Priority</strong></td><td>P1 (Critical) / P2 (High) / P3 (Med) / P4 (Low)</td><td>Sprint selection order</td></tr>
+        <tr><td><strong>Source</strong></td><td>Pipeline, L10, Rock, Direct</td><td>Where it came from</td></tr>
+        <tr><td><strong>Target Quarter</strong></td><td>Q2, Q3, Q4, etc.</td><td>Quarterly planning input</td></tr>
+        <tr><td><strong>Feature Project</strong></td><td>Link (if L/XL)</td><td>Connects to execution project</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-info" style="margin-top: 16px;">
+      <strong>Asana views on one Backlog:</strong> Board by Priority (sprint planning) &middot; List by Size (capacity planning) &middot; Filter: Type=Bug (bug triage) &middot; Filter: Target Quarter=Q3 (quarterly planning input)
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Feature Project Lifecycle — Milestones Drive Active Work</h3>
+    <div class="mermaid">
+graph LR
+  FP["Feature Project\n(Asana Project)"]
+  M1["Milestone 1\nDiscovery + Design\n✅ Complete"]
+  M2["Milestone 2\nCore Build\n🔵 Active"]
+  M3["Milestone 3\nQA + Launch\n⚪ Not Started"]
+
+  FP --> M1
+  FP --> M2
+  FP --> M3
+
+  T1["Task 2a\n(multi-homed)"]
+  T2["Task 2b\n(multi-homed)"]
+  T3["Task 2c\n(multi-homed)"]
+
+  M2 --> T1
+  M2 --> T2
+  M2 --> T3
+
+  SPRINT["Active Work\nSprint Board"]
+  T1 --> SPRINT
+  T2 --> SPRINT
+  T3 --> SPRINT
+
+  ROADMAP["Product Roadmap\nTimeline View"]
+  FP -.-> ROADMAP
+
+  style FP fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
+  style M1 fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style M2 fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style M3 fill:#1a2332,stroke:#9ca3af,color:#e4e4e7
+  style T1 fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style T2 fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style T3 fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style SPRINT fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style ROADMAP fill:#1a2332,stroke:#ec4899,color:#e4e4e7
+    </div>
+    <p style="color: var(--text-muted); font-size: 13px; margin-top: 12px;">When Milestone 2 goes active, its tasks get multi-homed to Active Work. When Milestone 2 completes, Milestone 3 tasks flow in. The Roadmap shows the Feature Project timeline across all milestones.</p>
+  </div>
+
+  <div class="card">
     <h3>Request Type Routing</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Each request type triggers a different Asana Rule that creates a discovery subtask with specific instructions.</p>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Each request type triggers a different Asana Rule that creates a discovery subtask with specific instructions and assignee.</p>
     <table>
       <thead><tr><th>Request Type</th><th>Auto-Created Subtask</th><th>Assigned To</th><th>Skill</th></tr></thead>
       <tbody>
         <tr>
-          <td><span class="tag tag-red">Bug</span></td>
+          <td><span class="tag tag-red">Bug</span> <span style="font-size:11px;color:var(--text-muted)">Platform</span></td>
           <td>Complete Quick Discovery (Bug)</td>
-          <td>Engineering lead</td>
+          <td><strong>Arbind</strong> (Recess Platform)</td>
+          <td><code>/quick-discovery</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">Bug</span> <span style="font-size:11px;color:var(--text-muted)">AI/Automation</span></td>
+          <td>Complete Quick Discovery (Bug)</td>
+          <td><strong>Leo</strong> (Recess AI Automations)</td>
           <td><code>/quick-discovery</code></td>
         </tr>
         <tr>
           <td><span class="tag tag-aqua">Feature</span></td>
           <td>Complete Discovery (Feature)</td>
-          <td>Product / Engineering</td>
+          <td><strong>Deuce</strong> (COO / Product)</td>
           <td><code>/quick-discovery</code> &rarr; <code>/discovery</code> if L/XL</td>
         </tr>
         <tr>
           <td><span class="tag tag-purple">New Project</span></td>
           <td>Complete Deep Discovery</td>
-          <td>Product lead</td>
+          <td><strong>Deuce</strong> (COO / Product)</td>
           <td><code>/discovery</code> (full)</td>
         </tr>
         <tr>
           <td><span class="tag tag-orange">Issue</span></td>
           <td>Complete Discovery (Issue)</td>
-          <td>Dept lead / COO</td>
+          <td><strong>Deuce</strong> (COO) &mdash; routes to dept lead</td>
           <td><code>/quick-discovery</code> with 5 Whys</td>
         </tr>
         <tr>
           <td><span class="tag tag-green">Opportunity</span></td>
           <td>Complete Discovery (Opportunity)</td>
-          <td>Strategy / COO</td>
+          <td><strong>Deuce</strong> (COO / Strategy)</td>
           <td><code>/quick-discovery</code> with value estimate</td>
         </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Ownership / RACI -->
+  <div class="card">
+    <h3>Ownership &mdash; Who Is Responsible at Each Stage</h3>
+    <div class="mermaid">
+graph LR
+  subgraph ANYONE["Anyone on Team"]
+    SUBMIT["Submit\nvia Asana Form"]
+  end
+
+  subgraph DEUCE["Deuce (COO)"]
+    DISC_F["Discovery\nFeatures, Issues,\nOpportunities"]
+    PRD_W["PRD\nWrite or delegate"]
+    APPROVE_S["Approve\nM+ sign-off"]
+    BACKLOG_P["Backlog\nPrioritization"]
+    ROADMAP_M["Roadmap\nMaintenance"]
+  end
+
+  subgraph ENG["Engineering"]
+    DISC_B["Discovery\nBugs (Arbind/Leo)"]
+    SPRINT_P["Sprint Planning\n(Arbind leads)"]
+    ACTIVE_E["Active Work\nExecution"]
+  end
+
+  subgraph ROCK_O["Rock Owners (varies)"]
+    ROCK_E["Rock Execution\nOwner drives progress"]
+    ROCK_R["Rock Review\nReports in L10"]
+  end
+
+  SUBMIT --> DISC_F
+  SUBMIT --> DISC_B
+  DISC_F --> PRD_W
+  DISC_B -->|"XS/S skip PRD"| BACKLOG_P
+  PRD_W --> APPROVE_S
+  APPROVE_S --> BACKLOG_P
+  BACKLOG_P --> SPRINT_P
+  SPRINT_P --> ACTIVE_E
+  ROADMAP_M -->|"Milestone\nactivated"| SPRINT_P
+
+  ROCK_E -.-> ACTIVE_E
+  ROCK_R -.->|"/rock-status"| ROADMAP_M
+
+  style ANYONE fill:#0f1117,stroke:#9ca3af,color:#e4e4e7
+  style DEUCE fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style ENG fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style ROCK_O fill:#0f1117,stroke:#eab308,color:#e4e4e7
+    </div>
+
+    <table style="margin-top: 20px;">
+      <thead><tr><th>Stage</th><th>Responsible</th><th>Accountable</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Submit</strong></td><td>Anyone on team</td><td>COO (Deuce)</td><td>Asana form, Asana Rules auto-route</td></tr>
+        <tr><td><strong>Discovery</strong></td><td>Per routing table above</td><td>COO (Deuce)</td><td>Bugs → Arbind/Leo. Everything else → Deuce</td></tr>
+        <tr><td><strong>PRD</strong></td><td>Deuce (or delegate)</td><td>COO</td><td><code>/prd</code> for L/XL, light PRD in task for M</td></tr>
+        <tr><td><strong>Approve</strong></td><td>COO (Deuce)</td><td>CEO (Jack) for L+</td><td>Business stakeholder sign-off</td></tr>
+        <tr><td><strong>Backlog Prioritization</strong></td><td>COO (Deuce)</td><td>COO</td><td>Weekly, informed by L10 IDS</td></tr>
+        <tr><td><strong>Sprint Planning</strong></td><td>Arbind (Eng lead)</td><td>Arbind</td><td>Pulls from Backlog + Roadmap milestones</td></tr>
+        <tr><td><strong>Active Work</strong></td><td>Task assignee</td><td>Arbind (Eng lead)</td><td>Weekly or bi-weekly sprint cadence</td></tr>
+        <tr><td><strong>Feature Project</strong></td><td>Rock owner</td><td>Rock owner</td><td>Milestone activation drives Active Work</td></tr>
+        <tr><td><strong>Product Roadmap</strong></td><td>COO (Deuce)</td><td>COO + CEO</td><td>Strategic view, updated quarterly</td></tr>
+        <tr><td><strong>Rock Review</strong></td><td>Rock owner</td><td>COO</td><td>Weekly in L10 via <code>/rock-status</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -425,10 +559,10 @@ graph TB
 
   subgraph PIPELINE["Product Dev — Execution Layer"]
     SCOPING["Scoping Pipeline\nIntake → Ready"]
-    ACTIVE["Active Work\nSprint board"]
-    FEATURES["Feature Projects\nL/XL execution"]
-    BACKLOG["Backlog\nPrioritized queue"]
-    ROADMAP["Product Roadmap\nTimeline view"]
+    BACKLOG["Backlog (single)\nTagged: Size, Type,\nPriority, Quarter"]
+    FEATURES["Feature Projects\nL/XL with milestones"]
+    ROADMAP["Product Roadmap\nTimeline of Features"]
+    ACTIVE["Active Work\nSprint board\n(weekly/bi-weekly)"]
   end
 
   subgraph DATA["Data Layer"]
@@ -443,8 +577,15 @@ graph TB
   TODOS -->|"Quick-solve items"| ACTIVE
   L10 -->|"Review new\nIntake items"| SCOPING
 
-  %% Pipeline → EOS
-  FEATURES -.->|"Goal progress\nauto-calculated"| ROCKS
+  %% Pipeline internal flow
+  SCOPING -->|"Ready items"| BACKLOG
+  BACKLOG -->|"Sprint planning\npulls XS/S/M"| ACTIVE
+  FEATURES -->|"Milestones\nmulti-homed"| ACTIVE
+  FEATURES --> ROADMAP
+  ROADMAP -->|"Milestone\nactivated"| ACTIVE
+
+  %% Pipeline → EOS (feedback loops)
+  ACTIVE -.->|"Completion feeds\nGoal progress %"| ROCKS
   SCOPING -.->|"Strategic items\ntagged for quarterly"| ROCKS
   ACTIVE -.->|"Velocity &\ncompletion data"| SCORE
 
