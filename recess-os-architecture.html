@@ -278,9 +278,9 @@
   <p>Recess OS unifies EOS, Product Development, and Discovery into a single operating system. Everyone enters through the same door; AI handles the routing.</p>
   <div class="hero-stats">
     <div class="hero-stat"><div class="num">18</div><div class="lbl">Team Members</div></div>
-    <div class="hero-stat"><div class="num">5</div><div class="lbl">Request Types</div></div>
+    <div class="hero-stat"><div class="num">7</div><div class="lbl">Request Types</div></div>
     <div class="hero-stat"><div class="num">26+</div><div class="lbl">AI Skills</div></div>
-    <div class="hero-stat"><div class="num">1</div><div class="lbl">Pipeline</div></div>
+    <div class="hero-stat"><div class="num">2</div><div class="lbl">Pipelines</div></div>
   </div>
 </div>
 
@@ -292,32 +292,99 @@
 <div class="section" id="pipeline">
   <span class="section-label">Core Architecture</span>
   <h2>The Single Front Door Pipeline</h2>
-  <p class="subtitle">Everything enters through the Asana intake form. Five request types, one pipeline, automated routing via Asana Rules and AI discovery skills.</p>
+  <p class="subtitle">Everything enters through the Asana intake form. Seven request types, two pipelines (standard + QA), automated routing via Asana Rules and AI discovery skills.</p>
 
   <div class="card">
     <h3>Pipeline Flow — Intake to Execution</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Features, Issues, and Opportunities follow the standard pipeline. Bugs have a dual path: single bugs go through quick discovery, QA sessions (multiple bugs) follow the QA workflow.</p>
     <div class="mermaid">
-graph LR
-  FORM["📋 Asana Form\n5 Request Types"]
-  INTAKE["Intake\nAuto-creates\ndiscovery subtask"]
-  DISC["Discovery\n/quick-discovery\nor /discovery"]
-  PRD["PRD\nLight or Full\nvia /prd"]
-  APPROVE["Approve\nCOO sign-off\nfor M+ items"]
-  READY["Ready\nFully scoped"]
+graph TB
+  FORM["📋 Asana Form\n7 Request Types"]
 
-  FORM --> INTAKE
-  INTAKE -->|"Asana Rules\nauto-route"| DISC
-  DISC -->|"XS/S skip PRD"| READY
+  subgraph STANDARD["Standard Pipeline (Features, Issues, Opportunities, New Projects)"]
+    INTAKE["Intake\nAsana Rules\nauto-route"]
+    DISC["Discovery\n/quick-discovery\nor /discovery"]
+    PRD["PRD\nLight (M) or Full (L/XL)\nvia /prd"]
+    APPROVE["Approve\nCOO sign-off\nfor M+ items"]
+    READY["Ready\nFully scoped"]
+  end
+
+  subgraph BUG_SINGLE["Single Bug Path"]
+    BUG_INTAKE["Bug Intake\nArbind or Leo\nauto-assigned"]
+    BUG_DISC["/quick-discovery\nRepro + Severity\n+ Size"]
+    BUG_READY["Ready\nNo PRD needed\n(XS/S direct)"]
+    BUG_PRD["Light PRD\n(M bugs only —\ncomplex fix)"]
+  end
+
+  subgraph QA_PATH["QA Session Path (Multiple Bugs)"]
+    QA_COLLECT["/qa-feedback\nStakeholder walks\nthrough feature"]
+    QA_NOTION["Notion Doc\nStructured items\n+ screenshots"]
+    QA_PROCESS["/receive-qa-feedback\nEngineer researches\ncodebase"]
+    QA_PLAN["Implementation Plan\n(substitutes for PRD)\nBefore/After + AC"]
+    QA_APPROVE["Plan Approval\nReview cycles"]
+    QA_EXEC["/execute-plan\nAsana tasks created\nTDD implementation"]
+  end
+
+  FORM -->|"Feature, Issue,\nOpportunity, New Project"| INTAKE
+  FORM -->|"Single Bug"| BUG_INTAKE
+  FORM -->|"QA Session\n(multiple bugs)"| QA_COLLECT
+
+  INTAKE -->|"Asana Rules"| DISC
+  DISC -->|"XS/S"| READY
   DISC -->|"M-XL"| PRD
   PRD --> APPROVE
   APPROVE --> READY
 
+  BUG_INTAKE --> BUG_DISC
+  BUG_DISC -->|"XS/S"| BUG_READY
+  BUG_DISC -->|"M (complex)"| BUG_PRD
+  BUG_PRD --> BUG_READY
+
+  QA_COLLECT --> QA_NOTION
+  QA_NOTION --> QA_PROCESS
+  QA_PROCESS --> QA_PLAN
+  QA_PLAN --> QA_APPROVE
+  QA_APPROVE --> QA_EXEC
+
+  READY -->|"→ Backlog"| BACKLOG["Backlog"]
+  BUG_READY -->|"→ Backlog"| BACKLOG
+  QA_EXEC -->|"→ Active Work"| SPRINT["Active Work\nSprint Board"]
+  BACKLOG -->|"Sprint planning"| SPRINT
+
   style FORM fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
-  style INTAKE fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
-  style DISC fill:#1a2332,stroke:#F27935,color:#e4e4e7
-  style PRD fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
-  style APPROVE fill:#1a2332,stroke:#eab308,color:#e4e4e7
-  style READY fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style STANDARD fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style BUG_SINGLE fill:#0f1117,stroke:#ef4444,color:#e4e4e7
+  style QA_PATH fill:#0f1117,stroke:#ec4899,color:#e4e4e7
+  style BACKLOG fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style SPRINT fill:#1a2332,stroke:#F27935,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Bug Paths — Single Bug vs QA Session</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">The Asana form asks: is this a single bug or a QA session with multiple findings? This determines the entire downstream workflow.</p>
+    <div class="grid-3">
+      <div class="mini-card" style="border-left: 3px solid var(--red);">
+        <h4 style="color: var(--red);">Single Bug</h4>
+        <p><strong>Who:</strong> Anyone reports, Arbind/Leo triages<br>
+        <strong>Skill:</strong> <code>/quick-discovery</code> (Bug path)<br>
+        <strong>Time:</strong> 2-5 minutes<br>
+        <strong>PRD:</strong> None (XS/S) or light PRD in task (M)<br>
+        <strong>Output:</strong> Sized task in Backlog</p>
+      </div>
+      <div class="mini-card" style="border-left: 3px solid var(--pink);">
+        <h4 style="color: var(--pink);">QA Session</h4>
+        <p><strong>Who:</strong> Deuce/stakeholder collects, Arbind/Leo processes<br>
+        <strong>Skills:</strong> <code>/qa-feedback</code> &rarr; <code>/receive-qa-feedback</code> &rarr; <code>/execute-plan</code><br>
+        <strong>Time:</strong> Collection (15-30 min) + Processing (30-60 min)<br>
+        <strong>PRD:</strong> Implementation plan substitutes<br>
+        <strong>Output:</strong> Researched plan + Asana tasks with TDD</p>
+      </div>
+      <div class="mini-card" style="border-left: 3px solid var(--yellow);">
+        <h4 style="color: var(--yellow);">Key Difference</h4>
+        <p>Single bugs go through the <strong>Scoping Pipeline</strong> like any other item.<br><br>
+        QA sessions have their <strong>own pipeline</strong> (collect &rarr; plan &rarr; approve &rarr; execute) that <strong>skips the Scoping Pipeline</strong> entirely and feeds directly into Active Work.</p>
+      </div>
     </div>
   </div>
 
@@ -425,48 +492,101 @@ graph LR
 
   <div class="card">
     <h3>Request Type Routing</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Each request type triggers a different Asana Rule that creates a discovery subtask with specific instructions and assignee.</p>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Each request type triggers a different Asana Rule. Bug has a sub-selection (Single vs QA Session) that determines the entire downstream workflow.</p>
     <table>
-      <thead><tr><th>Request Type</th><th>Auto-Created Subtask</th><th>Assigned To</th><th>Skill</th></tr></thead>
+      <thead><tr><th>Request Type</th><th>Auto-Created Subtask</th><th>Assigned To</th><th>Skill</th><th>PRD?</th></tr></thead>
       <tbody>
         <tr>
-          <td><span class="tag tag-red">Bug</span> <span style="font-size:11px;color:var(--text-muted)">Platform</span></td>
+          <td><span class="tag tag-red">Single Bug</span> <span style="font-size:11px;color:var(--text-muted)">Platform</span></td>
           <td>Complete Quick Discovery (Bug)</td>
           <td><strong>Arbind</strong> (Recess Platform)</td>
           <td><code>/quick-discovery</code></td>
+          <td>No (XS/S) &middot; Light (M)</td>
         </tr>
         <tr>
-          <td><span class="tag tag-red">Bug</span> <span style="font-size:11px;color:var(--text-muted)">AI/Automation</span></td>
+          <td><span class="tag tag-red">Single Bug</span> <span style="font-size:11px;color:var(--text-muted)">AI/Auto</span></td>
           <td>Complete Quick Discovery (Bug)</td>
           <td><strong>Leo</strong> (Recess AI Automations)</td>
           <td><code>/quick-discovery</code></td>
+          <td>No (XS/S) &middot; Light (M)</td>
+        </tr>
+        <tr style="background: rgba(236,72,153,0.04);">
+          <td><span class="tag tag-pink">QA Session</span> <span style="font-size:11px;color:var(--text-muted)">Multiple bugs</span></td>
+          <td>Run QA Feedback Collection</td>
+          <td><strong>Deuce</strong> (collects) &rarr; <strong>Arbind/Leo</strong> (processes)</td>
+          <td><code>/qa-feedback</code> &rarr; <code>/receive-qa-feedback</code> &rarr; <code>/execute-plan</code></td>
+          <td>Impl. plan substitutes</td>
         </tr>
         <tr>
           <td><span class="tag tag-aqua">Feature</span></td>
           <td>Complete Discovery (Feature)</td>
           <td><strong>Deuce</strong> (COO / Product)</td>
           <td><code>/quick-discovery</code> &rarr; <code>/discovery</code> if L/XL</td>
+          <td>Light (M) &middot; Full (L/XL)</td>
         </tr>
         <tr>
           <td><span class="tag tag-purple">New Project</span></td>
           <td>Complete Deep Discovery</td>
           <td><strong>Deuce</strong> (COO / Product)</td>
           <td><code>/discovery</code> (full)</td>
+          <td>Full PRD + Playbook</td>
         </tr>
         <tr>
           <td><span class="tag tag-orange">Issue</span></td>
           <td>Complete Discovery (Issue)</td>
           <td><strong>Deuce</strong> (COO) &mdash; routes to dept lead</td>
           <td><code>/quick-discovery</code> with 5 Whys</td>
+          <td>No &middot; Quick-solve or route</td>
         </tr>
         <tr>
           <td><span class="tag tag-green">Opportunity</span></td>
           <td>Complete Discovery (Opportunity)</td>
           <td><strong>Deuce</strong> (COO / Strategy)</td>
           <td><code>/quick-discovery</code> with value estimate</td>
+          <td>Depends on size</td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="card">
+    <h3>QA Session Workflow — The Parallel Pipeline</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">QA sessions bypass the Scoping Pipeline entirely. They have their own collect &rarr; plan &rarr; approve &rarr; execute flow documented in <a href="https://www.notion.so/teamrecess/QA-Feedback-Implementation-Workflow-32c78d863acd8139bf99f81d121b9aa2" style="color: var(--aqua);">Notion</a>.</p>
+    <div class="mermaid">
+sequenceDiagram
+  participant S as Stakeholder<br>(Deuce/Katie)
+  participant N as Notion
+  participant E as Engineer<br>(Arbind/Leo)
+  participant A as Asana
+
+  Note over S,A: Phase 1: Collection (/qa-feedback)
+  S->>S: Walk through feature, find bugs
+  S->>N: /qa-feedback creates Notion doc
+  S->>N: Add items 1 by 1 with screenshots
+  N->>N: Each item: Bug or Enhancement + severity
+
+  Note over S,A: Phase 2: Processing (/receive-qa-feedback)
+  E->>N: Read QA doc, get all items
+  E->>E: Research codebase for each item
+  E->>E: Flag already-fixed items
+  E->>N: Create implementation plan (v1)
+  N->>N: Before/After for each fix + AC
+
+  Note over S,A: Phase 3: Review
+  S->>N: Review plan, request changes
+  E->>N: Update plan (v2, v3...)
+  S->>E: Approve plan
+
+  Note over S,A: Phase 4: Execute (/execute-plan)
+  E->>A: Create Asana tasks (eng + QA subtasks)
+  E->>E: TDD: test first, then implement
+  E->>A: Mark tasks complete
+  S->>S: Verify fixes in QA subtasks
+    </div>
+
+    <div class="callout callout-info" style="margin-top: 16px;">
+      <strong>Why QA sessions skip the pipeline:</strong> The <code>/receive-qa-feedback</code> implementation plan IS the equivalent of a PRD — it has before/after descriptions, acceptance criteria, and codebase research. No need to duplicate this work in the Scoping Pipeline. Tasks are created during <code>/execute-plan</code>, not during planning.
+    </div>
   </div>
 
   <!-- Ownership / RACI -->
@@ -522,6 +642,7 @@ graph LR
         <tr><td><strong>Submit</strong></td><td>Anyone on team</td><td>COO (Deuce)</td><td>Asana form, Asana Rules auto-route</td></tr>
         <tr><td><strong>Discovery</strong></td><td>Per routing table above</td><td>COO (Deuce)</td><td>Bugs → Arbind/Leo. Everything else → Deuce</td></tr>
         <tr><td><strong>PRD</strong></td><td>Deuce (or delegate)</td><td>COO</td><td><code>/prd</code> for L/XL, light PRD in task for M</td></tr>
+        <tr style="background: rgba(236,72,153,0.04);"><td><strong>QA Session</strong></td><td>Deuce/stakeholder (collects) + Arbind/Leo (processes)</td><td>COO (Deuce)</td><td>Parallel pipeline: <code>/qa-feedback</code> &rarr; <code>/receive-qa-feedback</code> &rarr; approval &rarr; <code>/execute-plan</code></td></tr>
         <tr><td><strong>Approve</strong></td><td>COO (Deuce)</td><td>CEO (Jack) for L+</td><td>Business stakeholder sign-off</td></tr>
         <tr><td><strong>Backlog Prioritization</strong></td><td>COO (Deuce)</td><td>COO</td><td>Weekly, informed by L10 IDS</td></tr>
         <tr><td><strong>Sprint Planning</strong></td><td>Arbind (Eng lead)</td><td>Arbind</td><td>Pulls from Backlog + Roadmap milestones</td></tr>
@@ -877,7 +998,8 @@ graph TB
       <div class="skill-item"><span class="skill-name sn-exists">/discovery</span><span style="color:var(--text-muted);font-size:12px">Deep multi-session (L/XL)</span></div>
       <div class="skill-item"><span class="skill-name sn-exists">/prd</span><span style="color:var(--text-muted);font-size:12px">Product requirements</span></div>
       <div class="skill-item"><span class="skill-name sn-exists">/playbook</span><span style="color:var(--text-muted);font-size:12px">Behavioral specs</span></div>
-      <div class="skill-item"><span class="skill-name sn-exists">qa-feedback</span><span style="color:var(--text-muted);font-size:12px">QA &rarr; Notion &rarr; Asana</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">qa-feedback</span><span style="color:var(--text-muted);font-size:12px">Collect QA bugs &rarr; Notion</span></div>
+      <div class="skill-item"><span class="skill-name sn-exists">receive-qa-feedback</span><span style="color:var(--text-muted);font-size:12px">Research code &rarr; impl. plan</span></div>
     </div>
   </div>
 
