@@ -1,6 +1,6 @@
 # CEOS data - don't commit operational data to public repo
 data/scorecard/weeks/
-data/rocks/
+# data/rocks/ — now tracked in GitHub for team visibility
 data/issues/
 data/todos/
 data/meetings/
