@@ -15,6 +15,11 @@ weeks_remaining: 13
 **Rock:** rock-003 — Launch A2 Paid Media Campaign — Complete First Campaign, >$1 iROAS, Create SOP
 **Owner:** Char | **Due:** Jun 30 (iROAS validation carries to Jul 18) | **Weeks:** 13 (Q2) + 3 (Q3 carryover)
 
+**Campaign Details (Quaker Pilot):**
+- Sampling: 1 week
+- Digital flight: 3 weeks ($2,500 media budget = ~250K impressions at $10 CPM)
+- NOTE: 250K impressions is well below PEQ's 4-5M threshold for statistical significance. This is a **process pilot** — proving the workflow works end-to-end. iROAS measurement may be inconclusive at this scale. Recess may eat the cost as a pilot investment.
+
 ## Weekly Project Updates
 
 | Task | Owner | Due |
@@ -79,27 +84,27 @@ weeks_remaining: 13
 | Get brand approval on ad creative | Char | May 7 | Creative produced | Phase II |
 | Campaign goes live | Char | May 9 | All above | Phase II |
 
-## Phase III – Campaign Execution (May 12 – Jun 6)
+## Phase III – Campaign Execution (May 12 – May 30)
 
 | Task | Owner | Due | Depends On | Milestone |
 |------|-------|-----|------------|-----------|
-| **MILESTONE: Campaign flight completed** | Char | Jun 6 | — | ✓ |
+| **MILESTONE: Campaign flight completed** | Char | May 30 | — | ✓ |
 | Confirm A2 campaign is live and serving | Char | May 12 | Campaign launch | Phase III |
+| Sampling week completes (~May 9-16) | Char | May 16 | — | Phase III |
 | Weekly A2 check-in #1 — performance review | Char | May 16 | — | Phase III |
 | Weekly A2 check-in #2 | Char | May 23 | — | Phase III |
-| Weekly A2 check-in #3 | Char | May 30 | — | Phase III |
-| Collect organizer recap photos + social content during campaign | Char | Jun 6 | — | Phase III |
-| Campaign flight ends — confirm all media delivered | Char | Jun 6 | — | Phase III |
+| Collect organizer recap photos + social content during sampling week | Char | May 16 | — | Phase III |
+| Digital flight ends — confirm all media delivered (~3 weeks) | Char | May 30 | — | Phase III |
 
-## Phase IV – Media Wrap-Up & Retrospective (Jun 9 – Jun 20)
+## Phase IV – Media Wrap-Up & Retrospective (Jun 1 – Jun 13)
 
 | Task | Owner | Due | Depends On | Milestone |
 |------|-------|-----|------------|-----------|
-| **MILESTONE: Retrospective completed, PEQ data submitted** | Char | Jun 20 | — | ✓ |
-| Collect A2 media performance report (impressions, reach, CPM by DMA) | Char | Jun 13 | ~2 weeks post-flight | Phase IV |
-| Compile all media data into updated PEQ template | Char | Jun 16 | A2 report received | Phase IV |
-| Submit PEQ template (sampling data + media data) to PEQ | Char | Jun 16 | Template compiled | Phase IV |
-| Run internal retrospective — what worked, what broke, what to change | Char | Jun 20 | A2 report in hand | Phase IV |
+| **MILESTONE: Retrospective completed, PEQ data submitted** | Char | Jun 13 | — | ✓ |
+| Collect A2 media performance report (impressions, reach, CPM by DMA) | Char | Jun 6 | ~1 week post-flight | Phase IV |
+| Compile all media data into updated PEQ template | Char | Jun 9 | A2 report received | Phase IV |
+| Submit PEQ template (sampling data + media data) to PEQ | Char | Jun 9 | Template compiled | Phase IV |
+| Run internal retrospective — what worked, what broke, what to change | Char | Jun 13 | A2 report in hand | Phase IV |
 
 ## Phase V – SOP & Team Training (Jun 16 – Jun 30)
 
@@ -162,9 +167,12 @@ weeks_remaining: 13
 - Jack can deliver A2 onboarding materials by Apr 7
 - A2 can finalize intake form within ~1 week of receiving materials
 - A2 can build a media plan within ~1 week of receiving Quaker brief
-- Campaign flight is ~3-4 weeks (May 9 – Jun 6)
-- Content creation happens during the campaign, not before
-- PEQ SLA is 40-45 days post-campaign — iROAS lands ~Jul 14-18
+- Sampling is 1 week, digital flight is 3 weeks (May 9 – May 30)
+- Digital media budget is $2,500 (~250K impressions) — below PEQ's 4-5M threshold
+- Content creation happens during sampling week, not before
+- PEQ SLA is 40-45 days post-campaign — iROAS lands ~Jul 10-14
+- iROAS may be inconclusive at this impression level — this is a process pilot
+- Recess may eat campaign costs as a pilot investment
 - This pilot is A2 only, no DGMN
 - All SOPs live in Notion, linked from Asana tasks
 - Leo's recap tool implementation timing is TBD after PRD
@@ -175,7 +183,8 @@ weeks_remaining: 13
 - PEQ data submitted (measurement in progress) ✓
 - SOP created ✓
 - Team trained ✓
-- iROAS result: pending (Q3 carryover — expected Jul 14-18)
+- iROAS result: pending (Q3 carryover — expected Jul 10-14)
+- NOTE: At $2,500 / 250K impressions, iROAS may be inconclusive. Q2 success = full process executed end-to-end with working SOP. iROAS is a bonus.
 
 ## Tracking
 - **Dashboard:** None — tracked as Asana project plan with milestones
