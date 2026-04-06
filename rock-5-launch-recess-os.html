@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recess OS — Rock 5 Launch</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --aqua: #14B9D6;
+    --forest: #108DA3;
+    --sea-green: #1FBBA6;
+    --orange: #F27935;
+    --purple: #8b5cf6;
+    --green: #22c55e;
+    --pink: #ec4899;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --bg: #0a0d14;
+    --bg-elevated: #0f1117;
+    --card: #1a1d27;
+    --card-border: #2a2d3a;
+    --card-hover: #222636;
+    --text: #e4e4e7;
+    --text-muted: #9ca3af;
+    --text-bright: #ffffff;
+    --code-bg: #151820;
+    --nav-bg: rgba(10, 13, 20, 0.92);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(16px);
+    background: var(--nav-bg);
+    border-bottom: 1px solid var(--card-border);
+    padding: 14px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  nav .logo { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+  nav .logo span { color: var(--aqua); }
+  nav .nav-links { display: flex; gap: 22px; flex-wrap: wrap; }
+  nav .nav-links a {
+    color: var(--text-muted); text-decoration: none; font-size: 13px;
+    font-weight: 500; transition: color 0.2s; cursor: pointer;
+  }
+  nav .nav-links a:hover, nav .nav-links a.active { color: var(--aqua); }
+
+  /* Hero */
+  .hero {
+    padding: 80px 48px 60px;
+    max-width: 900px; margin: 0 auto;
+    text-align: center;
+  }
+  .hero .label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--aqua); margin-bottom: 16px; font-weight: 600;
+  }
+  .hero h1 {
+    font-size: 48px; font-weight: 900; letter-spacing: -2px;
+    line-height: 1.1; margin-bottom: 16px;
+  }
+  .hero p {
+    font-size: 18px; color: var(--text-muted);
+    max-width: 660px; margin: 0 auto; line-height: 1.7;
+  }
+  .hero-stats {
+    display: flex; justify-content: center; gap: 32px; margin-top: 32px;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat .num { font-size: 28px; font-weight: 800; color: var(--aqua); }
+  .hero-stat .lbl {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); margin-top: 4px;
+  }
+
+  /* Sections */
+  .section {
+    max-width: 1100px; margin: 0 auto;
+    padding: 60px 48px 40px;
+  }
+  .section-label {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--aqua);
+    margin-bottom: 12px;
+  }
+  .section h2 {
+    font-size: 28px; font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+  .section .subtitle {
+    color: var(--text-muted); font-size: 15px; margin-bottom: 32px;
+    max-width: 760px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .card h3 {
+    font-size: 16px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  /* Mermaid */
+  .mermaid {
+    margin: 24px 0;
+    text-align: center;
+  }
+  .mermaid svg { max-width: 100%; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px; border-radius: 4px;
+    margin: 2px 2px;
+  }
+  .tag-aqua { background: rgba(20,185,214,0.15); color: var(--aqua); }
+  .tag-orange { background: rgba(242,121,53,0.15); color: var(--orange); }
+  .tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .tag-purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+  .tag-pink { background: rgba(236,72,153,0.15); color: var(--pink); }
+  .tag-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .tag-red { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-muted);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--card-border);
+  }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--card-border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--card-hover); }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .mini-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .mini-card h4 {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .mini-card p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  code {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--aqua);
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 12px 0;
+  }
+  pre code { background: transparent; padding: 0; color: var(--text); }
+
+  /* Callout */
+  .callout {
+    border-left: 3px solid;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .callout-info { border-color: var(--aqua); background: rgba(20,185,214,0.06); }
+  .callout-warning { border-color: var(--yellow); background: rgba(234,179,8,0.06); }
+  .callout-success { border-color: var(--green); background: rgba(34,197,94,0.06); }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--card-border);
+    margin: 48px auto;
+    max-width: 1100px;
+  }
+
+  /* Phase blocks */
+  .phase-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .phase-row:last-child { border-bottom: none; }
+  .phase-tag {
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-align: center;
+    background: rgba(20,185,214,0.12);
+    color: var(--aqua);
+    border: 1px solid rgba(20,185,214,0.3);
+  }
+  .phase-body h4 {
+    font-size: 14px; font-weight: 700; margin-bottom: 4px;
+    color: var(--text-bright);
+  }
+  .phase-body p { font-size: 13px; color: var(--text-muted); }
+  .phase-body .dates {
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--orange);
+    font-weight: 600; margin-bottom: 6px;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 60px 0 32px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero { padding: 48px 24px 32px; }
+    .hero h1 { font-size: 32px; }
+    .section { padding: 40px 24px 24px; }
+    nav { padding: 12px 24px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .hero-stats { flex-direction: column; gap: 16px; }
+    .phase-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo"><span>Recess</span> OS &mdash; Rock 5</div>
+  <div class="nav-links">
+    <a onclick="document.getElementById('pieces').scrollIntoView({behavior:'smooth'})" class="active">Pieces</a>
+    <a onclick="document.getElementById('goals').scrollIntoView({behavior:'smooth'})">Goals</a>
+    <a onclick="document.getElementById('cron').scrollIntoView({behavior:'smooth'})">Daily Cron</a>
+    <a onclick="document.getElementById('leadership').scrollIntoView({behavior:'smooth'})">Leadership Loop</a>
+    <a onclick="document.getElementById('wrap').scrollIntoView({behavior:'smooth'})">Meeting Wrap</a>
+    <a onclick="document.getElementById('depts').scrollIntoView({behavior:'smooth'})">Dept L10s</a>
+    <a onclick="document.getElementById('data').scrollIntoView({behavior:'smooth'})">Data Split</a>
+    <a onclick="document.getElementById('plan').scrollIntoView({behavior:'smooth'})">Plan</a>
+    <a onclick="document.getElementById('howto').scrollIntoView({behavior:'smooth'})">How To</a>
+    <a onclick="document.getElementById('behind').scrollIntoView({behavior:'smooth'})">Behind Scenes</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="label">Q2 2026 Implementation</div>
+  <h1>Building the AI-First EOS Operating System</h1>
+  <p>How Recess automates EOS workflows by June 1 &mdash; six phases, six artifacts, one rock-solid system.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">6</div><div class="lbl">Phases</div></div>
+    <div class="hero-stat"><div class="num">8</div><div class="lbl">Weeks</div></div>
+    <div class="hero-stat"><div class="num">7</div><div class="lbl">Dept L10s</div></div>
+    <div class="hero-stat"><div class="num">3</div><div class="lbl">System Pieces</div></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 1: THE THREE SYSTEM PIECES -->
+<!-- ============================================================ -->
+<div class="section" id="pieces">
+  <span class="section-label">Section 1</span>
+  <h2>The Three System Pieces</h2>
+  <p class="subtitle">The entire Recess OS automation layer is just three things: one Python module, one YAML config, and one daily cron. Everything the team touches sits on top as user-facing skills.</p>
+
+  <div class="card">
+    <h3>The Whole System on a Napkin</h3>
+    <pre><code>recess_os.py     &larr; One module, every system action
+recess_os.yml    &larr; One config file, every dept/meeting/goal
+recess_os_daily  &larr; One Cloud Scheduler entry, day-of-week dispatch
+
+ceos-meeting-prep &larr; Interactive prep skill
+/meeting-wrap     &larr; End-of-meeting closed loop
+/preread-fill     &larr; Dept lead helper</code></pre>
+    <p style="color: var(--text-muted); font-size: 13px; margin-top: 8px;">
+      Three artifacts power the automation. Three skills power the human surface. That's the whole rock.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>How the Pieces Connect</h3>
+    <div class="mermaid">
+graph TB
+  YML["recess_os.yml\nDept + meeting + goal config"]
+  PY["recess_os.py\nOne module, all actions"]
+  CRON["recess_os_daily\nCloud Scheduler\nday-of-week dispatch"]
+
+  PREP["ceos-meeting-prep\nInteractive L10 prep"]
+  WRAP["/meeting-wrap\nClose the loop"]
+  FILL["/preread-fill\nDept lead helper"]
+
+  TEAM["Team Members\n(Asana + Slack + Docs)"]
+
+  YML --> PY
+  CRON --> PY
+  PY --> PREP
+  PY --> WRAP
+  PY --> FILL
+  PREP --> TEAM
+  WRAP --> TEAM
+  FILL --> TEAM
+
+  style YML fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style PY fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style CRON fill:#1a2332,stroke:#1FBBA6,color:#e4e4e7
+  style PREP fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style WRAP fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style FILL fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style TEAM fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="mini-card" style="border-left: 3px solid var(--aqua);">
+      <h4 style="color: var(--aqua);">recess_os.py</h4>
+      <p>Single Python module. Every system action &mdash; sync, push, post, prep, wrap &mdash; lives here as a function. No microservices, no sprawl.</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--orange);">
+      <h4 style="color: var(--orange);">recess_os.yml</h4>
+      <p>Single YAML file. Every department, every meeting cadence, every goal definition. Edit one file, the whole system reconfigures.</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--sea-green);">
+      <h4 style="color: var(--sea-green);">recess_os_daily</h4>
+      <p>Single Cloud Scheduler entry. Fires once daily, dispatches based on day-of-week. No tangle of cron jobs.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 2: TWO GOAL PATTERNS -->
+<!-- ============================================================ -->
+<div class="section" id="goals">
+  <span class="section-label">Section 2</span>
+  <h2>The Two Goal Patterns</h2>
+  <p class="subtitle">Every Recess goal is one of two flavors. Project-backed goals get their progress from Asana milestones. KPI-only goals get theirs from BigQuery snapshots. Same surface in Asana, different plumbing.</p>
+
+  <div class="card">
+    <h3>Project-Backed vs KPI-Only</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Metric Source</th>
+          <th>Status Source</th>
+          <th>Cadence</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Project-backed</strong><br><span class="tag tag-aqua">Milestone-driven</span></td>
+          <td>Asana milestone %</td>
+          <td>Activity synthesis</td>
+          <td>Bi-weekly alternating</td>
+        </tr>
+        <tr>
+          <td><strong>KPI-only</strong><br><span class="tag tag-orange">BQ-driven</span></td>
+          <td>BQ snapshot column</td>
+          <td>Threshold rules</td>
+          <td>Weekly</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>How Each Goal Type Updates</h3>
+    <div class="mermaid">
+graph LR
+  subgraph PB["Project-backed Goal"]
+    ASANA["Asana Milestones"]
+    SYN["Activity Synthesis\n(LLM)"]
+    G1["Asana Goal\nstatus + metric"]
+    ASANA --> SYN --> G1
+  end
+
+  subgraph KO["KPI-only Goal"]
+    BQ["BigQuery Snapshot"]
+    THRESH["Threshold Rules\n(green/yellow/red)"]
+    G2["Asana Goal\nstatus + metric"]
+    BQ --> THRESH --> G2
+  end
+
+  style PB fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style KO fill:#0f1117,stroke:#F27935,color:#e4e4e7
+  style G1 fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style G2 fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>Why two patterns?</strong> Some goals are about <em>shipping work</em> (project-backed). Some are about <em>moving a number</em> (KPI-only). Forcing them into one pattern made everything ugly. Two patterns, both clean.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 3: THE DAILY CRON -->
+<!-- ============================================================ -->
+<div class="section" id="cron">
+  <span class="section-label">Section 3</span>
+  <h2>The Daily Cron &mdash; Day-of-Week Dispatch</h2>
+  <p class="subtitle">One Cloud Scheduler entry fires every morning. The Python module checks the day of the week and runs the right actions. No tangle of cron jobs &mdash; one fire, one dispatch.</p>
+
+  <div class="card">
+    <h3>Day-of-Week Dispatch Flow</h3>
+    <div class="mermaid">
+graph TB
+  CRON["recess_os_daily\n8am every day"]
+  DISPATCH{"What day\nis it?"}
+
+  MON["Monday Actions\n&bull; monday_pulse\n&bull; refresh_founders\n&bull; (alt) leadership_prep"]
+  WED["Wednesday Actions\n&bull; (alt) send_preread\n&nbsp;&nbsp;leadership weeks"]
+  FRI["Friday Actions\n&bull; push_kpi_goals\n&bull; (alt) post_status"]
+  ANY["Every Day\n&bull; sync_to_bq"]
+
+  CRON --> DISPATCH
+  DISPATCH -->|Mon| MON
+  DISPATCH -->|Wed| WED
+  DISPATCH -->|Fri| FRI
+  DISPATCH --> ANY
+
+  style CRON fill:#1a2332,stroke:#1FBBA6,color:#e4e4e7
+  style DISPATCH fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style MON fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style WED fill:#0f1117,stroke:#8b5cf6,color:#e4e4e7
+  style FRI fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style ANY fill:#0f1117,stroke:#9ca3af,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="mini-card">
+      <h4 style="color: var(--aqua);">Mon 8am</h4>
+      <p>Monday pulse, founders refresh, alternating leadership prep</p>
+    </div>
+    <div class="mini-card">
+      <h4 style="color: var(--purple);">Wed 9am</h4>
+      <p>Send pre-read on leadership weeks (auto-fills missing sections)</p>
+    </div>
+    <div class="mini-card">
+      <h4 style="color: var(--green);">Fri EOD</h4>
+      <p>Push KPI snapshot to goals, post alternating status updates</p>
+    </div>
+    <div class="mini-card">
+      <h4 style="color: var(--text-muted);">Daily</h4>
+      <p>Sync Asana &rarr; BigQuery so everything downstream stays fresh</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 4: BI-WEEKLY LEADERSHIP RHYTHM -->
+<!-- ============================================================ -->
+<div class="section" id="leadership">
+  <span class="section-label">Section 4</span>
+  <h2>The Bi-Weekly Leadership Rhythm</h2>
+  <p class="subtitle">A 14-day cycle that runs itself. The leadership meeting ends on Thursday. Twelve days later, the next one is fully prepped, scorecards refreshed, dept lead sections filled, and the memo is in everyone's inbox before they wake up.</p>
+
+  <div class="card">
+    <h3>The 14-Day Cycle</h3>
+    <div class="mermaid">
+graph TB
+  D0["Day 0 &mdash; Thursday\nLeadership Meeting (120 min)\n/meeting-wrap creates next card"]
+  D4["Day 4 &mdash; Monday\nceos-leadership-prep\nrun by Jack &amp; Deuce\n&rarr; Founder's Agenda + scorecard"]
+  D4B["Day 4 &mdash; Monday\nPre-read posted to #leadership-team\n+ Asana parent task\n+ 7 dept lead subtasks"]
+  D6A["Day 6 &mdash; Wednesday 9am\nAuto-cron checks dept sections\n(reminder pings if missing)"]
+  D6B["Day 6 &mdash; Wednesday EOD\nFinal memo auto-sent\nto leadership channel"]
+  D7["Day 7 &mdash; Thursday\nNext Leadership Meeting"]
+
+  D0 --> D4
+  D4 --> D4B
+  D4B --> D6A
+  D6A --> D6B
+  D6B --> D7
+  D7 -.->|cycle restarts| D0
+
+  style D0 fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style D4 fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style D4B fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style D6A fill:#0f1117,stroke:#8b5cf6,color:#e4e4e7
+  style D6B fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style D7 fill:#1a2332,stroke:#F27935,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="callout callout-success">
+    <strong>What this kills:</strong> The Sunday-night scramble. The Wednesday-morning "what is everyone supposed to talk about" panic. The post-meeting "did anyone actually capture the action items" drop. All of it &mdash; gone.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 5: /meeting-wrap CLOSED LOOP -->
+<!-- ============================================================ -->
+<div class="section" id="wrap">
+  <span class="section-label">Section 5</span>
+  <h2>The /meeting-wrap Closed Loop</h2>
+  <p class="subtitle">Every meeting ends with one command. It pulls the Fireflies transcript, extracts action items, updates the current Asana card, and creates the next one &mdash; linked, populated, and ready. The loop closes itself.</p>
+
+  <div class="card">
+    <h3>The Loop Between Two Meetings</h3>
+    <div class="mermaid">
+graph LR
+  MTG1["Meeting Ends"]
+  WRAP["/meeting-wrap"]
+  FF["Fireflies Transcript"]
+  AI["LLM extracts\naction items"]
+  CUR["Current Card\nupdated"]
+  NEXT["Next Card\ncreated + linked"]
+  SUBS["Action Items\n&rarr; subtasks"]
+  VERIFY["User verifies\nin chat"]
+  BQ["BigQuery\ntrend logging"]
+
+  MTG1 --> WRAP
+  WRAP --> FF
+  FF --> AI
+  AI --> CUR
+  AI --> NEXT
+  AI --> SUBS
+  CUR --> VERIFY
+  NEXT --> VERIFY
+  SUBS --> VERIFY
+  VERIFY --> BQ
+
+  style MTG1 fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style WRAP fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style NEXT fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style BQ fill:#0f1117,stroke:#1FBBA6,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="mini-card" style="border-left: 3px solid var(--aqua);">
+      <h4 style="color: var(--aqua);">leadership</h4>
+      <p>Bi-weekly Thursday meeting. Wraps to next leadership card, posts to #leadership-team.</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--orange);">
+      <h4 style="color: var(--orange);">founders</h4>
+      <p>Weekly Jack + Deuce sync. Wraps to next founders card, refreshes Founder's Agenda.</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--purple);">
+      <h4 style="color: var(--purple);">dept-l10</h4>
+      <p>Weekly department L10. Wraps into the dept's L10 card sequence, posts to dept channel.</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--pink);">
+      <h4 style="color: var(--pink);">1on1</h4>
+      <p>Manager + report. Wraps to next 1:1 card, captures commitments as subtasks.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 6: 7 DEPARTMENT L10 CONTEXTS -->
+<!-- ============================================================ -->
+<div class="section" id="depts">
+  <span class="section-label">Section 6</span>
+  <h2>7 Department L10 Contexts</h2>
+  <p class="subtitle">One parameterized skill, seven departments. The recess_os.yml config file holds each dept's cadence, owner, channel, and pre-read style. Same code path, seven flavors.</p>
+
+  <div class="card">
+    <h3>The Seven Department L10s</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th>Owner</th>
+          <th>Cadence</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Leadership</strong></td>
+          <td>Jack &amp; Deuce</td>
+          <td>Bi-weekly Thursday</td>
+          <td>Google Doc pre-read, sensitive topics</td>
+        </tr>
+        <tr>
+          <td><strong>Sales</strong></td>
+          <td>Danny</td>
+          <td>Weekly</td>
+          <td>Pipeline, bookings, deal scores</td>
+        </tr>
+        <tr>
+          <td><strong>AM (Account Mgmt)</strong></td>
+          <td>Char</td>
+          <td>Weekly</td>
+          <td>Renewals, NRR, account health</td>
+        </tr>
+        <tr>
+          <td><strong>Engineering</strong></td>
+          <td>Arbind</td>
+          <td>Weekly</td>
+          <td>Sprint board, bugs, releases</td>
+        </tr>
+        <tr>
+          <td><strong>Marketing</strong></td>
+          <td>Courtney</td>
+          <td>Weekly</td>
+          <td><span class="tag tag-yellow">1-person dept &mdash; doubles as 1:1</span></td>
+        </tr>
+        <tr>
+          <td><strong>Supply</strong></td>
+          <td>Ian</td>
+          <td>Weekly</td>
+          <td><span class="tag tag-yellow">1-person dept &mdash; doubles as 1:1</span></td>
+        </tr>
+        <tr>
+          <td><strong>AI Automations</strong></td>
+          <td>Leo</td>
+          <td>Weekly</td>
+          <td><span class="tag tag-yellow">1-person dept &mdash; doubles as 1:1</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>One Skill, Seven Configurations</h3>
+    <div class="mermaid">
+graph TB
+  SKILL["ceos-l10\n(parameterized skill)"]
+  YML["recess_os.yml"]
+
+  L["Leadership"]
+  S["Sales (Danny)"]
+  AM["AM (Char)"]
+  E["Engineering (Arbind)"]
+  M["Marketing (Courtney)"]
+  SU["Supply (Ian)"]
+  AI["AI Automations (Leo)"]
+
+  YML --> SKILL
+  SKILL --> L
+  SKILL --> S
+  SKILL --> AM
+  SKILL --> E
+  SKILL --> M
+  SKILL --> SU
+  SKILL --> AI
+
+  style SKILL fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style YML fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style L fill:#0f1117,stroke:#1FBBA6,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>Why parameterize?</strong> Each dept thinks their L10 is unique. They're not &mdash; the structure is identical (Scorecard, Rocks, Headlines, To-Dos, Issues, IDS). Only the data changes. One skill, seven configs, zero copy-paste.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 7: RECESS BRAIN VS BIGQUERY -->
+<!-- ============================================================ -->
+<div class="section" id="data">
+  <span class="section-label">Section 7</span>
+  <h2>Recess Brain vs BigQuery Split</h2>
+  <p class="subtitle">Two stores, two purposes. Recess Brain is the static catalog &mdash; what things <em>are</em>. BigQuery is the dynamic ledger &mdash; what <em>happened</em>. Don't mix them.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Recess Brain &mdash; Static Catalog</h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
+        <code>github.com/leo-recess/Recess-Brain-V2</code>
+      </p>
+      <ul style="list-style: none; font-size: 13px; line-height: 2;">
+        <li><span class="tag tag-aqua">KPI definitions</span></li>
+        <li><span class="tag tag-aqua">Goal metadata</span></li>
+        <li><span class="tag tag-aqua">Project metadata</span></li>
+        <li><span class="tag tag-aqua">Skills + agents registry</span></li>
+        <li><span class="tag tag-aqua">Decisions log</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>BigQuery &mdash; Dynamic Ledger</h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
+        <code>App_Recess_OS</code>
+      </p>
+      <ul style="list-style: none; font-size: 13px; line-height: 2;">
+        <li><span class="tag tag-orange">Status updates (timestamped)</span></li>
+        <li><span class="tag tag-orange">L10 meetings + transcripts</span></li>
+        <li><span class="tag tag-orange">Action items + completion</span></li>
+        <li><span class="tag tag-orange">Scorecard time series</span></li>
+        <li><span class="tag tag-orange">Every event with a timestamp</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>How Data Flows In</h3>
+    <div class="mermaid">
+graph TB
+  ASANA["Asana"]
+  HS["HubSpot"]
+  MONGO["MongoDB"]
+  AT["Airtable"]
+  FS["Firestore"]
+
+  BRAIN["Recess Brain\nstatic catalog\n(GitHub)"]
+  BQ["BigQuery\nApp_Recess_OS\n(time-series ledger)"]
+
+  ASANA --> BRAIN
+  ASANA --> BQ
+  HS --> BQ
+  MONGO --> BQ
+  AT --> BQ
+  FS --> BQ
+  HS --> BRAIN
+
+  BRAIN --> CONS["recess_os.py\nconsumes both"]
+  BQ --> CONS
+
+  style BRAIN fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
+  style BQ fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style CONS fill:#0f1117,stroke:#1FBBA6,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="callout callout-warning">
+    <strong>Rule of thumb:</strong> If it has a timestamp, it goes in BigQuery. If it's a definition or registration, it goes in Recess Brain. When in doubt, ask: "Will this be different next week?" Yes &rarr; BQ. No &rarr; Brain.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 8: 6-PHASE IMPLEMENTATION PLAN -->
+<!-- ============================================================ -->
+<div class="section" id="plan">
+  <span class="section-label">Section 8</span>
+  <h2>6-Phase Implementation Plan</h2>
+  <p class="subtitle">Eight weeks. Six phases. Three weeks of buffer before paternity leave on June 10. Dept meetings come BEFORE leadership because they have higher leverage and they're the variant the leadership skill builds on.</p>
+
+  <div class="card">
+    <h3>The Roadmap</h3>
+
+    <div class="phase-row">
+      <div class="phase-tag">Phase 0</div>
+      <div class="phase-body">
+        <div class="dates">Apr 6 &mdash; Apr 10</div>
+        <h4>Setup + Foundation</h4>
+        <p>HTML training page (this doc), Asana portfolio, recess_os.yml scaffolded, repo + Cloud project + scheduler entry created. Get the runway clear.</p>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-tag">Phase 1</div>
+      <div class="phase-body">
+        <div class="dates">Apr 10 (focus day)</div>
+        <h4>Data Layer + sync_to_bq</h4>
+        <p>BigQuery schemas. <code>App_Recess_OS</code> dataset live. Asana &rarr; BQ daily sync running. Recess Brain repo connected. Foundation locked.</p>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-tag">Phase 2</div>
+      <div class="phase-body">
+        <div class="dates">Apr 13 &mdash; Apr 22</div>
+        <h4>Department Meeting Automation FIRST</h4>
+        <p>Build <code>ceos-l10</code> parameterized for all 7 depts. <code>/meeting-wrap</code> for dept-l10 type. Higher leverage than leadership &mdash; 7 meetings per week vs 1 every other.</p>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-tag">Phase 3</div>
+      <div class="phase-body">
+        <div class="dates">Apr 22 &mdash; May 1</div>
+        <h4>Leadership Meeting Automation</h4>
+        <p>Variant of dept skills with bi-weekly cadence + Wednesday auto-fill. Founder's Agenda refresh. Pre-read posting. Wednesday memo cron.</p>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-tag">Phase 4</div>
+      <div class="phase-body">
+        <div class="dates">May 1 &mdash; May 11</div>
+        <h4>Goal Sync + KPI Push</h4>
+        <p>Friday cron pushes KPI snapshot to Asana goals. Project-backed goals get activity synthesis. Threshold rules + status colors live.</p>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-tag">Phase 5</div>
+      <div class="phase-body">
+        <div class="dates">May 11 &mdash; May 18</div>
+        <h4>Front Door Auto-Routing</h4>
+        <p>Asana intake form &rarr; auto-route by request type. Ties Recess OS to the existing Scoping Pipeline architecture.</p>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-tag">Phase 6</div>
+      <div class="phase-body">
+        <div class="dates">May 18 &mdash; Jun 1</div>
+        <h4>Hardening + Handoff</h4>
+        <p>End-to-end runs, dry runs with each dept, fix the rough edges, document the runbook. <strong>3 weeks of buffer before paternity leave on June 10.</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>Why dept meetings before leadership?</strong> The leadership skill is a <em>variant</em> of the dept skill. Building dept first means leadership is mostly config + a Wednesday cron when we get there. It also means 7 weekly meetings get value before the bi-weekly one does.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 9: HOW TO USE IT -->
+<!-- ============================================================ -->
+<div class="section" id="howto">
+  <span class="section-label">Section 9</span>
+  <h2>How To Use It (For The Team)</h2>
+  <p class="subtitle">A practical reference. If you're a Recess team member, this is the part you actually need. Bookmark it.</p>
+
+  <div class="card">
+    <h3>Quick Reference</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>If you want to&hellip;</th>
+          <th>Run this</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Start an L10 for your department</td>
+          <td><code>ceos-l10 --dept=&lt;your-dept&gt;</code></td>
+        </tr>
+        <tr>
+          <td>Wrap an L10 (or any meeting)</td>
+          <td><code>/meeting-wrap --type=&lt;dept-l10&#124;leadership&#124;founders&#124;1on1&gt;</code></td>
+        </tr>
+        <tr>
+          <td>Fill in your pre-read section</td>
+          <td><code>/preread-fill</code></td>
+        </tr>
+        <tr>
+          <td>Find anything in the system</td>
+          <td>Search Recess Brain</td>
+        </tr>
+        <tr>
+          <td>See where your action items live</td>
+          <td>Asana subtasks under your meeting card</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid-3">
+    <div class="mini-card" style="border-left: 3px solid var(--aqua);">
+      <h4 style="color: var(--aqua);">Before your L10</h4>
+      <p>Run <code>ceos-l10</code>. It pulls your scorecard from BQ, your Rocks from Asana, and assembles the agenda automatically.</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--orange);">
+      <h4 style="color: var(--orange);">After your L10</h4>
+      <p>Run <code>/meeting-wrap</code>. It captures action items as subtasks, creates next week's card, and posts a recap to your channel.</p>
+    </div>
+    <div class="mini-card" style="border-left: 3px solid var(--sea-green);">
+      <h4 style="color: var(--sea-green);">Pre-read deadline</h4>
+      <p>Wednesday 9am for leadership weeks. The cron will ping you if your section is empty. Run <code>/preread-fill</code> to auto-draft.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 10: BEHIND THE SCENES -->
+<!-- ============================================================ -->
+<div class="section" id="behind">
+  <span class="section-label">Section 10</span>
+  <h2>What Happens Behind the Scenes</h2>
+  <p class="subtitle">Most of Recess OS is invisible. The team sees clean Asana cards, fresh scorecards in Slack, and pre-reads in their inbox. The cron jobs, the BQ syncs, the LLM extraction &mdash; all hidden.</p>
+
+  <div class="card">
+    <h3>The Surface vs The Plumbing</h3>
+    <div class="mermaid">
+graph TB
+  subgraph SURFACE["What the Team Sees"]
+    ASANA["Clean Asana cards\nwith subtasks"]
+    SLACK["Slack scorecards\n+ recaps"]
+    DOCS["Google Doc pre-reads"]
+    GOALS["Asana Goals\nupdating themselves"]
+  end
+
+  subgraph PLUMBING["What's Actually Happening"]
+    CRON["recess_os_daily\ncron"]
+    PY["recess_os.py\nactions"]
+    BQ["BigQuery\nApp_Recess_OS"]
+    LLM["LLM extraction\n+ synthesis"]
+    FF["Fireflies API"]
+    AS["Asana API"]
+  end
+
+  CRON --> PY
+  PY --> BQ
+  PY --> LLM
+  PY --> FF
+  PY --> AS
+  AS --> ASANA
+  AS --> GOALS
+  PY --> SLACK
+  PY --> DOCS
+
+  style SURFACE fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style PLUMBING fill:#0f1117,stroke:#9ca3af,color:#e4e4e7
+  style ASANA fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style SLACK fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style DOCS fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style GOALS fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="callout callout-success">
+    <strong>The whole point:</strong> Team members shouldn't need to learn Recess OS. They should just notice that meetings prep themselves, action items don't fall through the cracks, and goals stay green. That's success.
+  </div>
+</div>
+
+<footer>
+  Recess OS &mdash; Rock 5 Launch<br>
+  Generated 2026-04-06 &mdash; Updated as architecture evolves<br>
+  <code>~/Projects/eos/rock-5-launch-recess-os.html</code><br>
+  Deployed to: <code>deucethevenow.github.io/recess-eos/rock-5-launch-recess-os.html</code>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1a2332',
+      primaryTextColor: '#e4e4e7',
+      primaryBorderColor: '#14B9D6',
+      lineColor: '#14B9D6',
+      secondaryColor: '#1a1d27',
+      tertiaryColor: '#0f1117',
+      noteBkgColor: '#1a2332',
+      noteTextColor: '#e4e4e7',
+      actorBkg: '#1a2332',
+      actorTextColor: '#14B9D6',
+      actorBorder: '#14B9D6',
+      signalColor: '#e4e4e7',
+      signalTextColor: '#e4e4e7',
+      labelBoxBkgColor: '#1a2332',
+      labelBoxBorderColor: '#14B9D6',
+      labelTextColor: '#e4e4e7',
+      loopTextColor: '#F27935',
+      activationBorderColor: '#14B9D6',
+      activationBkgColor: '#1a2332',
+      sequenceNumberColor: '#0f1117'
+    },
+    sequence: { mirrorActors: false, useMaxWidth: true },
+    flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+  });
+</script>
+
+</body>
+</html>
