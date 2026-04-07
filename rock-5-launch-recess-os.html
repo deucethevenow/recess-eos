@@ -466,13 +466,13 @@ graph TB
 
   MON["Monday Actions\n&bull; monday_pulse\n&bull; refresh_founders\n&bull; (alt) leadership_prep"]
   WED["Wednesday Actions\n&bull; (alt) send_preread\n&nbsp;&nbsp;leadership weeks"]
-  FRI["Friday Actions\n&bull; push_kpi_goals\n&bull; (alt) post_status"]
+  FRI["Sunday Actions\n&bull; push_kpi_goals\n&bull; (alt) post_status"]
   ANY["Every Day\n&bull; sync_to_bq"]
 
   CRON --> DISPATCH
   DISPATCH -->|Mon| MON
   DISPATCH -->|Wed| WED
-  DISPATCH -->|Fri| FRI
+  DISPATCH -->|Sun| FRI
   DISPATCH --> ANY
 
   style CRON fill:#1a2332,stroke:#1FBBA6,color:#e4e4e7
@@ -494,7 +494,7 @@ graph TB
       <p>Send pre-read on leadership weeks (auto-fills missing sections)</p>
     </div>
     <div class="mini-card">
-      <h4 style="color: var(--green);">Fri EOD</h4>
+      <h4 style="color: var(--green);">Sun 8am</h4>
       <p>Push KPI snapshot to goals, post alternating status updates</p>
     </div>
     <div class="mini-card">
@@ -839,7 +839,7 @@ graph TB
       <div class="phase-body">
         <div class="dates">May 1 &mdash; May 11</div>
         <h4>Goal Sync + KPI Push</h4>
-        <p>Friday cron pushes KPI snapshot to Asana goals. Project-backed goals get activity synthesis. Threshold rules + status colors live.</p>
+        <p>Sunday cron pushes KPI snapshot to Asana goals. Project-backed goals get activity synthesis. Threshold rules + status colors live. Sunday chosen because it's the quietest day for write operations — no human conflicts on shared Asana resources, fresh data delivered for Monday morning.</p>
       </div>
     </div>
 
