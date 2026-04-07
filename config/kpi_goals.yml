@@ -1,0 +1,249 @@
+# Recess OS — KPI Goal Mappings
+#
+# Maps Asana Goals to BigQuery snapshot columns for automated metric updates.
+# Consumed by:
+#   - scripts/asana_kpi_goal_sync.py (Friday 8am cron — Cloud Scheduler)
+#   - /quarter-rock-kpi-update slash command (on-demand interactive push)
+#
+# Both paths read THIS FILE — single source of truth for goal → column mapping.
+# Adding a new KPI Goal = add an entry here, no code changes needed.
+#
+# ──────────────────────────────────────────────────────────────────────
+# AUTH PATTERN (IMPORTANT)
+# ──────────────────────────────────────────────────────────────────────
+# Asana writes use Personal Access Token (PAT), not MCP.
+#   Token location: ~/Projects/daily-brief-agent/.env → ASANA_ACCESS_TOKEN
+#   SDK: official `asana` Python package (same as daily-brief-agent)
+#   Reference impl: ~/Projects/daily-brief-agent/integrations/asana_client.py
+#
+# The mcp__claude_ai_Asana__* MCP is NOT connected in this environment.
+# Always use the PAT pattern.
+#
+# ──────────────────────────────────────────────────────────────────────
+# REQUIRED FIELDS
+# ──────────────────────────────────────────────────────────────────────
+#   asana_goal_id   : Trailing number from app.asana.com/0/goal/<id>
+#   name            : Human-readable label (used in Slack summary + previews)
+#   owner           : Asana Goal owner (informational)
+#   rock            : Which Q2 Rock this Goal supports
+#   metric_unit     : "percentage" | "number" | "currency" — match Asana Goal config
+#   transform       : See TRANSFORM TYPES below
+#   snapshot_table  : kpi_daily_snapshot OR executive_hourly_snapshot
+#   snapshot_column : Column name in that table (must exist when status=active)
+#   status          : "active" | "needs_kpi_build" | "needs_verification" | "draft"
+#
+# ──────────────────────────────────────────────────────────────────────
+# TRANSFORM TYPES
+# ──────────────────────────────────────────────────────────────────────
+# CRITICAL: Asana Goals with metric_unit="percentage" expect a value between
+# 0.0 and 1.0 representing % achievement, NOT the raw KPI value.
+#
+#   raw                          : Push value as-is. Use for Goals with unit=number
+#                                  where the literal KPI value goes in.
+#
+#   percent_higher_is_better     : Push min(1.0, current / target).
+#                                  Use for revenue $, count toward target, NRR %.
+#                                  Requires: target (the goal's target value)
+#
+#   percent_lower_is_better      : Push min(1.0, max(0.0, (baseline-current)/(baseline-target)))
+#                                  Use for days-to-X, error counts, cycle times.
+#                                  Requires: baseline (start) AND target (goal)
+#
+# ──────────────────────────────────────────────────────────────────────
+
+kpi_goals:
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Rock 1 — Drive Net Revenue Retention to 50% (Owner: Deuce)
+  # ═════════════════════════════════════════════════════════════════════
+
+  - asana_goal_id: "1213958749717833"
+    name: "Rock 1: Drive Net Revenue Retention to 50%"
+    owner: "Deuce Thevenow"
+    rock: "Rock 1 — NRR via ABM"
+    metric_unit: "percentage"
+    transform: "percent_higher_is_better"
+    transform_target: 0.50          # 50% NRR target
+    snapshot_table: "kpi_daily_snapshot"
+    snapshot_column: "demand_nrr"   # NRR % from snapshot
+    status: "needs_verification"
+    notes: |
+      Goal name still has "(not done)" prefix — Deuce hasn't finalized config.
+
+      VERIFICATION NEEDED:
+        - Confirm the metric should be `demand_nrr` (current snapshot value)
+          vs. a quarterly-specific NRR column.
+        - Confirm the Goal target is 50% NRR (target_number_value=1.0 in Asana
+          means 100% of THE GOAL, not 100% NRR — so 1.0 = "achieved 50% NRR").
+        - Double-check the transform. If demand_nrr is already a fraction
+          (0.50 = 50%), then percent_complete = current / 0.50 (capped at 1.0).
+          If demand_nrr is whole-number (50 = 50%), then current / 50.
+
+      Also: this Goal may be the parent for a separate "Net Revenue Pacing"
+      Goal that doesn't exist yet. Worth checking with Deuce.
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Q2 Rock — Reduce Campaign Fulfillment Time to <30 days
+  # Owner: Francisco Cazes
+  # Supports: Rock 1 (NRR) — faster fulfillment → full contract spend → renewals
+  # ═════════════════════════════════════════════════════════════════════
+
+  - asana_goal_id: "1213964743621574"
+    name: "Q2 Rock: Reduce Campaign Fulfillment Time to <30 days"
+    owner: "Francisco Cazes"
+    rock: "Rock — Campaign Fulfillment Time <30 days"
+    metric_unit: "percentage"
+    transform: "percent_lower_is_better"
+    transform_baseline: null        # ← NEED FROM FRANCISCO/DEUCE: starting median
+    transform_target: 30            # <30 days
+    snapshot_table: "kpi_daily_snapshot"
+    snapshot_column: "campaign_fulfillment_days_median"  # NEEDS TO BE BUILT
+    status: "needs_kpi_build"
+    notes: |
+      DEFINITION CONFIRMED via Asana Goal notes:
+        "Median days from first offer ACCEPTED to last offer ACCEPTED per campaign"
+
+      This matches `Days_to_Fulfill_Contract_Program` view (older measurement)
+      file: ~/Projects/company-kpi-dashboard/sql/reports/days-to-fulfill-contract.sql
+      The view exists but is NOT wired into kpi_daily_snapshot.
+
+      DOES NOT MATCH the existing `time_to_fulfill_days` snapshot column, which
+      uses `Days_to_Fulfill_Contract_Spend_From_Close_Date` (close-to-invoice).
+      Latest stats for that other measurement: median 69, avg 156 — not what
+      we want.
+
+      KPI BUILD STEPS (8-step checklist from KPI dashboard CLAUDE.md):
+        1. Add registry entry to dashboard/data/metric_registry.py
+           name: "Campaign Fulfillment Time (Median Days)"
+           snapshot_key: "campaign_fulfillment_days_median"
+        2. Add CTE to sql/scheduled/2026-02-11-kpi-daily-snapshot-refresh.sql
+           pulling from Days_to_Fulfill_Contract_Program view
+           (or inline the offer-bounds logic from days-to-fulfill-contract.sql)
+        3. Add column to sql/scheduled/2026-02-11-kpi-daily-snapshot-schema.sql
+           campaign_fulfillment_days_median INT64
+        4. Wire into _fetch_bigquery_metrics() (fast + slow paths)
+        5. Add default to _get_empty_company_metrics()
+        6. Optional: add UI card on demand_sales page
+        7. Tests: registry, snapshot, card render
+        8. Validate against the Days_to_Fulfill_Contract_Program view
+
+      THEN: set transform_baseline from current value, update status: active.
+
+      OPEN QUESTIONS for Francisco/Deuce:
+        - "Per campaign" — what's a campaign here? A HubSpot deal? A PO?
+          (The existing view groups by deal_id — that's the assumption I'd use.)
+        - Time window — all-time median, or last-90-days median, or
+          quarter-to-date median? Different windows give very different numbers.
+        - What's the current baseline? Need this for the transform formula.
+
+  # ═════════════════════════════════════════════════════════════════════
+  # Q2 Goal — Move 2 Retailers to Closed Won (Owner: Jack)
+  # Walmart = 1 (just closed). Need 1 more.
+  # NOT the same as Rock 2 ("Launch Walmart + Reusable Retailer Playbook")
+  # which is broader. This is the sales-progression KPI.
+  # ═════════════════════════════════════════════════════════════════════
+
+  - asana_goal_id: "1213965720789253"
+    name: "Q2 Rock: Move 2 Retailers to Contract Sent"
+    owner: "Jack Shannon"
+    rock: "Standalone Q2 sales KPI (not project-backed)"
+    goal_type: "kpi_only"           # No execution project — pure data Goal
+    cadence: "weekly"               # Override default bi-weekly cadence
+    metric_unit: "percentage"
+    transform: "percent_higher_is_better"
+    transform_target: 2             # 2 retailers progressed to Contract Sent or beyond
+    snapshot_table: "kpi_daily_snapshot"
+    snapshot_column: "retailers_advanced_count_q2"  # NEEDS TO BE BUILT
+    status: "needs_kpi_build"
+
+    status_update:
+      enabled: true
+      template: |
+        Retailer Progression — Q2
+        ─────────────────────────
+        Closed Won (Q2): {retailers_closed_won_count_q2} retailers
+        At Contract Sent (Q2): {retailers_at_contract_sent_count_q2} retailers
+        Total advanced: {retailers_advanced_count_q2} / 2
+
+        In active pipeline: {retailers_in_pipeline_count} retailers
+        Stage breakdown: {retailers_pipeline_breakdown_text}
+
+        Auto-generated from kpi_daily_snapshot — {snapshot_timestamp}
+
+      thresholds:
+        - if: "retailers_advanced_count_q2 >= 2"
+          status: "achieved"
+        - if: "retailers_advanced_count_q2 >= 1 AND retailers_in_pipeline_count >= 1"
+          status: "on_track"
+        - if: "retailers_advanced_count_q2 >= 1 AND days_remaining_in_quarter > 30"
+          status: "on_track"
+        - if: "retailers_in_pipeline_count >= 2"
+          status: "at_risk"
+        - if: "default"
+          status: "off_track"
+
+    notes: |
+      CORRECTION (2026-04-06): I originally categorized this as Rock 2 itself.
+      Deuce clarified: this Goal is NOT Rock 2 ("Launch Walmart + Reusable
+      Retailer Playbook"). It's a more specific sales-progression KPI.
+
+      CURRENT STATE per Deuce:
+        - Walmart was just moved to Closed Won → counts as 1 of 2
+        - Need 1 more retailer to reach Contract Sent or Closed Won by end of Q2
+
+      KEY DEFINITION DECISION:
+      The Goal title says "Contract Sent" but counting only "currently at
+      Contract Sent" would EXCLUDE Walmart (which has now moved past it to
+      Closed Won). So the metric must count retailers that REACHED Contract
+      Sent at any point in Q2 — i.e., are currently at Contract Sent OR any
+      stage beyond it (Closed Won, etc.).
+
+      Proposed snapshot column (`retailers_advanced_count_q2`):
+        COUNT(DISTINCT retailer_account)
+        WHERE the deal entered stage 'Contract Sent' OR LATER during Q2 FY26
+        — using HubSpot deal stage history (hs_date_entered_<stage>)
+
+      Plus 3 supporting columns for the status update text:
+        - retailers_closed_won_count_q2 INT64    (Walmart = 1 right now)
+        - retailers_at_contract_sent_count_q2 INT64  (currently sitting at CS)
+        - retailers_in_pipeline_count INT64      (pre-CS open deals)
+        - retailers_pipeline_breakdown_json STRING
+
+      OPEN QUESTIONS for Jack/Deuce:
+        - "Retailer" definition — HubSpot company property, market_type,
+          industry tag, or a curated list? What identifies Walmart as a
+          "retailer" vs. other closed-won deals?
+        - Account-level or deal-level? If a retailer has 3 deals and 1 reaches
+          Contract Sent, does that count once (account) or once per deal?
+          Most likely: once per ACCOUNT (count distinct companies).
+        - Stage history: HubSpot tracks `hs_date_entered_<stage_internal_id>`
+          — need to know the internal_id for "Contract Sent" stage. (Quick BQ
+          query against src_fivetran_hubspot.deal will reveal this.)
+        - Confirm: does "Q2" mean entered the stage during Q2, or is currently
+          at/past the stage as of the end of Q2? Subtle but matters for the
+          query window.
+
+      DASHBOARD PLACEMENT (Deuce 2026-04-06):
+        - Display on CEO / Biz Dev page (~/Projects/company-kpi-dashboard/
+          dashboard/pages/department.py rendered for "CEO / Biz Dev")
+        - Also display on Team Overview page (~/Projects/company-kpi-dashboard/
+          dashboard/pages/overview.py)
+        - Both pages added to metric_registry pages[] array
+        - NOT exec-only (this is sales pipeline data, fine in App_KPI_Dashboard)
+
+      KPI BUILD STEPS (8-step checklist):
+        1. Use `recess-bigquery` skill to draft the underlying query.
+           Validate Walmart shows up in the result set.
+        2. Add 4 registry entries to dashboard/data/metric_registry.py
+           with pages: ["overview", "ceo_biz_dev"]
+        3. Identify "Contract Sent" stage internal_id via BQ query
+        4. Add CTE to sql/scheduled/2026-02-11-kpi-daily-snapshot-refresh.sql
+           — joins src_fivetran_hubspot.deal + company with stage history
+        5. Add 4 columns to sql/scheduled/2026-02-11-kpi-daily-snapshot-schema.sql
+        6. Wire into _fetch_bigquery_metrics() (fast + slow paths)
+        7. Add defaults to _get_empty_company_metrics()
+        8. Render cards on both pages — overview.py and department.py
+        9. Tests (registry, snapshot, both card renders, cross-page consistency)
+        10. Validate against HubSpot UI with Jack
+        11. Deploy via ./scripts/deploy.sh (NEVER raw gcloud run deploy)
+        12. Post-deploy verification (debug_version=1, hard refresh)
