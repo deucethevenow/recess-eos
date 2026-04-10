@@ -21,9 +21,13 @@ export GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS:-$HOME/.
 DOW=$(date +%u)
 
 # ── Always run sync (every day) ──────────────────────────────────────────
+# CRON_TRIGGER defaults to 'local-cron' for local crontab execution.
+# Override to 'cloud-scheduler' when migrated to Cloud Run (Phase 6).
+CRON_TRIGGER="${CRON_TRIGGER:-local-cron}"
+
 .venv/bin/python recess_os.py sync-to-bq \
   --portfolio "$RECESS_PROJECTS_PORTFOLIO_GID" \
-  --cron-trigger cloud-scheduler
+  --cron-trigger "$CRON_TRIGGER"
 
 # ── Day-specific dispatches (Phase 4 will add these) ─────────────────────
 case "$DOW" in
