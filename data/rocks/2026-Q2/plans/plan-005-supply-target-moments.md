@@ -6,7 +6,7 @@ owner: "ian"
 quarter: "2026-Q2"
 status: active
 created: "2026-04-01"
-revised: ""
+revised: "2026-04-10"
 weeks_remaining: 13
 ---
 
@@ -87,59 +87,30 @@ Please include:
 
 ## Phase II – Category Launches (Weeks 4-10)
 
-| Task | Owner | Due | Depends On | Milestone |
-|------|-------|-----|------------|-----------|
-| **MILESTONE A: 3 categories launched through playbook** | Ian | May 9 | — | ✓ |
-| **MILESTONE B: 7+ categories launched** | Ian | Jun 6 | — | ✓ |
+Each category is its own milestone. Per-category lifecycle (~1 week):
+1. Industry research + account universe + tiering (Ian + Leo, 1-2 hrs)
+2. Contact intel + Tier 1 account briefs (Ian, 1-2 days)
+3. Execution setup + outbound sequences live (Ian + Leo, 1 day)
+4. Marketing handoff → Courtney builds category marketing plan (parallel)
 
-### Per-Category Task Template
+### Category Milestones
 
-Each category follows this lifecycle (~1 week per category):
+| # | Category | Target | Due | Q1 Baseline | Subtasks |
+|---|----------|--------|-----|-------------|----------|
+| 1 | **university_housing** | 1M National | Apr 25 | 66% | Research + tiering, Contact intel + briefs, Execution + outbound, Conference follow-up (300+ complexes), Marketing plan (Courtney, Apr 28) |
+| 2 | **youth_sports** | 1M Nat'l + 500k WMT | May 2 | 69% | Research + tiering, Contact intel + execution, Marketing plan (Courtney, May 5) |
+| 3 | **veterinary_clinic** | 500k National | May 9 | 61% | Research + tiering, Contact intel + execution, Marketing plan (Courtney, May 12) |
+| 4 | **fitness_studio** | 500k Walmart | May 16 | 52% | Research + tiering, Contact intel + execution, Marketing plan (Courtney, May 19) |
+| 5 | **kids_camp** | 1M National | May 23 | 10% | Research + tiering, Contact intel + execution, Marketing plan (Courtney, May 26) |
+| 6 | **social_sports** | 1M top 30 DMAs | May 30 | 21% | Research + tiering, Contact intel + execution, Marketing plan (Courtney, Jun 2) |
+| 7 | **campground_glampgrounds** | 500k National | Jun 6 | 0% | Research + tiering, Contact intel + execution, Marketing plan (Courtney, Jun 9) |
+| 8 | **holiday_lights_drive_thru** | 1M National | Jun 13 | NEW | Research + tiering, Contact intel + execution, Marketing plan (Courtney, Jun 16) |
 
-| Step | Task | Owner | Duration |
-|------|------|-------|----------|
-| 1 | Run /launch-category Phase 1: Industry research (market size, publications, conferences, influencers) | Ian + Leo | 1-2 hours |
-| 2 | Run /launch-category Phase 2: Account universe + tiering (Tier 1/2/3) + import to HubSpot | Ian + Leo | 1-2 hours |
-| 3 | Contact intelligence — decision makers per Tier 1 account, enrichment | Ian | 1-2 days |
-| 4 | Account strategy — briefs for Tier 1 accounts via /category-account-briefs | Ian + Leo | 1 day |
-| 5 | Execution setup — build sequences, create Asana category project, configure tools | Ian + Leo | 1 day |
-| 6 | Marketing handoff — Courtney builds category marketing plan (landing pages, content, campaigns, social) | Courtney | Parallel |
-| 7 | Outbound live — sequences running, LinkedIn warming, Courtney's campaigns executing | Ian + Courtney | Ongoing |
+### Infrastructure (supports all categories)
 
-### Weekly Category Schedule
-
-| Week | Dates | Category | Target | Rationale |
-|------|-------|----------|--------|-----------|
-| 4 | Apr 21-25 | university_housing | 1M National | 66% Q1 + 300 complexes from conference → fast close. Proves playbook. |
-| 5 | Apr 28 - May 2 | youth_sports | 1M Nat'l + 500k WMT | 69% Q1, compound target, high retail value |
-| 6 | May 5-9 | veterinary_clinic | 500k National | 61% Q1, quick win potential |
-| 7 | May 12-16 | fitness_studio | 500k Walmart | 52% Q1, Walmart-specific alignment |
-| 8 | May 19-23 | kids_camp | 1M National | 10% Q1, needs heavy lift — summer timing helps |
-| 9 | May 26-30 | social_sports | 1M top 30 DMAs | 21% Q1, DMA-scoped (more complex targeting) |
-| 10 | Jun 2-6 | campground_glampgrounds | 500k National | 0% Q1, greenfield — summer season is the moment |
-| Flex | Jun 9-13 | holiday_lights_drive_thru | 1M National | NEW, seasonal — fit if bandwidth allows |
-
-### Courtney's Marketing Execution (Parallel Track)
-
-| Task | Owner | Due | Depends On | Milestone |
-|------|-------|-----|------------|-----------|
-| Build /category-marketing-plan skill (content calendar, landing pages, social, ad spend templates) | Leo | Apr 21 | /launch-category skill | Phase II |
-| Marketing plan: university_housing | Courtney | Apr 28 | Category launched | Phase II |
-| Marketing plan: youth_sports | Courtney | May 5 | Category launched | Phase II |
-| Marketing plan: veterinary_clinic | Courtney | May 12 | Category launched | Phase II |
-| Marketing plan: fitness_studio | Courtney | May 19 | Category launched | Phase II |
-| Marketing plan: kids_camp | Courtney | May 26 | Category launched | Phase II |
-| Marketing plan: social_sports | Courtney | Jun 2 | Category launched | Phase II |
-| Marketing plan: campground_glampgrounds | Courtney | Jun 9 | Category launched | Phase II |
-| Marketing plan: holiday_lights_drive_thru | Courtney | Jun 16 | Category launched | Phase II |
-
-### Phase II Checkpoints
-
-| Task | Owner | Due | Milestone |
-|------|-------|-----|-----------|
-| Verify 3 categories launched with active outbound + marketing executing | Ian | May 9 | Phase II-A |
-| Review dashboard pacing — which types trending toward goal? | Ian + Deuce | May 9 | Phase II-A |
-| Verify 7+ categories launched through playbook | Ian | Jun 6 | Phase II-B |
+| Task | Owner | Due |
+|------|-------|-----|
+| Build /category-marketing-plan skill | Leo | Apr 21 |
 
 ## Phase III – Pacing Checkpoint (Week 8)
 
@@ -151,15 +122,11 @@ Each category follows this lifecycle (~1 week per category):
 | If <3 at goal: create recovery plan for lagging types — what changes? | Ian + Deuce | May 30 | Assessment | Phase III |
 | Report pacing status in L10 | Ian | May 27 | — | Phase III |
 
-## Phase IV – Final Push + Close (Weeks 10-13)
+## Phase IV – Retrospective + Rock Scoring (Jun 30)
 
 | Task | Owner | Due | Depends On | Milestone |
 |------|-------|-----|------------|-----------|
 | **MILESTONE: 5 of 8 supply types at 100% of Q2 target** | Ian | Jun 30 | — | ✓ |
-| Double down on categories closest to but not yet at goal (targeted sourcing push) | Ian | Jun 6-27 | Pacing data | Phase IV |
-| Courtney: intensify campaigns on lagging categories | Courtney | Jun 6-27 | Pacing data | Phase IV |
-| Weekly dashboard review with Deuce — course-correct as needed | Ian + Deuce | Jun 6, 13, 20, 27 | — | Phase IV |
-| Final dashboard screenshot — confirm 5+ of 8 at 100% | Ian | Jun 30 | — | Phase IV |
 | Rock scoring: count types at goal, document what worked and what didn't | Ian + Deuce | Jun 30 | — | Phase IV |
 | Document category playbook learnings for Q3 (what to repeat, what to change) | Ian | Jun 30 | — | Phase IV |
 
