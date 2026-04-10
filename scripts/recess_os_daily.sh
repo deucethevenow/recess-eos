@@ -12,7 +12,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # ── Source third-party credentials ───────────────────────────────────────
+# Temporarily disable strict mode: .env files often contain lines that
+# trigger -e (failed commands) or -u (unset variables). We only need the
+# exported env vars, not a clean exit from every line in .env.
+set +eu
 set -a; source "$HOME/Projects/daily-brief-agent/.env" 2>/dev/null || true; set +a
+set -eu
 
 # ── Set BQ credentials (local dev only; Cloud Run uses ADC) ──────────────
 export GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS:-$HOME/.config/bigquery-mcp-key.json}"
