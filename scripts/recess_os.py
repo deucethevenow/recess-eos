@@ -35,10 +35,37 @@ def cli(ctx, config):
 
 
 @cli.command("sync-to-bq")
+@click.option("--portfolio", required=True, help="Asana portfolio GID to sync from.")
+@click.option(
+    "--cron-trigger",
+    default="manual",
+    help="How this run was triggered: 'cloud-scheduler', 'manual', 'backfill', 'test'",
+)
 @click.pass_context
-def sync_to_bq(ctx):
+def sync_to_bq(ctx, portfolio, cron_trigger):
     """Sync Asana data into BigQuery (App_Recess_OS dataset)."""
-    click.echo("sync-to-bq: not yet implemented (Task 11)")
+    from lib.asana_client import RecessAsanaClient
+    from lib.bq_client import RecessOSBQClient
+    from lib.instrumentation import sync_instrumented
+    from lib.sync_projects import sync_projects_to_bq
+
+    config = ctx.obj["config"]
+    bq_config = config["bigquery"]
+
+    asana = RecessAsanaClient(workspace_gid="21487286163067")
+    bq = RecessOSBQClient(
+        project_id=bq_config["project_id"],
+        dataset=bq_config["dataset"],
+    )
+    ctx.obj["bq_client"] = bq
+
+    @sync_instrumented(cron_trigger=cron_trigger)
+    def _run(ctx):
+        n_projects = sync_projects_to_bq(asana, bq, portfolio_gid=portfolio)
+        ctx.obj["instrumentation"].record_table_write("eos_projects", n_projects)
+        click.echo(f"sync-to-bq: synced {n_projects} projects to App_Recess_OS.eos_projects")
+
+    _run(ctx)
 
 
 @cli.command("push-kpi-goals")
