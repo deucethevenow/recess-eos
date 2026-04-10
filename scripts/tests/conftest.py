@@ -1,5 +1,4 @@
 """Shared pytest fixtures for recess_os tests."""
-import os
 import sys
 from pathlib import Path
 
