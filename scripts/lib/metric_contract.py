@@ -172,4 +172,10 @@ def _load_registry() -> dict[str, Any]:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
-    return getattr(module, "METRIC_REGISTRY", {})
+    if not hasattr(module, "METRIC_REGISTRY"):
+        raise ContractResolutionError(
+            f"metric_registry.py at {registry_path} does not export METRIC_REGISTRY. "
+            f"The variable may have been renamed. This is the GOD import — it must exist."
+        )
+
+    return module.METRIC_REGISTRY

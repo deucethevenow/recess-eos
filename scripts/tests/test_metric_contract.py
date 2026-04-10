@@ -106,6 +106,30 @@ class TestHardFailures:
         with pytest.raises(ContractResolutionError, match="missing required"):
             resolve_metric_contract(config, registry=MOCK_REGISTRY)
 
+    def test_invalid_sensitivity_raises(self):
+        """Invalid sensitivity value → HARD FAIL."""
+        config = {
+            "name": "Bad Sensitivity",
+            "registry_key": "Pipeline Coverage",
+            "sensitivity": "top_secret",
+            "status": "automated",
+            "null_behavior": "show_dash",
+        }
+        with pytest.raises(ContractResolutionError, match="invalid sensitivity"):
+            resolve_metric_contract(config, registry=MOCK_REGISTRY)
+
+    def test_invalid_null_behavior_raises(self):
+        """Invalid null_behavior value → HARD FAIL."""
+        config = {
+            "name": "Bad Null",
+            "registry_key": "Pipeline Coverage",
+            "sensitivity": "public",
+            "status": "automated",
+            "null_behavior": "crash_and_burn",
+        }
+        with pytest.raises(ContractResolutionError, match="invalid null_behavior"):
+            resolve_metric_contract(config, registry=MOCK_REGISTRY)
+
 
 class TestNonAutomatedMetrics:
     def test_needs_build_skips_registry(self):
@@ -120,6 +144,20 @@ class TestNonAutomatedMetrics:
         }
         contract = resolve_metric_contract(config, registry=MOCK_REGISTRY)
         assert contract.availability_state == "needs_build"
+        assert contract.snapshot_column is None
+
+    def test_manual_skips_registry(self):
+        """manual metrics don't need a registry_key — operator enters values by hand."""
+        config = {
+            "name": "Customer satisfaction",
+            "registry_key": None,
+            "target": 90,
+            "sensitivity": "public",
+            "status": "manual",
+            "null_behavior": "show_dash",
+        }
+        contract = resolve_metric_contract(config, registry=MOCK_REGISTRY)
+        assert contract.availability_state == "manual"
         assert contract.snapshot_column is None
 
     def test_asana_goal_skips_registry(self):
