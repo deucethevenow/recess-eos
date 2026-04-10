@@ -55,32 +55,35 @@ kpi_goals:
 
   # ═════════════════════════════════════════════════════════════════════
   # Rock 1 — Drive Net Revenue Retention to 50% (Owner: Deuce)
+  # STATUS: INACTIVE — Rock 1 removed from Q2 2026 (2026-04-10)
+  # Goal may still exist in Asana but cron will NOT push to it.
+  # Danny's scorecard metrics (NRR, pipeline, etc.) remain unchanged.
   # ═════════════════════════════════════════════════════════════════════
 
   - asana_goal_id: "1213958749717833"
     name: "Rock 1: Drive Net Revenue Retention to 50%"
     owner: "Deuce Thevenow"
-    rock: "Rock 1 — NRR via ABM"
+    rock: "Rock 1 — NRR via ABM (CANCELLED)"
     metric_unit: "percentage"
     transform: "percent_higher_is_better"
-    transform_target: 0.50          # 50% NRR target
+    transform_target: 0.50
     snapshot_table: "kpi_daily_snapshot"
-    snapshot_column: "demand_nrr"   # NRR % from snapshot
-    status: "needs_verification"
+    snapshot_column: "demand_nrr"
+    status: "inactive"              # ← Was needs_verification. Rock removed 2026-04-10.
     notes: |
-      Goal name still has "(not done)" prefix — Deuce hasn't finalized config.
+      CANCELLED 2026-04-10: Rock 1 removed from Q2 2026.
+      Asana Goal 1213958749717833 may still exist in Asana but is no longer
+      tracked by the automated cron. Danny's scorecard metrics (NRR, pipeline,
+      bookings, etc.) are unaffected — they live in the KPI Dashboard, not here.
 
-      VERIFICATION NEEDED:
+      If this Goal is reactivated in a future quarter, change status back to
+      "needs_verification" and complete the verification steps below.
+
+      ORIGINAL VERIFICATION NOTES (preserved for reference):
         - Confirm the metric should be `demand_nrr` (current snapshot value)
           vs. a quarterly-specific NRR column.
         - Confirm the Goal target is 50% NRR (target_number_value=1.0 in Asana
           means 100% of THE GOAL, not 100% NRR — so 1.0 = "achieved 50% NRR").
-        - Double-check the transform. If demand_nrr is already a fraction
-          (0.50 = 50%), then percent_complete = current / 0.50 (capped at 1.0).
-          If demand_nrr is whole-number (50 = 50%), then current / 50.
-
-      Also: this Goal may be the parent for a separate "Net Revenue Pacing"
-      Goal that doesn't exist yet. Worth checking with Deuce.
 
   # ═════════════════════════════════════════════════════════════════════
   # Q2 Rock — Reduce Campaign Fulfillment Time to <30 days

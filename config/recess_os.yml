@@ -6,7 +6,10 @@
 # ──────────────────────────────────────────────────────────────────────
 # GOALS — Asana Goals to sync via Sunday cron
 # ──────────────────────────────────────────────────────────────────────
-# (For now, mirror the existing kpi_goals.yml — Phase 4 work merges them)
+# Phase 4 work will merge entries from kpi_goals.yml into this section.
+# NOTE (2026-04-10): Rock 1 (NRR via ABM, Goal 1213958749717833) was
+# removed from Q2 2026. That goal is marked inactive in kpi_goals.yml
+# and will NOT be added here. Danny's scorecard metrics are unaffected.
 goals: []
 
 # ──────────────────────────────────────────────────────────────────────

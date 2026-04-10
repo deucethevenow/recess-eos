@@ -3,7 +3,9 @@ id: rock-001
 title: "Drive Net Revenue Retention to 50% via ABM Plans"
 owner: "danny"
 quarter: "2026-Q2"
-status: on_track
+status: cancelled
+cancelled_date: "2026-04-10"
+cancelled_reason: "Rock removed from Q2 2026. NRR remains a scorecard metric tracked in KPI Dashboard but is no longer a standalone Rock with ABM execution plans. Danny's scorecard metrics are unaffected."
 created: "2026-03-23"
 due: "2026-06-30"
 annual_goal: "Grow retention and expansion of our top customers"
