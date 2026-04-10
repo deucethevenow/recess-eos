@@ -1,39 +1,52 @@
 # ABM Portfolio Schema — Canonical Contract
 
-> **Purpose:** This document defines the schema, custom fields, lifecycle phases, and reporting contract that BOTH ABM Rocks adhere to. Rock 1 (Demand ABM, Danny) and rock-005 (Supply ABM, Ian) MUST use these field names and lifecycle states. The shared L10 reporting infrastructure (`v_abm_portfolio_status` BQ view + `/abm-l10-report` skill) reads from this contract — divergence breaks reporting for both rocks.
+> **Purpose:** This document defines the schema, custom fields, lifecycle phases, and reporting contract for ABM portfolio tracking. Originally designed for both Rock 1 (Demand) and Rock 005 (Supply). **Rock 1 was removed from Q2 2026 on 2026-04-10** — this schema now applies to Supply ABM (Rock 005, Ian) only.
 >
-> **Owners:** Deuce (architecture), Danny (demand), Ian (supply)
+> **Owners:** Deuce (architecture), Ian (supply)
 >
 > **Created:** 2026-04-06 — part of Recess OS Rock 5 (Phase 1.5)
 >
-> **Status:** Active. If you change this doc, ping both Rock owners (Danny + Ian) so they update their template projects to match.
+> **Status:** PARTIALLY SUPERSEDED. See notes below.
 
 ---
 
-## Why a shared schema
+## ⚠️ Important: Relationship to Supply ABM Playbook (2026-04-10)
 
-Both ABM Rocks produce many individual ABM plans as Asana projects. Without a shared schema:
-- Each Rock builds its own L10 reporting → duplicate work, drift over time
-- Custom fields drift in name and type → reporting breaks silently
-- "Stale" definitions vary → confusing leadership conversations
+This schema was designed assuming both ABM Rocks would use a "one Asana project per target account" model with shared custom fields. **That assumption was incorrect for the supply side.**
 
-With a shared schema:
-- One BQ view (`v_abm_portfolio_status`) serves both Rocks
-- One L10 report skill (`/abm-l10-report`) used by both Sales L10 (Danny) and Supply L10 (Ian)
-- Schema changes flow through one place — both rocks stay in sync
+Ian's Rock 005 follows the **Supply ABM: Category Playbook Framework** in Notion:
+- https://www.notion.so/teamrecess/33578d863acd81a1b0c8eb120ef7d1c2
+- Unit of work = **categories** (University Housing, Campgrounds, etc.), not individual accounts
+- Data lives in HubSpot (accounts + contacts + deals) + dedicated `App_Supply_ABM` BQ dataset
+- 7-phase lifecycle (Research → Monitoring), not the 5 phases below
+- Tiering is per-account within a category (T1=10-15 human touch, T2=10-20 semi-auto, T3=auto)
+- 6 Claude skills planned (`/launch-category`, `/category-report`, etc.) — none built yet
+
+**The custom fields, lifecycle phases, and view SQL below may still be useful as a starting point** if supply ABM adopts Asana portfolio tracking at the category level. But they should NOT be used as-is — the playbook's data model is richer and different.
+
+**For supply ABM L10 reporting,** the right path is building `/category-report` and `/standup-prep` skills as part of Rock 005's own implementation, reading from `App_Supply_ABM` in BQ. Phase 1.5 of Recess OS is deferred — see `~/Projects/eos/context/plans/2026-04-06-recess-os-phase-1-5-abm-reporting.md`.
+
+---
+
+## Why a shared schema (original rationale — partially obsolete)
+
+~~Both ABM Rocks produce many individual ABM plans as Asana projects.~~ Rock 1 (Demand ABM) was removed from Q2 2026. Supply ABM (Rock 005) uses a category-based model per the playbook, not an individual-account Asana project model.
+
+The schema below is preserved for reference. If supply ABM later adopts Asana portfolio tracking at the category level, this contract can be adapted.
 
 ---
 
 ## Asana portfolios
 
-Two parent portfolios in Asana, one per Rock:
+~~Two parent portfolios in Asana, one per Rock:~~
 
-| Portfolio Name | Rock | Owner | Child Project Count (target) |
+| Portfolio Name | Rock | Owner | Status |
 |---|---|---|---|
-| `Q2 2026 Demand ABM` | Rock 1 (NRR via ABM) | Danny Sears | ~30 (10 per AE × 3 AEs) |
-| `Q2 2026 Supply ABM` | rock-005 (Supply) | Ian / DRI TBD | TBD |
+| ~~`Q2 2026 Demand ABM`~~ | ~~Rock 1 (NRR via ABM)~~ | ~~Danny Sears~~ | **CANCELLED** — Rock 1 removed 2026-04-10 |
+| `Q2 2026 Supply ABM` | rock-005 (Supply) | Ian / DRI TBD | **Not yet created** — pending alignment with playbook's category model |
 
-**Each child project** in either portfolio is one ABM plan = one target account.
+**Original assumption:** Each child project in either portfolio is one ABM plan = one target account.
+**Revised understanding:** Supply ABM operates at category level, not individual account level. If an Asana portfolio is created, each child project would be one **category** (e.g., "University Housing"), not one account.
 
 ---
 
