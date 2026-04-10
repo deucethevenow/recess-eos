@@ -1,0 +1,80 @@
+# Recess OS — Master Config
+#
+# Single source of truth for goals, meetings, projects, and slack channels.
+# Read by recess_os.py at startup.
+
+# ──────────────────────────────────────────────────────────────────────
+# GOALS — Asana Goals to sync via Sunday cron
+# ──────────────────────────────────────────────────────────────────────
+# (For now, mirror the existing kpi_goals.yml — Phase 4 work merges them)
+goals: []
+
+# ──────────────────────────────────────────────────────────────────────
+# MEETINGS — L10s, 1:1s, founders meetings
+# ──────────────────────────────────────────────────────────────────────
+meetings:
+  - id: leadership
+    name: "Bi-Weekly Leadership Meeting"
+    facilitator_email: "deuce@recess.is"
+    cadence: bi-weekly
+    day: thursday
+    duration_min: 120
+    asana_project_id: "1203877946496228"
+    asana_section_id: "1205117190014932"
+    slack_channel: "C05855AJCKF"  # #leadership-team
+    sensitive: true
+    pre_read_format: "google_doc"
+    scorecard_metrics: []  # populated in Phase 0
+    members: []            # populated in Phase 0
+
+  - id: founders
+    name: "Founders Meeting (Jack + Deuce)"
+    facilitator_email: "deuce@recess.is"
+    cadence: weekly
+    day: monday
+    duration_min: 60
+    asana_project_id: "1203960217254518"
+    asana_section_id: "1203972339339930"
+    slack_channel: null  # founders only — no public channel
+    sensitive: true
+    pre_read_format: "asana_card"
+    scorecard_metrics: []
+    members:
+      - "deuce@recess.is"
+      - "jack@recess.is"
+
+  # Dept L10s — populated in Phase 0
+  - id: sales
+    name: "Sales L10"
+    facilitator_email: "danny@recess.is"
+    cadence: weekly
+    asana_project_id: "1203895053367225"
+    asana_section_id: "1203911910859358"
+    slack_channel: null  # TBD in Phase 0
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics: []  # populated in Phase 0
+    members: []            # populated in Phase 0
+
+# (Other dept L10s added in Phase 0)
+
+# ──────────────────────────────────────────────────────────────────────
+# SLACK CHANNELS — global channel registry
+# ──────────────────────────────────────────────────────────────────────
+slack_channels:
+  recess_goals_kpis: "C0AQP3WH7AB"
+  leadership_team: "C05855AJCKF"
+
+# ──────────────────────────────────────────────────────────────────────
+# BIGQUERY — dataset and table names
+# ──────────────────────────────────────────────────────────────────────
+bigquery:
+  project_id: "stitchdata-384118"
+  dataset: "App_Recess_OS"
+  tables:
+    rocks: "eos_rocks"
+    projects: "eos_projects"
+    status_updates: "eos_status_updates"
+    l10_meetings: "eos_l10_meetings"
+    l10_action_items: "eos_l10_action_items"
+    goal_metric_history: "eos_goal_metric_history"
