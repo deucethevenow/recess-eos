@@ -20,14 +20,17 @@ class TestSyncRunTracker:
         t.record_table_write("eos_projects", 42)
         t.finish(success=True)
 
-        # Expect two merge_events calls: start + finish (finish batches per-table + ALL rows)
-        assert bq.merge_events.call_count >= 2
-        # Verify the finish call includes the per-table row
-        finish_call_rows = bq.merge_events.call_args_list[-1]
-        rows = finish_call_rows.kwargs.get("rows") or finish_call_rows.args[1]
+        # start() no longer writes to BQ (would block finish's ALL row via INSERT-only MERGE).
+        # Exactly one merge_events call at finish(), batching per-table + ALL rows.
+        assert bq.merge_events.call_count == 1
+        rows = bq.merge_events.call_args.kwargs.get("rows") or bq.merge_events.call_args.args[1]
         table_names = [r["table_name"] for r in rows]
         assert "eos_projects" in table_names
         assert "ALL" in table_names
+        # Verify the ALL row has the correct final status and row count
+        all_row = [r for r in rows if r["table_name"] == "ALL"][0]
+        assert all_row["status"] == "success"
+        assert all_row["row_count"] == 42
 
     def test_captures_error_on_failure(self):
         bq = MagicMock()

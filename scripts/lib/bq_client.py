@@ -102,11 +102,14 @@ class RecessOSBQClient:
         staging_name = f"{table_name}_staging_{run_id.replace('-', '_')}"
         staging_full = self.full_table_id(staging_name)
 
-        # Upload rows to staging via load job (WRITE_TRUNCATE — overwrites any leftover staging)
+        # Fetch schema from the main table so staging has identical column types.
+        # This prevents autodetect from inferring STRING for null-only TIMESTAMP
+        # columns (e.g. ended_at=None in start-row writes to eos_sync_runs).
+        main_table = self.bq.get_table(self.full_table_id(table_name))
         load_config = bigquery.LoadJobConfig(
             source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
             write_disposition="WRITE_TRUNCATE",
-            autodetect=True,  # infer schema from main table on first write
+            schema=main_table.schema,
         )
         load_job = self.bq.load_table_from_json(rows, staging_full, job_config=load_config)
         load_job.result()

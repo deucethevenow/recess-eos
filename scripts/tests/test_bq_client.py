@@ -67,6 +67,12 @@ class TestMergeEvents:
     def test_merge_events_creates_staging_and_merges(self, mock_bq):
         """Event tables must load to per-run staging then MERGE WHEN NOT MATCHED THEN INSERT only."""
         client = RecessOSBQClient(project_id="p", dataset="d")
+        # Mock get_table to return a table with an empty schema list
+        # (LoadJobConfig.schema setter requires a Sequence, not a MagicMock)
+        mock_main_table = MagicMock()
+        mock_main_table.schema = []
+        client.bq.get_table.return_value = mock_main_table
+
         mock_load_job = MagicMock()
         mock_load_job.result.return_value = None
         mock_load_job.output_rows = 2
@@ -88,6 +94,9 @@ class TestMergeEvents:
             run_id="test-run-123",
         )
 
+        # Verify get_table was called to fetch schema from main table
+        client.bq.get_table.assert_called_once()
+
         # Verify staging table name includes run_id (dashes replaced with underscores for BQ)
         load_call = client.bq.load_table_from_json.call_args
         assert "test_run_123" in str(load_call)
@@ -105,6 +114,10 @@ class TestMergeEvents:
     def test_merge_events_composite_natural_key(self, mock_bq):
         """Composite natural keys (e.g. eos_goal_metric_history) are joined with AND."""
         client = RecessOSBQClient(project_id="p", dataset="d")
+        mock_main_table = MagicMock()
+        mock_main_table.schema = []
+        client.bq.get_table.return_value = mock_main_table
+
         mock_load_job = MagicMock()
         mock_load_job.result.return_value = None
         mock_load_job.output_rows = 1

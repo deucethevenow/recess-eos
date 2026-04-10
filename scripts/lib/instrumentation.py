@@ -49,23 +49,18 @@ class SyncRunTracker:
         self.table_writes: List[dict] = []
 
     def start(self) -> None:
-        """Record the run start -- writes the (run_id, 'ALL') row with status=running."""
+        """Record the run start time. Does NOT write to BQ yet.
+
+        We intentionally do not write a 'status=running' row at start because
+        eos_sync_runs uses INSERT-only MERGE. A start row with (run_id, 'ALL')
+        would block the finish row (same natural key) from being inserted.
+        Instead, started_at is tracked in memory and written at finish().
+
+        Crash detection uses the SLO query 'last success > 36h old' rather
+        than looking for stuck running rows.
+        """
         self.started_at = datetime.now(timezone.utc)
         logger.info("sync_run_started", extra={"run_id": self.run_id, "cron_trigger": self.cron_trigger})
-        self._write_rows([
-            {
-                "run_id": self.run_id,
-                "table_name": "ALL",
-                "started_at": self.started_at.isoformat(),
-                "ended_at": None,
-                "status": "running",
-                "row_count": 0,
-                "duration_seconds": 0.0,
-                "error_message": None,
-                "git_sha": self.git_sha,
-                "cron_trigger": self.cron_trigger,
-            }
-        ])
 
     def record_table_write(self, table_name: str, row_count: int) -> None:
         """Record that a particular table was written to during this run."""
