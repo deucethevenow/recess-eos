@@ -6,8 +6,8 @@ owner: "deuce"
 quarter: "2026-Q2"
 status: active
 created: "2026-04-06"
-revised: ""
-weeks_remaining: 9
+revised: "2026-04-09"
+weeks_remaining: 7
 hard_deadline: "2026-05-29"
 hard_deadline_reason: "Paternity leave starts 2026-06-01; 3-day buffer (Sat-Sun-Mon)"
 ---
@@ -101,17 +101,16 @@ Each update includes: (1) what was accomplished since last update, (2) what's cu
 | ✅ Wire skills to Notion DB IDs via `.notion-config.json` | Deuce | Apr 6 | — | Done |
 | ✅ Update Asana project notes with full pipeline overview | Deuce | Apr 6 | — | Done |
 | Brief Sales + Supply teams on assessments coming in Wk 5; send calendar holds | Deuce | Mon Apr 6 | — | 15 min |
-| **Step 1 — Deuce tests:** runs `ai-readiness-assess` on himself for `accounting` (= Dry-Run #1) | Deuce | **Tue Apr 7** | — | ~1.5 hrs batch |
-| **Step 2 — Deuce confirms:** any skill bugs found are fixed and re-tested | Deuce | Wed Apr 8 (AM) | Apr 7 | 30 min - 2 hrs |
-| Slack to AM team announcing self-serve window with EOD Fri Apr 10 deadline | Deuce | Wed Apr 8 (AM, after confirm) | Apr 8 confirm | 5 min |
-| **Step 3 — AM team self-serves** 5 assessments (Char, Francisco, Ashton, Victoria, Claire) | Each AM | **Wed Apr 8 → Fri Apr 10** | Slack out | 25 min/person |
-| Slack DM reminders to laggards | Deuce | Thu Apr 9 EOD | — | 5 min |
-| **BATCH DAY 1 — Step 4: Consolidation** — verify all 5 AM files in Notion → run `ai-readiness-score` on AM → validate dept summary → push to Notion Diagnostics DB | Deuce | **Mon Apr 13** | All AM files in | ~2 hrs batch |
-| **BATCH DAY 2 — Step 5: Roadmap + Hire Spec** — run `ai-readiness-roadmap` on AM (interactive) → add Hiring Implications section → push to Notion Roadmaps DB | Deuce | **Tue Apr 14** | Apr 13 score | ~2-3 hrs batch |
-| Buffer / polish / unexpected fixes from dry runs | Deuce | Wed-Thu Apr 15-16 | Apr 14 | flexible |
-| Slack heads-up to Char: confirm 45-min meeting Friday | Deuce | Wed Apr 15 | — | 5 min |
-| **Step 6 — 1:1 with Char** to review AM roadmap + hire spec | Deuce + Char | **Fri Apr 17** | Apr 14 roadmap | **45 min batch** |
-| Apply Char's feedback; finalize the version that goes to AM team Monday | Deuce | Fri Apr 17 (same day, after meeting) | Char meeting | ~30 min |
+| **Step 1 — Deuce tests:** runs `ai-readiness-assess` on himself for `accounting` (= Dry-Run #1) | Deuce | **Thu Apr 9** | — | ~1.5 hrs batch |
+| **Step 2 — Deuce confirms:** any skill bugs found are fixed and re-tested | Deuce | Fri Apr 10 (AM) | Apr 9 | 30 min - 2 hrs |
+| Slack to AM team announcing self-serve window with EOD Wed Apr 15 deadline | Deuce | Thu Apr 9 (after test) | Apr 9 test | 5 min |
+| **Step 3 — AM team self-serves** 5 assessments (Char, Francisco, Ashton, Victoria, Claire) | Each AM | **Fri Apr 10 → Wed Apr 15** (4 business days + weekend) | Slack out | 25 min/person |
+| Slack DM reminders to laggards | Deuce | Tue Apr 14 EOD | — | 5 min |
+| **BATCH DAY 1 — Step 4: Consolidation** — verify all 5 AM files in Notion → run `ai-readiness-score` on AM → validate dept summary → push to Notion Diagnostics DB | Deuce | **Thu Apr 16** | All AM files in | ~2 hrs batch |
+| **BATCH DAY 2 — Step 5: Roadmap + Hire Spec** — run `ai-readiness-roadmap` on AM (interactive) → add Hiring Implications section → push to Notion Roadmaps DB | Deuce | **Fri Apr 17 (AM)** | Apr 16 score | ~2-3 hrs batch |
+| Slack heads-up to Char: confirm 45-min meeting Friday afternoon | Deuce | Thu Apr 16 | — | 5 min |
+| **Step 6 — 1:1 with Char** to review AM roadmap + hire spec | Deuce + Char | **Fri Apr 17 (PM)** | Apr 17 AM roadmap | **45 min batch** |
+| Apply Char's feedback; finalize the version that goes to AM team Monday | Deuce | Fri Apr 17 EOD (after meeting) | Char meeting | ~30 min |
 
 ---
 
@@ -252,8 +251,8 @@ Each update includes: (1) what was accomplished since last update, (2) what's cu
 
 | From | To | What | By When |
 |------|-----|------|---------|
-| Deuce | AM team (5 ppl) | Slack + skill instructions | Wed Apr 8 |
-| AM team | Deuce | 5 completed assessment files in Notion | EOD Fri Apr 10 |
+| Deuce | AM team (5 ppl) | Slack + skill instructions | Thu Apr 9 (after dry-run) |
+| AM team | Deuce | 5 completed assessment files in Notion | EOD Wed Apr 15 |
 | Deuce | Char | Polished AM roadmap + hire spec for review | Fri Apr 17 (45 min meeting) |
 | Char | Deuce | Feedback on AM roadmap + hire spec | Fri Apr 17 (during meeting) |
 | Deuce | AM team | Pre-read with finalized AM roadmap | Mon Apr 20 |
@@ -273,8 +272,8 @@ Each update includes: (1) what was accomplished since last update, (2) what's cu
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| **Char + Francisco + 3 AMs unavailable Wed-Fri Apr 8-10** | Phase 0 slips, Mon Apr 13 batch consolidation has incomplete data | Slack scheduling Mon Apr 6, follow up Tue/Wed if no calendar accept; fallback: extend AM window into following Mon Apr 13 |
-| **Skill bugs found in Deuce dry-run Tue Apr 7** | Need to fix before AM team can use | Wed Apr 8 AM is buffered for fixes; if catastrophic, fall back to Char's existing Google Doc as the AM input |
+| **Char + Francisco + 3 AMs unavailable Fri Apr 10 → Wed Apr 15** | Phase 0 slips, Thu Apr 16 batch consolidation has incomplete data | Slack scheduling Thu Apr 9 after dry-run, Tue Apr 14 laggard reminders; fallback: extend AM window into Thu Apr 16 AM |
+| **Skill bugs found in Deuce dry-run Thu Apr 9** | Need to fix before AM team can use | Fri Apr 10 AM is buffered for fixes; if catastrophic, fall back to Char's existing Google Doc as the AM input |
 | **Leo overcommitted across 8 depts** | Q3 plan is fiction | Phase III.5 (Tue May 12) is the trip-wire; surface in pre-read explicitly so leadership makes the trade-off live |
 | **Hiring approval blocked at Apr 22 meeting** | AM execution doesn't unblock | Pre-clear budget with Jack BEFORE Apr 22 meeting (during pre-read window Apr 20-21) |
 | **In-person meeting attendees not the right people** | Lock decision not durable | Confirm attendee list with Jack by Mon Apr 20 |
@@ -287,7 +286,7 @@ Each update includes: (1) what was accomplished since last update, (2) what's cu
 
 - ✅ Recess-Brain-V2 is installed on every team member's machine (confirmed)
 - ✅ Notion DBs created and wired into the 3 skills (confirmed Apr 6)
-- Char + Francisco + 3 AMs can each find 25 minutes between Wed Apr 8 and Fri Apr 10
+- Char + Francisco + 3 AMs can each find 25 minutes between Fri Apr 10 and Wed Apr 15
 - Sales team (Danny + 2-3 AEs), Supply team (Ian + 2-3 reps), Marketing (Courtney), Engineering team (Arbind + 2-3 engineers), and Tier 2 reps can each find 25 minutes between Apr 27 and May 8
 - Leo has bandwidth Tue May 12 for the capacity check session
 - Jack + leadership team available Mon May 18 OR Tue May 19 for the full review meeting
@@ -306,7 +305,8 @@ Each update includes: (1) what was accomplished since last update, (2) what's cu
 ## Notes
 
 - 2026-04-06: Plan created. Tooling already built and tested in Phase 0 work this morning. Notion DBs live and smoke-tested. Asana project overview populated.
-- **First action:** Send Slack to Char + Francisco + 3 AMs scheduling their self-serve window. Send Mon Apr 6 EOD or first thing Tue Apr 7 morning.
+- **2026-04-09 (Thu):** Phase 0 dates SLID to give AM team more breathing room. Original plan had AM team self-serving Wed-Fri Apr 8-10 (3 days) — too tight, and the Slack announcing it was never sent in the original window. NEW window: Fri Apr 10 → Wed Apr 15 (4 business days + weekend). Deuce test moved from Tue Apr 7 → Thu Apr 9 (today). Consolidation batch moved from Mon Apr 13 → Thu Apr 16. Roadmap batch moved from Tue Apr 14 → Fri Apr 17 AM. Char 1:1 stays Fri Apr 17 but moves to PM. Phase 0 milestone date unchanged (still Fri Apr 17 EOD). All other phases unchanged. Asana tasks updated to match. Buffer task deleted (no slot for it in compressed schedule).
+- **First action (Thu Apr 9 — today):** (1) Run `ai-readiness-assess` on yourself for accounting to validate the skill. (2) Once confirmed working, send Slack to Char + Francisco + Ashton + Victoria + Claire with the self-serve instructions and Wed Apr 15 deadline.
 - **Hard deadline reasoning:** Deuce's paternity leave starts Mon Jun 1. Rock must close Fri May 29 (3-day weekend buffer). Original Rock file says Jun 30 due — that's superseded. Update Rock file `due` field if needed.
 - **Total Deuce focused work blocks:** ~12 batch sessions across 9 weeks, averaging ~4 hrs/week with peaks during Phase III (3 batch days that week) and Phase IV Wk 9 (4-6 hr conversion batch).
 - **Working principle:** Batch into 2-3 hour focused blocks instead of 30-min daily tasks. Async self-serve removes Deuce from team interviews entirely. Two leadership touchpoints (Apr 22 in-person AM, May 18 full company) are the high-leverage decision moments.

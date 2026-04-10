@@ -53,7 +53,7 @@ Every ABM project — demand or supply — flows through the same 5 phases:
 
 ## Custom Fields on Each ABM Project
 
-These custom fields MUST exist on every project in both portfolios. Field names are case-sensitive — the Asana → BQ sync uses exact name matching.
+These custom fields MUST exist on every project in both portfolios. Field names are a documented stable contract — see the "Custom Field Lookup Rule" section below for how consumers should resolve them.
 
 | Field Name | Type | Required | Values / Example | Notes |
 |---|---|---|---|---|
@@ -72,6 +72,66 @@ These custom fields MUST exist on every project in both portfolios. Field names 
 ### Note on `ae_owner` vs `dri`
 
 For reporting uniformity, the BQ view treats `ae_owner` (demand) and `dri` (supply) as the same logical column. The view aliases both to `owner_name` in the output. Rock owners do not need to rename the underlying Asana field.
+
+---
+
+## Custom Field Lookup Rule (Phase 1.5 contract — added 2026-04-09)
+
+The Phase 1 sync writes `custom_fields_json` to `eos_projects` in a **dual-format** JSON:
+
+```json
+{
+  "fields_by_name": {
+    "portfolio_id": "Q2 2026 Demand ABM",
+    "ae_owner": "Andy Cooper",
+    "tier": 1,
+    ...
+  },
+  "fields_by_gid": {
+    "1203876543210": "Q2 2026 Demand ABM",
+    "1203876543211": "Andy Cooper",
+    "1203876543212": 1,
+    ...
+  }
+}
+```
+
+**Both views hold identical data**, keyed differently. This gives us resilience against field renames while preserving human readability.
+
+### Consumer rules (STRICT)
+
+1. **Downstream logic MUST prefer `fields_by_gid`** when looking up custom field values for:
+   - View definitions (`v_abm_portfolio_status`)
+   - Skills and CLI commands (`/abm-l10-report`, status commands)
+   - Automation code (sync scripts, routing logic)
+
+   Example:
+   ```sql
+   -- PREFERRED (GID-keyed — survives renames):
+   JSON_VALUE(custom_fields_json, '$.fields_by_gid."1203876543210"') AS portfolio_id
+
+   -- ALLOWED for human-readable debug output only:
+   JSON_VALUE(custom_fields_json, '$.fields_by_name.portfolio_id') AS portfolio_id
+   ```
+
+2. **`fields_by_name` is for human-readable output only** — sample output files, debug queries, error messages. If an Asana field is renamed, `fields_by_name` silently breaks but `fields_by_gid` keeps working.
+
+3. **Field names are a stable contract** — listed in the "Custom Fields" table above. Renames MUST follow the "Schema Change Process" at the bottom of this document AND notify both Rock owners (Danny + Ian). But even with the contract, the `fields_by_gid` path is the safety net for when someone forgets the process.
+
+4. **GID mapping for downstream consumers** lives in `~/Projects/eos/config/recess_os.yml` under `asana_custom_field_gids:` once Phase 1.5 starts and the actual GIDs are known. Example:
+   ```yaml
+   asana_custom_field_gids:
+     portfolio_id: "1203876543210"
+     ae_owner: "1203876543211"
+     tier: "1203876543212"
+   ```
+   The `v_abm_portfolio_status` view reads these GIDs from a parameterized query or hardcodes them after schema freeze.
+
+5. **If a new field is added to Asana**, update BOTH this document AND the `asana_custom_field_gids` config block. Update the view AFTER both are in sync.
+
+### Why dual-format instead of GID-only
+
+GID-only would be rename-safe but unreadable when debugging. A DBA querying `eos_projects` directly would see `{"1203876543210": "Q2 2026 Demand ABM", ...}` with no idea which field that is. Dual-format costs ~2x the bytes in `custom_fields_json` (a few KB per project max) and gives us both safety and debuggability.
 
 ---
 
