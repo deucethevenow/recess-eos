@@ -27,8 +27,56 @@ meetings:
     slack_channel: "C05855AJCKF"  # #leadership-team
     sensitive: true
     pre_read_format: "google_doc"
-    scorecard_metrics: []  # populated in Phase 0
-    members: []            # populated in Phase 0
+    scorecard_metrics:
+      - name: "Revenue YTD"
+        registry_key: "Revenue YTD"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Demand NRR"
+        registry_key: "Demand NRR"
+        target: 0.50
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Pipeline Coverage"
+        registry_key: "Pipeline Coverage"
+        target: 2.5
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Take Rate %"
+        registry_key: "Take Rate %"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Total Sellable Inventory"
+        registry_key: "Total Sellable Inventory"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Days to Fulfill"
+        registry_key: "Days to Fulfill"
+        target: 30
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Logo Retention"
+        registry_key: "Logo Retention"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Customer Count"
+        registry_key: "Customer Count"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+    members: []
 
   - id: founders
     name: "Founders Meeting (Jack + Deuce)"
@@ -41,12 +89,47 @@ meetings:
     slack_channel: null  # founders only — no public channel
     sensitive: true
     pre_read_format: "asana_card"
-    scorecard_metrics: []
+    scorecard_metrics:
+      - name: "Revenue YTD"
+        registry_key: "Revenue YTD"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Bank Cash (Available)"
+        registry_key: "Bank Cash (Available)"
+        target: null
+        sensitivity: "founders_only"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Total Liquidity"
+        registry_key: "Total Liquidity (Bank + Restricted Reserve)"
+        target: null
+        sensitivity: "founders_only"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Conservative Runway"
+        registry_key: "Conservative Runway"
+        target: null
+        sensitivity: "founders_only"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Working Capital"
+        registry_key: "Working Capital"
+        target: null
+        sensitivity: "founders_only"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Customer Concentration (Top 1)"
+        registry_key: "Customer Concentration (Top 1)"
+        target: null
+        sensitivity: "founders_only"
+        status: "automated"
+        null_behavior: "show_dash"
     members:
       - "deuce@recess.is"
       - "jack@recess.is"
 
-  # Dept L10s — populated in Phase 0
   - id: sales
     name: "Sales L10"
     facilitator_email: "danny@recess.is"
@@ -56,10 +139,376 @@ meetings:
     slack_channel: null  # TBD in Phase 0
     sensitive: false
     pre_read_format: "asana_card"
-    scorecard_metrics: []  # populated in Phase 0
-    members: []            # populated in Phase 0
+    scorecard_metrics:
+      - name: "Pipeline Coverage"
+        registry_key: "Pipeline Coverage"
+        target: 2.5
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Demand NRR"
+        registry_key: "Demand NRR"
+        target: 0.50
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Avg Deal Size"
+        registry_key: "Avg Deal Size"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Days to First Offer"
+        registry_key: "Days to First Offer"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "PO Accepted Revenue"
+        registry_key: "PO Accepted Revenue"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Win Rate (90 days)"
+        registry_key: "Win Rate (90 days)"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Bookings Goal Attainment"
+        registry_key: "Bookings Goal Attainment"
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Net Revenue Quota Attainment"
+        registry_key: "Net Revenue Quota Attainment"
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members: []
 
-# (Other dept L10s added in Phase 0)
+  - id: demand_am
+    name: "Demand AM L10"
+    facilitator_email: "char@recess.is"
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Days to Fulfill"
+        registry_key: "Days to Fulfill"
+        target: 30
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Unspent Contract Net Revenue"
+        registry_key: "Unspent Contract Net Revenue"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Contract Spend %"
+        registry_key: "Contract Spend %"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "NPS Score"
+        registry_key: "NPS Score"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Offer Acceptance %"
+        registry_key: "Offer Acceptance %"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Avg Ticket Response"
+        registry_key: "Avg Ticket Response"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members: []
+
+  - id: supply
+    name: "Supply L10"
+    facilitator_email: null
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Total Sellable Inventory"
+        registry_key: "Total Sellable Inventory"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Net-New Supply Added"
+        registry_key: "Net-New Supply Added"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Weekly Contact Attempts"
+        registry_key: "Weekly Contact Attempts"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Active Event Types"
+        registry_key: "Active Event Types"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "MoM Capacity Growth"
+        registry_key: "MoM Capacity Growth"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Supply Pipeline Coverage"
+        registry_key: "Supply Pipeline Coverage"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members: []
+
+  - id: supply_am
+    name: "Supply AM L10"
+    facilitator_email: null
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Supply NRR"
+        registry_key: "Supply NRR"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Active Suppliers"
+        registry_key: "Active Suppliers"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "At-Risk Suppliers"
+        registry_key: "At-Risk Suppliers"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Lost Suppliers"
+        registry_key: "Lost Suppliers"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Inactive Suppliers"
+        registry_key: "Inactive Suppliers"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members: []
+
+  - id: marketing
+    name: "Marketing L10"
+    facilitator_email: null
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Mktg-Influenced Pipeline"
+        registry_key: "Mktg-Influenced Pipeline"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "MQL → SQL Conversion"
+        registry_key: "MQL → SQL Conversion"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "First Touch Attribution $"
+        registry_key: "First Touch Attribution $"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Last Touch Attribution $"
+        registry_key: "Last Touch Attribution $"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members: []
+
+  - id: engineering
+    name: "Engineering L10"
+    facilitator_email: "arbind@recess.is"
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Features Fully Scoped"
+        registry_key: "Features Fully Scoped"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "BizSup Completed"
+        registry_key: "BizSup Completed"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "PRDs Generated"
+        registry_key: "PRDs Generated"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "FSDs Generated"
+        registry_key: "FSDs Generated"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members: []
+
+  - id: accounting
+    name: "Accounting L10"
+    facilitator_email: null
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Bill Payment Timeliness"
+        registry_key: "Bill Payment Timeliness"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Invoice Collection Rate"
+        registry_key: "Invoice Collection Rate"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "On-Time Collection Rate"
+        registry_key: "On-Time Collection Rate"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Avg Days to Collection"
+        registry_key: "Avg Days to Collection"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Overdue Invoices"
+        registry_key: "Overdue Invoices"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members: []
+
+  - id: ceo_bizdev
+    name: "CEO / Biz Dev"
+    facilitator_email: "jack@recess.is"
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: true
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Revenue YTD"
+        registry_key: "Revenue YTD"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Pipeline Coverage"
+        registry_key: "Pipeline Coverage"
+        target: 2.5
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Logo Retention"
+        registry_key: "Logo Retention"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Customer Count"
+        registry_key: "Customer Count"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+    members:
+      - "jack@recess.is"
+
+  - id: coo_ops
+    name: "COO / Ops"
+    facilitator_email: "deuce@recess.is"
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: true
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Take Rate %"
+        registry_key: "Take Rate %"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Invoice Collection Rate"
+        registry_key: "Invoice Collection Rate"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Avg Ticket Response"
+        registry_key: "Avg Ticket Response"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members:
+      - "deuce@recess.is"
 
 # ──────────────────────────────────────────────────────────────────────
 # SLACK CHANNELS — global channel registry
