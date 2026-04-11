@@ -242,3 +242,76 @@ class TestFilterBySensitivity:
 class TestStaleness:
     def test_stale_threshold_is_25_hours(self):
         assert STALE_THRESHOLD_HOURS == 25
+
+    def test_marks_stale_when_timestamp_old(self):
+        """Snapshot timestamp >25h old → availability_state='stale'."""
+        old_ts = (datetime.now(timezone.utc) - timedelta(hours=30)).isoformat()
+        meeting = {
+            "id": "sales",
+            "scorecard_metrics": [{
+                "name": "Pipeline Coverage",
+                "registry_key": "Pipeline Coverage",
+                "target": 2.5,
+                "sensitivity": "public",
+                "status": "automated",
+                "null_behavior": "show_dash",
+            }],
+        }
+        snapshot = {"pipeline_coverage": 2.1}
+        payloads = build_metric_payloads(meeting, snapshot, old_ts, registry=MOCK_REGISTRY)
+        assert payloads[0].availability_state == "stale"
+
+    def test_fresh_timestamp_is_live(self):
+        """Snapshot timestamp <25h old → availability_state='live'."""
+        fresh_ts = datetime.now(timezone.utc).isoformat()
+        meeting = {
+            "id": "sales",
+            "scorecard_metrics": [{
+                "name": "Pipeline Coverage",
+                "registry_key": "Pipeline Coverage",
+                "target": 2.5,
+                "sensitivity": "public",
+                "status": "automated",
+                "null_behavior": "show_dash",
+            }],
+        }
+        snapshot = {"pipeline_coverage": 2.1}
+        payloads = build_metric_payloads(meeting, snapshot, fresh_ts, registry=MOCK_REGISTRY)
+        assert payloads[0].availability_state == "live"
+
+    def test_unparseable_timestamp_is_stale(self):
+        """Garbage timestamp string → availability_state='stale' (fail-safe)."""
+        meeting = {
+            "id": "sales",
+            "scorecard_metrics": [{
+                "name": "Pipeline Coverage",
+                "registry_key": "Pipeline Coverage",
+                "target": 2.5,
+                "sensitivity": "public",
+                "status": "automated",
+                "null_behavior": "show_dash",
+            }],
+        }
+        snapshot = {"pipeline_coverage": 2.1}
+        payloads = build_metric_payloads(meeting, snapshot, "not-a-real-timestamp", registry=MOCK_REGISTRY)
+        assert payloads[0].availability_state == "stale"
+
+
+class TestContractErrorPath:
+    def test_bad_registry_key_produces_error_payload(self):
+        """If ContractResolutionError is raised, build_metric_payloads produces an error payload."""
+        meeting = {
+            "id": "sales",
+            "scorecard_metrics": [{
+                "name": "Fake Metric",
+                "registry_key": "Does Not Exist In Registry",
+                "target": 2.5,
+                "sensitivity": "public",
+                "status": "automated",
+                "null_behavior": "show_dash",
+            }],
+        }
+        payloads = build_metric_payloads(meeting, {}, "2026-04-13T08:00:00Z", registry=MOCK_REGISTRY)
+        assert len(payloads) == 1
+        assert payloads[0].availability_state == "error"
+        assert "does NOT exist" in payloads[0].notes

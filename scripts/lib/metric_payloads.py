@@ -11,9 +11,25 @@ from typing import Optional
 
 from .metric_contract import resolve_metric_contract, MetricContract, ContractResolutionError
 from .percentage_transforms import apply_transform
-from .nan_safety import safe_float
+from .nan_safety import _is_bad_number
 
 STALE_THRESHOLD_HOURS = 25  # if snapshot_timestamp > 25h old, mark stale
+
+
+def _safe_optional_float(value) -> Optional[float]:
+    """Return float(value) or None for null/nan/inf/non-numeric.
+
+    This is the null-aware sibling of nan_safety.safe_float(): we need to
+    preserve None as a distinct signal (metric missing from snapshot) rather
+    than coerce to 0.0. safe_float's contract is 'always return a float',
+    which would destroy the null signal.
+    """
+    if _is_bad_number(value):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 SENSITIVITY_LEVELS = {"public": 0, "leadership": 1, "founders_only": 2}
 
@@ -82,9 +98,12 @@ def build_metric_payloads(
             continue
 
         # Automated — pull from snapshot
-        raw_value = safe_float(snapshot_row.get(contract.snapshot_column), default=None)
+        raw_value = _safe_optional_float(snapshot_row.get(contract.snapshot_column))
 
-        # Check staleness
+        # Check staleness first, then null. Precedence order (deliberate):
+        # null ALWAYS wins over stale, because a null value is a "no data"
+        # signal regardless of freshness, and consumers render it as a dash.
+        # Stale + null ambiguity is resolved by the `notes` field downstream.
         availability = "live"
         if _is_stale(snapshot_timestamp):
             availability = "stale"
