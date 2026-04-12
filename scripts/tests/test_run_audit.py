@@ -77,6 +77,56 @@ class TestMetricRunLifecycle:
         assert run.status == "error"
         assert run.error_message == "Config load failed"
 
+    def test_complete_all_skipped(self):
+        """All deliveries skipped (e.g., every metric is needs_build) → status='skipped'."""
+        entries = [
+            DeliveryAuditEntry("r1", "cmd", "A", "s", "asana_goal",
+                               None, None, "", "needs_build", "ts", "skipped"),
+            DeliveryAuditEntry("r1", "cmd", "B", "s", "asana_goal",
+                               None, None, "", "needs_build", "ts", "skipped"),
+        ]
+        run = MetricRun("r1", "push-kpi-goals").start()
+        run.complete(deliveries=entries)
+        assert run.status == "skipped"
+
+    def test_dry_run_does_not_mask_errors(self):
+        """Mixed dry_run + error → partial (not dry_run). Errors must surface."""
+        entries = [
+            DeliveryAuditEntry("r1", "cmd", "A", "s", "asana_goal",
+                               2.1, 0.84, "2.1x", "live", "ts", "dry_run"),
+            DeliveryAuditEntry("r1", "cmd", "B", "s", "asana_goal",
+                               None, None, "", "error", "ts", "error",
+                               error_message="API timeout"),
+        ]
+        run = MetricRun("r1", "push-kpi-goals").start()
+        run.complete(deliveries=entries)
+        assert run.status == "partial"
+        assert "error" in run.error_message.lower()
+
+    def test_snapshot_timestamp_set_on_complete(self):
+        """snapshot_timestamp is set when passed to complete()."""
+        run = MetricRun("r1", "push-kpi-goals").start()
+        run.complete(snapshot_timestamp="2026-04-13T08:00:00Z")
+        assert run.snapshot_timestamp == "2026-04-13T08:00:00Z"
+
+    def test_snapshot_timestamp_none_when_not_passed(self):
+        """snapshot_timestamp stays None if not passed."""
+        run = MetricRun("r1", "push-kpi-goals").start()
+        run.complete()
+        assert run.snapshot_timestamp is None
+
+    def test_skipped_plus_success_is_success(self):
+        """Mix of skipped + delivered → success (some work was done)."""
+        entries = [
+            DeliveryAuditEntry("r1", "cmd", "A", "s", "asana_goal",
+                               2.1, 0.84, "2.1x", "live", "ts", "delivered"),
+            DeliveryAuditEntry("r1", "cmd", "B", "s", "asana_goal",
+                               None, None, "", "needs_build", "ts", "skipped"),
+        ]
+        run = MetricRun("r1", "push-kpi-goals").start()
+        run.complete(deliveries=entries)
+        assert run.status == "success"
+
 
 class TestPayloadToAuditEntry:
     def test_converts_all_fields(self):

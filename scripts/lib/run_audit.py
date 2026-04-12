@@ -7,12 +7,19 @@ Every execution of push-kpi-goals / monday-pulse / all-hands-deck:
 4. Records a MetricRun at completion (one row per run_id — write-once)
 
 Table semantics:
-- eos_metric_runs: MUTABLE (one row per run, written at completion only).
+- eos_metric_runs: WRITE-ONCE per run_id (written at completion only).
   This is a completed-run audit table, NOT an in-progress run-state table.
-  It cannot detect stuck or mid-run crashes.
+  It cannot detect stuck or mid-run crashes. Uses merge_events() with
+  natural_key=["run_id"] — a second write for the same run_id is a no-op.
 - eos_metric_delivery_audit: APPEND-ONLY (immutable event log).
+  Uses merge_events() with natural_key=["run_id","registry_key","consumer"].
 
 All writes go through RecessOSBQClient.merge_events().
+
+Schema constants (METRIC_RUN_SCHEMA, METRIC_DELIVERY_SCHEMA) are REFERENCE ONLY.
+They document the expected BQ table schemas but are not consumed by any runtime
+code. The actual BQ tables must be created externally with matching schemas.
+If the BQ table schema drifts from these constants, there is no automatic failure.
 """
 import uuid
 from dataclasses import dataclass, asdict
@@ -69,15 +76,28 @@ class MetricRun:
         self.started_at = datetime.now(timezone.utc).isoformat()
         return self
 
-    def complete(self, deliveries: list = None, error: str = None):
-        """Derive status from delivery actions.
+    def complete(self, deliveries: list = None, error: str = None,
+                 snapshot_timestamp: str = None):
+        """Derive status from delivery actions and finalize the run.
 
-        Partial: at least one error AND at least one delivered/noop.
-        Error: all errors (or top-level error string provided).
-        Dry_run: any dry_run action present.
-        Success: everything else.
+        Status rules (Rule 2):
+        - "error": top-level error string provided, OR all deliveries errored.
+        - "partial": at least one error AND at least one delivered/noop.
+        - "dry_run": all deliveries are dry_run (dry_run is all-or-nothing).
+                     If dry_run mixed with error, status = "partial" (errors not masked).
+        - "skipped": all deliveries were skipped (no real work done).
+        - "success": at least one delivered/noop and no errors.
+
+        Args:
+            deliveries: list of DeliveryAuditEntry from this run.
+            error: top-level error message (command-level failure, e.g., config load).
+            snapshot_timestamp: ISO timestamp of the BQ snapshot used for this run.
+                Set this from the snapshot data AFTER building payloads.
         """
         self.completed_at = datetime.now(timezone.utc).isoformat()
+
+        if snapshot_timestamp is not None:
+            self.snapshot_timestamp = snapshot_timestamp
 
         if error:
             self.status = "error"
@@ -92,14 +112,24 @@ class MetricRun:
         has_errors = "error" in actions
         has_success = bool(actions & {"delivered", "noop"})
         has_dry_run = "dry_run" in actions
+        has_skipped = "skipped" in actions
 
-        if has_dry_run:
-            self.status = "dry_run"
-        elif has_errors and has_success:
+        # Errors always surface — dry_run does NOT mask errors
+        if has_errors and has_success:
             self.status = "partial"
-        elif has_errors and not has_success:
+        elif has_errors and has_dry_run:
+            self.status = "partial"  # dry_run + error = partial, not dry_run
+            self.error_message = f"{sum(1 for d in deliveries if d.action == 'error')} delivery errors (dry_run run)"
+        elif has_errors:
             self.status = "error"
             self.error_message = f"{sum(1 for d in deliveries if d.action == 'error')} delivery errors"
+        elif has_dry_run:
+            self.status = "dry_run"
+        elif has_success:
+            self.status = "success"
+        elif has_skipped and not has_success and not has_errors:
+            # ALL deliveries were skipped (e.g., every metric is needs_build)
+            self.status = "skipped"
         else:
             self.status = "success"
 
