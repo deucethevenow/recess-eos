@@ -8,27 +8,62 @@ Two sync primitives, matching the Truth Model:
 Both use load_table_from_json under the hood. insert_rows_json (streaming
 inserts) is BANNED in this codebase — it's expensive, buffered, and does
 not support MERGE.
+
+This is the ONLY module in scripts/lib/ allowed to instantiate
+google.cloud.bigquery.Client directly. A static test guard
+(test_bq_access_policy.py) enforces this invariant.
 """
 from __future__ import annotations
 
-from typing import Any, List
+import logging
+import os
+from typing import Any, List, Optional
 
 from google.cloud import bigquery
 
+log = logging.getLogger(__name__)
+
+
+class StagingCleanupError(Exception):
+    """Raised in strict mode when staging table cleanup fails.
+
+    Staging tables are named with a per-run UUID and have a 7-day TTL, so a
+    failed delete is not data-destructive. But in strict mode we want to know
+    about it immediately rather than accumulate orphans silently.
+    """
+
 
 class RecessOSBQClient:
-    """Thin wrapper around google.cloud.bigquery that enforces the Recess OS Truth Model."""
+    """Thin wrapper around google.cloud.bigquery that enforces the Recess OS Truth Model.
 
-    def __init__(self, project_id: str, dataset: str):
+    Args:
+        project_id: GCP project id.
+        dataset: BigQuery dataset name.
+        strict_cleanup: If True, a failed staging table cleanup raises
+            StagingCleanupError instead of logging and continuing. Default False
+            (warn-and-continue) because the 7-day TTL backstop makes cleanup
+            failures non-fatal in production. Defaults from
+            RECESS_OS_STRICT_BQ_CLEANUP environment variable when unset.
+    """
+
+    def __init__(self, project_id: str, dataset: str, strict_cleanup: Optional[bool] = None):
         self.project_id = project_id
         self.dataset = dataset
         self.bq = bigquery.Client(project=project_id)
+        if strict_cleanup is None:
+            strict_cleanup = os.environ.get("RECESS_OS_STRICT_BQ_CLEANUP", "").lower() in ("1", "true", "yes")
+        self.strict_cleanup = strict_cleanup
 
     def full_table_id(self, table_name: str) -> str:
         """Return the fully qualified table id: project.dataset.table"""
         return f"{self.project_id}.{self.dataset}.{table_name}"
 
-    def load_snapshot(self, table_name: str, rows: List[dict]) -> int:
+    def load_snapshot(
+        self,
+        table_name: str,
+        rows: List[dict],
+        schema: Optional[List[dict]] = None,
+    ) -> int:
         """Atomically replace a snapshot table's contents.
 
         For snapshot tables only (eos_projects, eos_rocks, eos_goals).
@@ -42,15 +77,23 @@ class RecessOSBQClient:
         Args:
             table_name: Short table name (e.g. 'eos_projects').
             rows: List of dicts representing rows. May be empty.
+            schema: Optional explicit schema (list of dicts with 'name'/'field_type').
+                When provided, the load job uses this schema — required for tables
+                that don't exist yet or where autodetect would be unreliable.
+                When omitted, the existing table schema is used.
 
         Returns:
             Number of rows loaded.
         """
-        job_config = bigquery.LoadJobConfig(
+        job_config_kwargs: dict[str, Any] = dict(
             source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
             write_disposition="WRITE_TRUNCATE",
             autodetect=False,
         )
+        if schema is not None:
+            job_config_kwargs["schema"] = [bigquery.SchemaField(**s) for s in schema]
+
+        job_config = bigquery.LoadJobConfig(**job_config_kwargs)
         # load_table_from_json handles [] by loading zero rows with WRITE_TRUNCATE,
         # which is exactly the desired "clear table" behavior.
         job = self.bq.load_table_from_json(
@@ -60,6 +103,25 @@ class RecessOSBQClient:
         )
         job.result()  # wait for completion; raises on error
         return len(rows)
+
+    def create_or_replace_view(self, view_name: str, sql: str) -> None:
+        """Create or replace a BQ view with the given SQL.
+
+        Uses delete-then-create because `bq mk --view --force` silently fails
+        in some cases (see MEMORY.md BigQuery gotchas). This is the only
+        view-management primitive in the canonical BQ layer — asana_eos_sync.py
+        and any other writer must route through here.
+
+        Args:
+            view_name: Short view name (e.g. 'v_rock_health').
+            sql: Full SELECT query for the view.
+        """
+        view_ref = self.full_table_id(view_name)
+        # Delete first; not_found_ok=True so first-run is a no-op.
+        self.bq.delete_table(view_ref, not_found_ok=True)
+        view = bigquery.Table(view_ref)
+        view.view_query = sql
+        self.bq.create_table(view)
 
     def merge_events(
         self,
@@ -135,11 +197,29 @@ class RecessOSBQClient:
         merge_job.result()
         inserted = merge_job.num_dml_affected_rows or 0
 
-        # 3. Drop staging table (belt and suspenders — 7-day TTL also cleans it)
+        # 3. Drop staging table.
+        # The staging table has a 7-day TTL as a backstop, so a failed delete
+        # is not data-destructive. But we log structured info so orphans don't
+        # accumulate silently. In strict_cleanup mode, raise instead.
         try:
             self.bq.delete_table(staging_full, not_found_ok=True)
-        except Exception:
-            pass  # best-effort; 7-day TTL backstop
+        except Exception as e:
+            log.warning(
+                "bq_staging_cleanup_failed",
+                extra={
+                    "run_id": run_id,
+                    "table": table_name,
+                    "staging_table": staging_full,
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                    "backstop": "7-day TTL will reclaim orphan",
+                },
+            )
+            if self.strict_cleanup:
+                raise StagingCleanupError(
+                    f"Failed to delete staging table {staging_full} for run {run_id}: "
+                    f"{type(e).__name__}: {e}"
+                ) from e
 
         return int(inserted)
 

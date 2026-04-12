@@ -6,11 +6,61 @@
 # ──────────────────────────────────────────────────────────────────────
 # GOALS — Asana Goals to sync via Sunday cron
 # ──────────────────────────────────────────────────────────────────────
-# Phase 4 work will merge entries from kpi_goals.yml into this section.
-# NOTE (2026-04-10): Rock 1 (NRR via ABM, Goal 1213958749717833) was
-# removed from Q2 2026. That goal is marked inactive in kpi_goals.yml
-# and will NOT be added here. Danny's scorecard metrics are unaffected.
-goals: []
+# This is the CANONICAL goal config. kpi_goals.yml was deprecated 2026-04-11
+# in the hardening refactor — all transform/threshold logic was stripped
+# and the active goals were moved here.
+#
+# Every goal MUST be pointer-only:
+#   asana_goal_id   — trailing number from app.asana.com/0/goal/<id>
+#   name            — human-readable label
+#   owner           — informational, matches Asana Goal owner
+#   registry_key    — exact key in metric_registry.py (null if needs_build)
+#   target          — dept-specific goal target
+#   status          — automated | needs_build | manual | asana_goal
+#   null_behavior   — how to render when value is null
+#   sensitivity     — public | leadership | founders_only
+#   notes           — freeform context (no logic)
+#
+# FORBIDDEN in goal entries (enforced by metric_contract.py):
+#   transform, transform_target, transform_baseline, thresholds,
+#   snapshot_table, snapshot_column, format, higher_is_better
+#
+# These fields come from the KPI Dashboard metric_registry.py at runtime
+# via resolve_metric_contract().
+#
+# NOTE (2026-04-10): Rock 1 (NRR via ABM, Goal 1213958749717833) was removed
+# from Q2 2026. It is NOT listed here. Danny's scorecard metrics (NRR,
+# pipeline, etc.) are unaffected — they live under meetings[].scorecard_metrics.
+goals:
+  - name: "Q2 Rock: Reduce Campaign Fulfillment Time to <30 days"
+    owner: "Francisco Cazes"
+    asana_goal_id: "1213964743621574"
+    registry_key: null    # needs_build — campaign_fulfillment_days_median column not in snapshot yet
+    target: 30
+    sensitivity: "public"
+    status: "needs_build"
+    null_behavior: "show_needs_build"
+    notes: |
+      Rock — Campaign Fulfillment Time <30 days.
+      Metric defined as "median days from first offer ACCEPTED to last offer
+      ACCEPTED per campaign." The snapshot column must be built in the KPI
+      Dashboard registry before this can flip to status: automated. See the
+      legacy kpi_goals.yml historical entry for the full KPI build checklist.
+
+  - name: "Q2 Rock: Move 2 Retailers to Contract Sent"
+    owner: "Jack Shannon"
+    asana_goal_id: "1213965720789253"
+    registry_key: null    # needs_build — retailers_advanced_count_q2 column not in snapshot yet
+    target: 2
+    sensitivity: "public"
+    status: "needs_build"
+    null_behavior: "show_needs_build"
+    notes: |
+      Standalone Q2 sales KPI (not project-backed). Counts retailer accounts
+      that REACHED "Contract Sent" or LATER during Q2 FY26 (Walmart counts
+      because it closed-won, which is past Contract Sent). The snapshot column
+      must be built in the KPI Dashboard registry before this can flip to
+      status: automated.
 
 # ──────────────────────────────────────────────────────────────────────
 # MEETINGS — L10s, 1:1s, founders meetings

@@ -140,6 +140,72 @@ class TestMergeEvents:
         assert "T.pushed_at = S.pushed_at" in merge_sql
         assert " AND " in merge_sql  # composite join
 
+    def test_staging_cleanup_failure_is_logged_not_swallowed(self, mock_bq, caplog):
+        """Hardening E: staging delete failure must log structured info, not silently pass."""
+        import logging
+        client = RecessOSBQClient(project_id="p", dataset="d")
+        mock_main_table = MagicMock()
+        mock_main_table.schema = []
+        client.bq.get_table.return_value = mock_main_table
+
+        mock_load_job = MagicMock()
+        mock_load_job.result.return_value = None
+        client.bq.load_table_from_json.return_value = mock_load_job
+
+        mock_query_job = MagicMock()
+        mock_query_job.result.return_value = None
+        mock_query_job.num_dml_affected_rows = 1
+        client.bq.query.return_value = mock_query_job
+
+        # Simulate cleanup failure
+        client.bq.delete_table.side_effect = Exception("permission denied on staging")
+
+        with caplog.at_level(logging.WARNING, logger="lib.bq_client"):
+            n = client.merge_events(
+                "eos_status_updates",
+                [{"status_update_gid": "a1", "parent_gid": "p1", "text": "hi"}],
+                natural_key_columns=["status_update_gid"],
+                run_id="cleanup-fail-run",
+            )
+
+        # Merge still succeeded — cleanup failure is non-fatal by default
+        assert n == 1
+        # But the failure is logged with structured context
+        assert any("bq_staging_cleanup_failed" in r.message for r in caplog.records)
+        # Structured fields present on the record
+        failing = [r for r in caplog.records if "bq_staging_cleanup_failed" in r.message][0]
+        assert getattr(failing, "run_id", None) == "cleanup-fail-run"
+        assert getattr(failing, "table", None) == "eos_status_updates"
+        assert "error_type" in failing.__dict__
+        assert "error_message" in failing.__dict__
+
+    def test_staging_cleanup_strict_mode_raises(self, mock_bq):
+        """Hardening E: strict_cleanup=True raises StagingCleanupError on delete failure."""
+        from lib.bq_client import StagingCleanupError
+        client = RecessOSBQClient(project_id="p", dataset="d", strict_cleanup=True)
+        mock_main_table = MagicMock()
+        mock_main_table.schema = []
+        client.bq.get_table.return_value = mock_main_table
+
+        mock_load_job = MagicMock()
+        mock_load_job.result.return_value = None
+        client.bq.load_table_from_json.return_value = mock_load_job
+
+        mock_query_job = MagicMock()
+        mock_query_job.result.return_value = None
+        mock_query_job.num_dml_affected_rows = 1
+        client.bq.query.return_value = mock_query_job
+
+        client.bq.delete_table.side_effect = Exception("permission denied")
+
+        with pytest.raises(StagingCleanupError, match="permission denied"):
+            client.merge_events(
+                "eos_status_updates",
+                [{"status_update_gid": "a1"}],
+                natural_key_columns=["status_update_gid"],
+                run_id="strict-run",
+            )
+
     def test_merge_events_empty_rows_is_noop(self, mock_bq):
         """Empty event batch must NOT hit BQ at all — event tables are additive."""
         client = RecessOSBQClient(project_id="p", dataset="d")

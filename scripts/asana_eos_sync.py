@@ -150,72 +150,59 @@ class AsanaClient:
 
 
 class BigQueryWriter:
-    """Writes synced data to BigQuery tables."""
+    """Thin adapter over RecessOSBQClient for the asana sync.
+
+    Hardening D: direct google.cloud.bigquery.Client instantiation is banned
+    outside lib/bq_client.py. This class now routes ALL writes through the
+    canonical RecessOSBQClient to preserve the Truth Model (WRITE_TRUNCATE
+    for snapshots, MERGE WHEN NOT MATCHED THEN INSERT for events).
+    """
 
     def __init__(self, project: str, dataset: str, dry_run: bool = False):
         self.project = project
         self.dataset = dataset
         self.dry_run = dry_run
-        self._client = None
+        self._canonical: Optional["Any"] = None  # lazy-init; see canonical property
 
     @property
-    def client(self):
-        if self._client is None:
-            from google.cloud import bigquery
-            self._client = bigquery.Client(project=self.project)
-        return self._client
+    def canonical(self):
+        """Return the canonical RecessOSBQClient, lazy-initialized on first use.
+
+        Lazy init keeps dry-run paths cheap and avoids credential errors when
+        running --dry-run without GOOGLE_APPLICATION_CREDENTIALS set.
+        """
+        if self._canonical is None:
+            from lib.bq_client import RecessOSBQClient
+            self._canonical = RecessOSBQClient(project_id=self.project, dataset=self.dataset)
+        return self._canonical
 
     def _table_ref(self, table_name: str) -> str:
         return f"{self.project}.{self.dataset}.{table_name}"
 
     def write_rows(self, table_name: str, rows: list[dict], schema: list[dict]):
-        """Write rows to a BQ table (truncate and reload)."""
+        """Write rows to a BQ snapshot table via the canonical client.
+
+        Snapshot semantics (WRITE_TRUNCATE) match the asana_eos_sync contract:
+        every run produces a fresh view of Asana state, old rows are replaced
+        atomically.
+        """
         if self.dry_run:
             log.info(f"[DRY RUN] Would write {len(rows)} rows to {table_name}")
             if rows:
                 log.info(f"  Sample: {json.dumps(rows[0], default=str)[:200]}")
             return
 
-        from google.cloud import bigquery
-
-        table_ref = self._table_ref(table_name)
-        bq_schema = [bigquery.SchemaField(**s) for s in schema]
-
-        job_config = bigquery.LoadJobConfig(
-            schema=bq_schema,
-            write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-            source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-        )
-
-        # Convert rows to NDJSON
-        import io
-        ndjson = io.BytesIO()
-        for row in rows:
-            ndjson.write(json.dumps(row, default=str).encode() + b"\n")
-        ndjson.seek(0)
-
-        job = self.client.load_table_from_file(ndjson, table_ref, job_config=job_config)
-        job.result()  # Wait for completion
-        log.info(f"Wrote {len(rows)} rows to {table_ref}")
+        n = self.canonical.load_snapshot(table_name, rows, schema=schema)
+        log.info(f"Wrote {n} rows to {self._table_ref(table_name)}")
 
     def create_view(self, view_name: str, sql: str):
-        """Create or replace a BQ view."""
+        """Create or replace a BQ view via the canonical client."""
         if self.dry_run:
             log.info(f"[DRY RUN] Would create view {view_name}")
             return
 
-        from google.cloud import bigquery
-
-        view_ref = self._table_ref(view_name)
-        view = bigquery.Table(view_ref)
-        view.view_query = sql
-        # Delete first, then create (bq mk --view --force is unreliable)
-        try:
-            self.client.delete_table(view_ref, not_found_ok=True)
-        except Exception:
-            pass
-        self.client.create_table(view)
-        log.info(f"Created view {view_ref}")
+        self.canonical.create_or_replace_view(view_name, sql)
+        log.info(f"Created view {self._table_ref(view_name)}")
 
 
 # ---------------------------------------------------------------------------
