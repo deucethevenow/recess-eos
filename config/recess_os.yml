@@ -75,6 +75,7 @@ goals:
 #   asana_goal  — progress pulled from Asana Goal API, not from BQ
 # ──────────────────────────────────────────────────────────────────────
 meetings:
+  # ── Leadership (5 metrics, all registry) ───────────────────────────
   - id: leadership
     name: "Bi-Weekly Leadership Meeting"
     facilitator_email: "deuce@recess.is"
@@ -82,21 +83,33 @@ meetings:
     day: thursday
     duration_min: 120
     asana_project_id: "1203877946496228"
-    asana_section_id: "1213574997719335"  # Upcoming (verified Apr 2026; old GID 1205117190014932 no longer exists)
+    asana_section_id: "1213574997719335"
     slack_channel: "C05855AJCKF"  # #leadership-team
     sensitive: true
     pre_read_format: "google_doc"
     scorecard_metrics:
-      - name: "Revenue YTD"
+      - name: "Net Revenue YTD"
         registry_key: "Revenue YTD"
         target: null
         sensitivity: "leadership"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Demand NRR"
+      - name: "Bookings vs Goal"
+        registry_key: "Bookings Goal Attainment"
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"        # bq_key=None in registry — dashboard computes live
+        null_behavior: "show_needs_build"
+      - name: "Take Rate %"
+        registry_key: "Take Rate %"
+        target: null
+        sensitivity: "leadership"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "NRR"
         registry_key: "Demand NRR"
         target: 0.50
-        sensitivity: "public"
+        sensitivity: "leadership"
         status: "automated"
         null_behavior: "show_dash"
       - name: "Pipeline Coverage"
@@ -105,38 +118,9 @@ meetings:
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Take Rate %"
-        registry_key: "Take Rate %"
-        target: null
-        sensitivity: "leadership"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Total Sellable Inventory"
-        registry_key: "Total Sellable Inventory"
-        target: null
-        sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Days to Fulfill"
-        registry_key: "Days to Fulfill"
-        target: 30
-        sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Logo Retention"
-        registry_key: "Logo Retention"
-        target: null
-        sensitivity: "leadership"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Customer Count"
-        registry_key: "Customer Count"
-        target: null
-        sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
     members: []
 
+  # ── Founders (4 metrics, all founders_only) ────────────────────────
   - id: founders
     name: "Founders Meeting (Jack + Deuce)"
     facilitator_email: "deuce@recess.is"
@@ -149,20 +133,20 @@ meetings:
     sensitive: true
     pre_read_format: "asana_card"
     scorecard_metrics:
-      - name: "Revenue YTD"
+      - name: "Net Revenue YTD"
         registry_key: "Revenue YTD"
-        target: null
-        sensitivity: "leadership"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Bank Cash (Available)"
-        registry_key: "Bank Cash (Available)"
         target: null
         sensitivity: "founders_only"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Total Liquidity"
-        registry_key: "Total Liquidity (Bank + Restricted Reserve)"
+      - name: "Take Rate %"
+        registry_key: "Take Rate %"
+        target: null
+        sensitivity: "founders_only"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Bank Cash (Available)"
+        registry_key: "Bank Cash (Available)"
         target: null
         sensitivity: "founders_only"
         status: "automated"
@@ -173,29 +157,18 @@ meetings:
         sensitivity: "founders_only"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Working Capital"
-        registry_key: "Working Capital"
-        target: null
-        sensitivity: "founders_only"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Customer Concentration (Top 1)"
-        registry_key: "Customer Concentration (Top 1)"
-        target: null
-        sensitivity: "founders_only"
-        status: "automated"
-        null_behavior: "show_dash"
     members:
       - "deuce@recess.is"
       - "jack@recess.is"
 
+  # ── Sales / Danny (8 metrics, all registry) ────────────────────────
   - id: sales
     name: "Sales L10"
     facilitator_email: "danny@recess.is"
     cadence: weekly
     asana_project_id: "1203895053367225"
     asana_section_id: "1203911910859358"
-    slack_channel: null  # TBD in Phase 0
+    slack_channel: null
     sensitive: false
     pre_read_format: "asana_card"
     scorecard_metrics:
@@ -205,50 +178,52 @@ meetings:
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Demand NRR"
-        registry_key: "Demand NRR"
-        target: 0.50
-        sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Avg Deal Size"
-        registry_key: "Avg Deal Size"
+      - name: "Weighted Pipeline $"
+        registry_key: "Weighted Pipeline"
         target: null
         sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
+        status: "needs_build"        # bq_key=None in registry
+        null_behavior: "show_needs_build"
       - name: "Days to First Offer"
         registry_key: "Days to First Offer"
         target: null
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "PO Accepted Revenue"
-        registry_key: "PO Accepted Revenue"
-        target: null
-        sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Win Rate (90 days)"
-        registry_key: "Win Rate (90 days)"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "Bookings Goal Attainment"
+      - name: "Bookings vs Goal"
         registry_key: "Bookings Goal Attainment"
         target: null
         sensitivity: "leadership"
-        status: "needs_build"
+        status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
-      - name: "Net Revenue Quota Attainment"
+      - name: "Net Revenue vs Goal"
         registry_key: "Net Revenue Quota Attainment"
         target: null
         sensitivity: "leadership"
+        status: "needs_build"        # bq_key=None in registry
+        null_behavior: "show_needs_build"
+      - name: "NRR"
+        registry_key: "Demand NRR"
+        target: 0.50
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Renewal Bookings Pacing"
+        registry_key: "Renewal Pipeline"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"        # bq_key=None in registry — uses Pipeline by Deal Type
+        null_behavior: "show_needs_build"
+      - name: "L&E Bookings Pacing"
+        registry_key: null
+        target: null
+        sensitivity: "public"
         status: "needs_build"
         null_behavior: "show_needs_build"
+        notes: "Uses Pipeline by Deal Type on dashboard. No registry key yet."
     members: []
 
+  # ── Demand AM / Char (7 metrics: 5 registry + 2 needs_build) ──────
   - id: demand_am
     name: "Demand AM L10"
     facilitator_email: "char@recess.is"
@@ -259,44 +234,53 @@ meetings:
     sensitive: false
     pre_read_format: "asana_card"
     scorecard_metrics:
+      - name: "Contract Spend %"
+        registry_key: "Contract Spend %"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"        # bq_key=None in registry
+        null_behavior: "show_needs_build"
       - name: "Days to Fulfill"
         registry_key: "Days to Fulfill"
         target: 30
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Unspent Contract Net Revenue"
-        registry_key: "Unspent Contract Net Revenue"
-        target: null
-        sensitivity: "leadership"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Contract Spend %"
-        registry_key: "Contract Spend %"
+      - name: "Offer Fulfillment Speed (<30 days)"
+        registry_key: null
+        target: 30
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Percentage of campaigns fulfilled in <30 days. Not yet in registry."
+      - name: "Upsell Pipeline"
+        registry_key: null
         target: null
         sensitivity: "public"
         status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Upsell pipeline from existing accounts. Not yet in registry."
+      - name: "Unresolved PO Net Revenue"
+        registry_key: "Unresolved PO Net Revenue"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
       - name: "NPS Score"
         registry_key: "NPS Score"
-        target: null
+        target: 75
         sensitivity: "public"
-        status: "needs_build"
+        status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
       - name: "Offer Acceptance %"
         registry_key: "Offer Acceptance %"
-        target: null
+        target: 0.70
         sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "Avg Ticket Response"
-        registry_key: "Avg Ticket Response"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
+        status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
     members: []
 
+  # ── Supply / Ian (6 metrics: 3 registry + 3 needs_build) ──────────
   - id: supply
     name: "Supply L10"
     facilitator_email: null
@@ -307,47 +291,51 @@ meetings:
     sensitive: false
     pre_read_format: "asana_card"
     scorecard_metrics:
-      - name: "Total Sellable Inventory"
+      - name: "Supply Types at Goal"
+        registry_key: null
+        target: 5
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Target 5 of 7 types. Data exists on dashboard (Q1 supply goals table)."
+      - name: "Net-New Supply Added (monthly)"
+        registry_key: "Net-New Supply Added"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"        # bq_key=None in registry
+        null_behavior: "show_needs_build"
+      - name: "Weekly Outreach Attempts + Contacts Added"
+        registry_key: "Weekly Contact Attempts"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"        # bq_key=None in registry
+        null_behavior: "show_needs_build"
+      - name: "Organizers Losing"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Data in snapshot as loosing_suppliers. Needs dashboard card."
+      - name: "Organizers Lost"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Data in snapshot as lost_suppliers. Needs dashboard card."
+      - name: "Sellable Inventory"
         registry_key: "Total Sellable Inventory"
         target: null
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Net-New Supply Added"
-        registry_key: "Net-New Supply Added"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "Weekly Contact Attempts"
-        registry_key: "Weekly Contact Attempts"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "Active Event Types"
-        registry_key: "Active Event Types"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "MoM Capacity Growth"
-        registry_key: "MoM Capacity Growth"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "Supply Pipeline Coverage"
-        registry_key: "Supply Pipeline Coverage"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
     members: []
 
-  - id: supply_am
-    name: "Supply AM L10"
-    facilitator_email: null
+  # ── BizDev / Jack (3 metrics, all needs_build) ────────────────────
+  - id: bizdev
+    name: "BizDev (Jack)"
+    facilitator_email: "jack@recess.is"
     cadence: weekly
     asana_project_id: null
     asana_section_id: null
@@ -355,38 +343,31 @@ meetings:
     sensitive: false
     pre_read_format: "asana_card"
     scorecard_metrics:
-      - name: "Supply NRR"
-        registry_key: "Supply NRR"
-        target: null
+      - name: "Retailer Deals Closed Won"
+        registry_key: null
+        target: 2
         sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Active Suppliers"
-        registry_key: "Active Suppliers"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Count of retailer deals closed won in quarter."
+      - name: "Retailer Closed Won $ Attribution"
+        registry_key: null
         target: null
         sensitivity: "public"
         status: "needs_build"
         null_behavior: "show_needs_build"
-      - name: "At-Risk Suppliers"
-        registry_key: "At-Risk Suppliers"
+        notes: "Dollar value attributed to retailer closed-won deals."
+      - name: "Retailer Deals in Pipeline"
+        registry_key: null
         target: null
         sensitivity: "public"
         status: "needs_build"
         null_behavior: "show_needs_build"
-      - name: "Lost Suppliers"
-        registry_key: "Lost Suppliers"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "Inactive Suppliers"
-        registry_key: "Inactive Suppliers"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-    members: []
+        notes: "Count of active retailer deals in pipeline."
+    members:
+      - "jack@recess.is"
 
+  # ── Marketing / Courtney (6 metrics: 1 registry + 5 needs_build) ──
   - id: marketing
     name: "Marketing L10"
     facilitator_email: null
@@ -397,32 +378,178 @@ meetings:
     sensitive: false
     pre_read_format: "asana_card"
     scorecard_metrics:
-      - name: "Mktg-Influenced Pipeline"
-        registry_key: "Mktg-Influenced Pipeline"
-        target: null
-        sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
       - name: "MQL → SQL Conversion"
         registry_key: "MQL → SQL Conversion"
         target: null
         sensitivity: "public"
-        status: "needs_build"
+        status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
-      - name: "First Touch Attribution $"
-        registry_key: "First Touch Attribution $"
+      - name: "Retailer Pipeline $ (Closed Won)"
+        registry_key: null
         target: null
         sensitivity: "public"
         status: "needs_build"
         null_behavior: "show_needs_build"
-      - name: "Last Touch Attribution $"
-        registry_key: "Last Touch Attribution $"
+        notes: "Walmart + DG data exists on dashboard. Needs registry entry."
+      - name: "Demand Mktg Closed Won QTD (FT+LT)"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Demand Mktg Pipeline QTD (FT+LT)"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Supply Mktg Closed Won QTD (FT+LT)"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Supply Mktg Pipeline QTD (FT+LT)"
+        registry_key: null
         target: null
         sensitivity: "public"
         status: "needs_build"
         null_behavior: "show_needs_build"
     members: []
 
+  # ── AI Automations / Leo (12 metrics: all from Asana, no registry) ─
+  # NOTE: These metrics do NOT come from kpi_daily_snapshot. They come
+  # from Asana portfolio data (eos_projects) and scoping pipeline section
+  # counts. The metric contract treats them as needs_build until the
+  # Asana data source is wired into the payload pipeline.
+  - id: ai_automations
+    name: "AI Automations (Leo)"
+    facilitator_email: "leo@recess.is"
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      # Portfolio metrics (from eos_projects)
+      - name: "L/XL Projects Completed (QTD)"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "From eos_projects WHERE owner=leo AND status=Done."
+      - name: "L/XL Projects in Progress"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "From eos_projects WHERE owner=leo AND status=Active."
+      # Scoping Pipeline section counts (project 1213534502811066, assignee=leo)
+      - name: "Scoping Pipeline: Submissions"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: Icebox"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: Discovery Queue (Not Started)"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: In Discovery"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: Completed Discovery"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: Needs PRD"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: PRD Draft"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: PRD - Proposed"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: PRD - Accepted (Project Needed)"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+      - name: "Scoping Pipeline: Prioritized"
+        registry_key: null
+        target: null
+        sensitivity: "public"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+    members:
+      - "leo@recess.is"
+
+  # ── Operations / Deuce (3 metrics: 1 registry + 2 asana_goal) ─────
+  - id: operations
+    name: "Operations (Deuce)"
+    facilitator_email: "deuce@recess.is"
+    cadence: weekly
+    asana_project_id: null
+    asana_section_id: null
+    slack_channel: null
+    sensitive: false
+    pre_read_format: "asana_card"
+    scorecard_metrics:
+      - name: "Take Rate %"
+        registry_key: "Take Rate %"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "Dept AI Plans Completed"
+        registry_key: null
+        asana_goal_id: "1213958752860959"
+        target: null
+        sensitivity: "public"
+        status: "asana_goal"
+        null_behavior: "show_dash"
+        notes: "Asana Goal progress %."
+      - name: "Recess OS Milestones"
+        registry_key: null
+        asana_goal_id: "1213964742972565"
+        target: null
+        sensitivity: "public"
+        status: "asana_goal"
+        null_behavior: "show_dash"
+        notes: "Asana Goal progress %."
+    members:
+      - "deuce@recess.is"
+
+  # ── Engineering / Arbind (0 metrics — TBD) ────────────────────────
+  # No metrics defined yet. Arbind will define his own later.
+  # Meeting context exists so infrastructure is ready when metrics are added.
   - id: engineering
     name: "Engineering L10"
     facilitator_email: "arbind@recess.is"
@@ -432,42 +559,20 @@ meetings:
     slack_channel: null
     sensitive: false
     pre_read_format: "asana_card"
-    scorecard_metrics:
-      - name: "Features Fully Scoped"
-        registry_key: "Features Fully Scoped"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "BizSup Completed"
-        registry_key: "BizSup Completed"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "PRDs Generated"
-        registry_key: "PRDs Generated"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "FSDs Generated"
-        registry_key: "FSDs Generated"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
+    scorecard_metrics: []
     members: []
 
+  # ── Accounting / Andres (5 metrics, all registry, deck-only) ──────
+  # No L10 meeting cadence yet. Metrics show on all-hands deck + Monday Pulse.
   - id: accounting
-    name: "Accounting L10"
-    facilitator_email: null
-    cadence: weekly
+    name: "Accounting"
+    facilitator_email: "accounting@recess.is"
+    cadence: null  # deck-only context, no recurring meeting
     asana_project_id: null
     asana_section_id: null
     slack_channel: null
     sensitive: false
-    pre_read_format: "asana_card"
+    pre_read_format: null
     scorecard_metrics:
       - name: "Bill Payment Timeliness"
         registry_key: "Bill Payment Timeliness"
@@ -475,99 +580,31 @@ meetings:
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Invoice Collection Rate"
+      - name: "Invoice Collection %"
         registry_key: "Invoice Collection Rate"
         target: null
         sensitivity: "public"
-        status: "needs_build"
+        status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
-      - name: "On-Time Collection Rate"
-        registry_key: "On-Time Collection Rate"
+      - name: "Overdue Invoices (count)"
+        registry_key: "Overdue Invoices"
         target: null
         sensitivity: "public"
-        status: "needs_build"
+        status: "needs_build"        # bq_key=None in registry
+        null_behavior: "show_needs_build"
+      - name: "Overdue Amount ($)"
+        registry_key: "Overdue Amount"
+        target: null
+        sensitivity: "public"
+        status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
       - name: "Avg Days to Collection"
         registry_key: "Avg Days to Collection"
         target: null
         sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "Overdue Invoices"
-        registry_key: "Overdue Invoices"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
+        status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
     members: []
-
-  - id: ceo_bizdev
-    name: "CEO / Biz Dev"
-    facilitator_email: "jack@recess.is"
-    cadence: weekly
-    asana_project_id: null
-    asana_section_id: null
-    slack_channel: null
-    sensitive: true
-    pre_read_format: "asana_card"
-    scorecard_metrics:
-      - name: "Revenue YTD"
-        registry_key: "Revenue YTD"
-        target: null
-        sensitivity: "leadership"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Pipeline Coverage"
-        registry_key: "Pipeline Coverage"
-        target: 2.5
-        sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Logo Retention"
-        registry_key: "Logo Retention"
-        target: null
-        sensitivity: "leadership"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Customer Count"
-        registry_key: "Customer Count"
-        target: null
-        sensitivity: "public"
-        status: "automated"
-        null_behavior: "show_dash"
-    members:
-      - "jack@recess.is"
-
-  - id: coo_ops
-    name: "COO / Ops"
-    facilitator_email: "deuce@recess.is"
-    cadence: weekly
-    asana_project_id: null
-    asana_section_id: null
-    slack_channel: null
-    sensitive: true
-    pre_read_format: "asana_card"
-    scorecard_metrics:
-      - name: "Take Rate %"
-        registry_key: "Take Rate %"
-        target: null
-        sensitivity: "leadership"
-        status: "automated"
-        null_behavior: "show_dash"
-      - name: "Invoice Collection Rate"
-        registry_key: "Invoice Collection Rate"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-      - name: "Avg Ticket Response"
-        registry_key: "Avg Ticket Response"
-        target: null
-        sensitivity: "public"
-        status: "needs_build"
-        null_behavior: "show_needs_build"
-    members:
-      - "deuce@recess.is"
 
 # ──────────────────────────────────────────────────────────────────────
 # SLACK CHANNELS — global channel registry
