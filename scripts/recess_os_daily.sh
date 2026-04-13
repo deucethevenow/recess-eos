@@ -34,11 +34,16 @@ CRON_TRIGGER="${CRON_TRIGGER:-local-cron}"
   --portfolio "$RECESS_PROJECTS_PORTFOLIO_GID" \
   --cron-trigger "$CRON_TRIGGER"
 
-# ── Day-specific dispatches (Phase 4 will add these) ─────────────────────
+# ── Day-specific dispatches (Phase 2: KPI Goal Sync + Metrics) ───────────
 case "$DOW" in
-  1) echo "Monday — would run monday-pulse (Phase 4)" ;;
-  3) echo "Wednesday — would run send-preread (Phase 4)" ;;
-  5) echo "Friday — would run push-kpi-goals (Phase 4)" ;;
+  1) # Monday
+    .venv/bin/python recess_os.py monday-pulse
+    .venv/bin/python recess_os.py update-all-hands-deck --check-cadence
+    ;;
+  3) echo "Wednesday — would run send-preread (Phase 3)" ;;
+  5) # Friday
+    .venv/bin/python recess_os.py push-kpi-goals
+    ;;
 esac
 
 # ══════════════════════════════════════════════════════════════════════════
