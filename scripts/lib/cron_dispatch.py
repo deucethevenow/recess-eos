@@ -7,6 +7,7 @@ configurable reference week for parity calculation.
 Config (in recess_os.yml):
     cron:
       reference_week: 14        # ISO week 14 is first goals week
+      reference_year: 2026      # year of the reference week
       goals_weeks: "even"       # even-offset weeks are goals weeks
 """
 
@@ -15,6 +16,17 @@ from datetime import date
 
 class CronConfigError(Exception):
     """Raised when cron config is missing or incomplete."""
+
+
+def _iso_week_count(d: date) -> int:
+    """Return a monotonically increasing week counter from ISO year/week.
+
+    Uses ISO year * 53 + ISO week as a stable ordinal.
+    This ensures parity is preserved across year boundaries,
+    including 53-week (long) ISO years.
+    """
+    iso_year, iso_week, _ = d.isocalendar()
+    return iso_year * 53 + iso_week
 
 
 def get_cron_mode(today: date, config: dict) -> str:
@@ -32,10 +44,14 @@ def get_cron_mode(today: date, config: dict) -> str:
         raise CronConfigError("cron config missing 'goals_weeks'.")
 
     reference_week = cron_config["reference_week"]
+    reference_year = cron_config.get("reference_year", 2026)
     goals_weeks = cron_config["goals_weeks"]
 
-    current_week = today.isocalendar()[1]
-    offset = current_week - reference_week
+    # Build a reference date from ISO year/week (Monday of that week)
+    ref_date = date.fromisocalendar(reference_year, reference_week, 1)
+
+    # Compute offset using stable week counter (handles year boundaries)
+    offset = _iso_week_count(today) - _iso_week_count(ref_date)
     is_even_offset = (offset % 2) == 0
 
     if goals_weeks == "even":

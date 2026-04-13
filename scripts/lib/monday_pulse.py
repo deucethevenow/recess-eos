@@ -122,6 +122,11 @@ def render_monday_pulse(
                 "text": {"type": "mrkdwn", "text": section_text},
             })
 
+    # If no metric sections were added (all filtered), return empty blocks
+    # to avoid posting a header + footer with no content
+    if len(blocks) <= 1:  # only header, no dept sections
+        return [], results
+
     # Footer with data timestamp
     blocks.append({
         "type": "section",

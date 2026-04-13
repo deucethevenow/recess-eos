@@ -599,4 +599,5 @@ bigquery:
 #   "even" means reference_week itself (offset 0) is goals, +1 is projects, etc.
 cron:
   reference_week: 14
+  reference_year: 2026
   goals_weeks: "even"

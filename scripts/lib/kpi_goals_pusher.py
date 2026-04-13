@@ -11,6 +11,7 @@ Flow:
 5. If changed → push to Asana, log success
 6. If dry-run → log dry_run, never touch Asana
 """
+import re
 from dataclasses import dataclass
 from typing import Optional
 import logging
@@ -154,6 +155,10 @@ def push_kpi_goals(
 
 def _get_last_pushed_value(bq_client, goal_id: str) -> Optional[float]:
     """Query eos_goal_metric_history for the last pushed value for this goal."""
+    # Sanitize goal_id — Asana goal IDs are numeric strings only
+    if not re.match(r'^[a-zA-Z0-9_-]+$', goal_id):
+        logger.warning("Invalid goal_id format: %r, skipping history lookup", goal_id)
+        return None
     try:
         rows = bq_client.query(
             "SELECT pushed_value as last_value "

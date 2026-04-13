@@ -150,17 +150,11 @@ def apply_deck_updates(
             + ". Update the deck template or the placeholder mapping."
         )
 
-    # Apply all replacements
-    for r in replacements:
-        # MCP replaceAllTextInSlides would go here
-        results.append(ConsumerResult(
-            registry_key=r.metric_name,
-            dept_id=r.dept_id,
-            consumer="slides_deck",
-            action="delivered",
-        ))
-
-    return results
+    # MCP integration not yet wired — refuse to pretend we delivered
+    raise NotImplementedError(
+        "apply_deck_updates non-dry-run mode requires MCP integration "
+        "(replaceAllTextInSlides). Use --dry-run until MCP is wired in the CLI layer."
+    )
 
 
 def _get_slide_content(deck_id: str) -> str:

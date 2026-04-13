@@ -14,10 +14,11 @@ from lib.cron_dispatch import CronConfigError, get_cron_mode
 # ── Known weeks ──────────────────────────────────────────────────��────
 
 
-def _config(reference_week=14, goals_weeks="even"):
+def _config(reference_week=14, reference_year=2026, goals_weeks="even"):
     return {
         "cron": {
             "reference_week": reference_week,
+            "reference_year": reference_year,
             "goals_weeks": goals_weeks,
         }
     }
@@ -67,3 +68,21 @@ class TestGetCronMode:
         # And week 15 (offset 1, odd) → goals
         d2 = date(2026, 4, 7)  # ISO week 15
         assert get_cron_mode(d2, _config(goals_weeks="odd")) == "goals"
+
+    def test_year_boundary_preserves_parity(self):
+        """Parity must be continuous across year boundaries (including 53-week years).
+
+        2026 is a 53-week ISO year. Week 52 of 2026 and week 1 of 2027 are
+        consecutive, so their parity must differ by exactly 1.
+        """
+        # Week 52 of 2026: offset from week 14 = 38 (even) → goals
+        d_w52 = date.fromisocalendar(2026, 52, 1)
+        assert get_cron_mode(d_w52, _config()) == "goals"
+
+        # Week 53 of 2026: offset = 39 (odd) → projects
+        d_w53 = date.fromisocalendar(2026, 53, 1)
+        assert get_cron_mode(d_w53, _config()) == "projects"
+
+        # Week 1 of 2027: offset = 40 (even) → goals
+        d_w1_2027 = date.fromisocalendar(2027, 1, 1)
+        assert get_cron_mode(d_w1_2027, _config()) == "goals"

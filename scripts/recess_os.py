@@ -73,15 +73,20 @@ def _consumer_results_to_audit_entries(
     entries = []
     for cr in results:
         payload = payload_lookup.get((cr.registry_key, cr.dept_id))
-        if payload:
-            entries.append(payload_to_audit_entry(
-                run_id=run_id,
-                command=command,
-                payload=payload,
-                consumer=cr.consumer,
-                action=cr.action,
-                error=cr.error_message,
-            ))
+        if not payload:
+            raise AssertionError(
+                f"Orphaned ConsumerResult: registry_key={cr.registry_key!r}, "
+                f"dept_id={cr.dept_id!r}, consumer={cr.consumer!r} — "
+                f"no matching payload found. This is a bug in the consumer."
+            )
+        entries.append(payload_to_audit_entry(
+            run_id=run_id,
+            command=command,
+            payload=payload,
+            consumer=cr.consumer,
+            action=cr.action,
+            error=cr.error_message,
+        ))
     return entries
 
 
@@ -208,6 +213,7 @@ def push_kpi_goals_cmd(ctx, dry_run, allow_stale):
         # Match payloads to goal configs by registry_key
         matched_payloads = []
         matched_goals = []
+        stale_skipped = []  # track stale skips for audit
         for goal in goal_configs:
             rk = goal.get("registry_key")
             if rk is None:
@@ -216,7 +222,8 @@ def push_kpi_goals_cmd(ctx, dry_run, allow_stale):
                 if p.registry_key == rk:
                     # Stale check (C2): skip stale unless --allow-stale
                     if p.availability_state == "stale" and not allow_stale:
-                        continue
+                        stale_skipped.append((goal, p))
+                        break
                     matched_payloads.append(p)
                     matched_goals.append(goal)
                     break
@@ -235,14 +242,25 @@ def push_kpi_goals_cmd(ctx, dry_run, allow_stale):
         )
 
         # Convert PushResult → ConsumerResult
+        # Use matched payload's dept_id (not "goals") so audit lookup matches
         consumer_results = []
-        for pr, goal in zip(results, matched_goals):
+        for pr, goal, payload in zip(results, matched_goals, matched_payloads):
             consumer_results.append(ConsumerResult(
                 registry_key=goal.get("registry_key", ""),
-                dept_id="goals",
+                dept_id=payload.dept_id,
                 consumer="asana_goal",
                 action=pr.action,
                 error_message=pr.reason if pr.action == "error" else None,
+            ))
+
+        # Emit audit records for stale-skipped goals (C2 enforcement)
+        for goal, payload in stale_skipped:
+            consumer_results.append(ConsumerResult(
+                registry_key=goal.get("registry_key", ""),
+                dept_id=payload.dept_id,
+                consumer="asana_goal",
+                action="skipped",
+                error_message="stale_data_skipped",
             ))
 
         return results, consumer_results
@@ -274,6 +292,12 @@ def monday_pulse_cmd(ctx, dry_run):
                     if line.startswith("SLACK_BOT_TOKEN="):
                         slack_token = line.split("=", 1)[1].strip().strip('"')
                         break
+
+        if not slack_token:
+            raise RuntimeError(
+                "SLACK_BOT_TOKEN not found in environment or "
+                "~/Projects/daily-brief-agent/.env. Cannot post Monday Pulse."
+            )
 
         ts = post_monday_pulse(blocks, SLACK_CHANNEL, slack_token, dry_run=False)
         click.echo(f"Posted Monday Pulse to {SLACK_CHANNEL}, ts={ts}")
