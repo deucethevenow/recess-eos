@@ -37,14 +37,17 @@ class ConsumerResult:
 def fetch_latest_snapshot(bq_client) -> tuple[dict, str]:
     """Fetch the single latest BQ snapshot row.
 
-    Query is resilient — no CURRENT_DATE() filter. ORDER BY DESC LIMIT 1
-    handles stale snapshots gracefully.
+    Uses a broad 7-day partition filter to satisfy BQ's require_partition_filter
+    on kpi_daily_snapshot (partitioned by snapshot_date). Within that window,
+    takes the most recent row by snapshot_timestamp. If the snapshot is >25h old,
+    downstream _is_stale() will flag it.
 
     Returns: (snapshot_row_dict, snapshot_timestamp_iso_string)
     Raises: SnapshotUnavailableError if zero rows returned.
     """
     rows = bq_client.query(
         "SELECT * FROM `stitchdata-384118.App_KPI_Dashboard.kpi_daily_snapshot` "
+        "WHERE snapshot_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY) "
         "ORDER BY snapshot_timestamp DESC LIMIT 1"
     )
 
