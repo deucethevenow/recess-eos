@@ -162,7 +162,8 @@ def _get_last_pushed_value(bq_client, goal_id: str) -> Optional[float]:
             "ORDER BY pushed_at DESC LIMIT 1"
         )
         if rows:
-            return safe_float(rows[0].get("last_value"), default=None)
+            raw = rows[0].get("last_value")
+            return safe_float(raw) if raw is not None else None
     except Exception:
         pass  # first run or table doesn't exist yet
     return None

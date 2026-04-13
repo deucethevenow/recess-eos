@@ -117,7 +117,7 @@ def build_metric_payloads(
                 raw_value=raw_value,
                 transform=contract.transform,
                 target=contract.target,
-                baseline=metric_config.get("transform_baseline"),
+                baseline=None,  # reserved for percent_lower_is_better (from registry when needed)
             )
         elif raw_value is not None:
             transformed = raw_value
@@ -183,7 +183,7 @@ def _format_display(value: Optional[float], format_spec: str, null_behavior: str
             return f"${value / 1_000:,.0f}K"
         return f"${value:,.0f}"
     elif format_spec == "percent":
-        if abs(value) < 1:
+        if abs(value) <= 1:
             return f"{value * 100:.1f}%"
         return f"{value:.1f}%"
     elif format_spec in ("multiplier", "pipeline_gap"):
