@@ -82,7 +82,7 @@ meetings:
     day: thursday
     duration_min: 120
     asana_project_id: "1203877946496228"
-    asana_section_id: "1205117190014932"
+    asana_section_id: "1213574997719335"  # Upcoming (verified Apr 2026; old GID 1205117190014932 no longer exists)
     slack_channel: "C05855AJCKF"  # #leadership-team
     sensitive: true
     pre_read_format: "google_doc"
@@ -589,3 +589,14 @@ bigquery:
     l10_meetings: "eos_l10_meetings"
     l10_action_items: "eos_l10_action_items"
     goal_metric_history: "eos_goal_metric_history"
+
+# ──────────────────────────────────────────────────────────────────────
+# CRON — Bi-weekly dispatch parity
+# ──────────────────────────────────────────────────────────────────────
+# reference_week: ISO week number that anchors the alternation pattern.
+#   Week 14 (2026-03-30) was the first goals week after Phase 2 launch.
+# goals_weeks: "even" or "odd" — which offset-parity weeks are goals weeks.
+#   "even" means reference_week itself (offset 0) is goals, +1 is projects, etc.
+cron:
+  reference_week: 14
+  goals_weeks: "even"
