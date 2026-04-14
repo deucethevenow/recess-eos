@@ -91,25 +91,25 @@ meetings:
       - name: "Net Revenue YTD"
         registry_key: "Revenue YTD"
         target: null
-        sensitivity: "leadership"
+        sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
       - name: "Bookings vs Goal"
         registry_key: "Bookings Goal Attainment"
         target: null
-        sensitivity: "leadership"
+        sensitivity: "public"
         status: "needs_build"        # bq_key=None in registry — dashboard computes live
         null_behavior: "show_needs_build"
       - name: "Take Rate %"
         registry_key: "Take Rate %"
         target: null
-        sensitivity: "leadership"
+        sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
       - name: "NRR"
         registry_key: "Demand NRR"
         target: 0.50
-        sensitivity: "leadership"
+        sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
       - name: "Pipeline Coverage"
@@ -193,13 +193,13 @@ meetings:
       - name: "Bookings vs Goal"
         registry_key: "Bookings Goal Attainment"
         target: null
-        sensitivity: "leadership"
+        sensitivity: "public"
         status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
       - name: "Net Revenue vs Goal"
         registry_key: "Net Revenue Quota Attainment"
         target: null
-        sensitivity: "leadership"
+        sensitivity: "public"
         status: "needs_build"        # bq_key=None in registry
         null_behavior: "show_needs_build"
       - name: "NRR"

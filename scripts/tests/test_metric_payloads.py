@@ -67,7 +67,10 @@ class TestBuildMetricPayloads:
             }],
         }
         snapshot = {"pipeline_coverage": 2.1}
-        ts = "2026-04-13T08:00:00Z"
+        # Use current time so stale threshold (25h) doesn't flip this test
+        # from "live" to "stale" as real calendar time advances.
+        from datetime import datetime, timezone
+        ts = datetime.now(timezone.utc).isoformat()
 
         payloads = build_metric_payloads(meeting, snapshot, ts, registry=MOCK_REGISTRY)
         assert len(payloads) == 1
