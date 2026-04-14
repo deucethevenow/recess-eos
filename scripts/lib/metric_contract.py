@@ -132,20 +132,30 @@ def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> Me
         # Pull definitions FROM THE REGISTRY — no defaults. _validate_registry_entry
         # has already confirmed all REQUIRED_REGISTRY_FIELDS are present and
         # format is in VALID_FORMATS.
-        snapshot_column = reg_entry["bq_key"]
+        #
+        # Prefer `snapshot_column` (actual BQ column name) over `bq_key` (internal
+        # dashboard dict key). The dashboard's data_layer remaps some snapshot
+        # columns to different Python keys (e.g., snapshot "demand_nrr" →
+        # COMPANY_METRICS["nrr"]); Recess OS reads BQ directly and needs the
+        # real column. Fall back to bq_key for registry entries that haven't
+        # added snapshot_column yet — means no coordinated cutover required.
+        snapshot_column = reg_entry.get("snapshot_column")
+        if snapshot_column is None:
+            snapshot_column = reg_entry["bq_key"]
         format_spec = reg_entry["format"]
         higher_is_better = reg_entry["higher_is_better"]
 
-        # For automated metrics, bq_key MUST be non-null — a null bq_key
-        # means "this metric is computed live, not snapshot-backed," and
-        # the canonical payload layer cannot consume it. Such metrics must
-        # be marked needs_build until the snapshot column exists.
+        # For automated metrics, the resolved snapshot column MUST be non-null.
+        # A null value means "this metric is computed live, not snapshot-backed,"
+        # and the canonical payload layer cannot consume it. Such metrics must
+        # be marked needs_build until a snapshot column exists.
         if snapshot_column is None:
             raise ContractResolutionError(
                 f"Automated metric '{config['name']}' (registry_key='{registry_key}') "
-                f"has bq_key=None in the registry. The canonical payload layer reads "
-                f"kpi_daily_snapshot; a metric without a snapshot column cannot be "
-                f"automated. Mark status: needs_build until the snapshot column exists."
+                f"has snapshot_column=None (and bq_key=None) in the registry. The "
+                f"canonical payload layer reads kpi_daily_snapshot; a metric without "
+                f"a snapshot column cannot be automated. Mark status: needs_build "
+                f"until the snapshot column exists."
             )
 
         # Derive transform from registry's higher_is_better.
