@@ -40,6 +40,7 @@ class SlideReplacement:
     replacement: str      # "2.1x / 2.5x"
     dept_id: str
     metric_name: str
+    registry_key: str     # for audit trail matching
 
 
 class DeckStructureDriftError(Exception):
@@ -102,6 +103,7 @@ def render_deck_updates(
                 replacement=replacement_text,
                 dept_id=dept_id,
                 metric_name=p.metric_name,
+                registry_key=p.registry_key,
             ))
 
             results.append(ConsumerResult(
@@ -129,7 +131,7 @@ def apply_deck_updates(
     if dry_run:
         for r in replacements:
             results.append(ConsumerResult(
-                registry_key=r.metric_name,
+                registry_key=r.registry_key,
                 dept_id=r.dept_id,
                 consumer="slides_deck",
                 action="dry_run",

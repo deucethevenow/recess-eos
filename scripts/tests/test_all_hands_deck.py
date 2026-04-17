@@ -167,6 +167,7 @@ class TestApplyDeckUpdates:
                 replacement="2.1x / 2.5x",
                 dept_id="sales",
                 metric_name="Pipeline Coverage",
+                registry_key="Pipeline Coverage",
             ),
         ]
 
@@ -183,6 +184,7 @@ class TestApplyDeckUpdates:
                 replacement="42",
                 dept_id="sales",
                 metric_name="Nonexistent",
+                registry_key="Nonexistent",
             ),
         ]
 
