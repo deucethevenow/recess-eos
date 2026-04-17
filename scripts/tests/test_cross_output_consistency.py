@@ -63,13 +63,14 @@ def _metric_config(name, registry_key, target=None, sensitivity="public",
 
 
 SNAPSHOT_ROW = {
-    "snapshot_timestamp": "2026-04-14T08:00:00Z",
     "pipeline_coverage": 2.1,
     "cash_position": 1500000.0,
     "demand_nrr": 0.22,
 }
 
-SNAPSHOT_TS = "2026-04-14T08:00:00Z"
+# Use current time so stale threshold (25h) doesn't flip these tests
+from datetime import datetime, timezone
+SNAPSHOT_TS = datetime.now(timezone.utc).isoformat()
 
 
 # ── Same metric across all surfaces ──────────────────────────────────

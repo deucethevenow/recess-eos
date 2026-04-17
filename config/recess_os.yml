@@ -379,7 +379,7 @@ meetings:
     pre_read_format: "asana_card"
     scorecard_metrics:
       - name: "MQL → SQL Conversion"
-        registry_key: "MQL → SQL Conversion"
+        registry_key: "MQL to SQL Conversion"
         target: null
         sensitivity: "public"
         status: "needs_build"        # bq_key=None in registry

@@ -137,10 +137,15 @@ def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> Me
         # dashboard dict key). The dashboard's data_layer remaps some snapshot
         # columns to different Python keys (e.g., snapshot "demand_nrr" →
         # COMPANY_METRICS["nrr"]); Recess OS reads BQ directly and needs the
-        # real column. Fall back to bq_key for registry entries that haven't
-        # added snapshot_column yet — means no coordinated cutover required.
-        snapshot_column = reg_entry.get("snapshot_column")
-        if snapshot_column is None:
+        # real column.
+        #
+        # Semantics:
+        #   - Key present with string value → use it (the real BQ column)
+        #   - Key present with None → metric has no snapshot column (live-computed)
+        #   - Key absent → legacy entry, fall back to bq_key (migration path)
+        if "snapshot_column" in reg_entry:
+            snapshot_column = reg_entry["snapshot_column"]
+        else:
             snapshot_column = reg_entry["bq_key"]
         format_spec = reg_entry["format"]
         higher_is_better = reg_entry["higher_is_better"]
@@ -152,10 +157,9 @@ def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> Me
         if snapshot_column is None:
             raise ContractResolutionError(
                 f"Automated metric '{config['name']}' (registry_key='{registry_key}') "
-                f"has snapshot_column=None (and bq_key=None) in the registry. The "
-                f"canonical payload layer reads kpi_daily_snapshot; a metric without "
-                f"a snapshot column cannot be automated. Mark status: needs_build "
-                f"until the snapshot column exists."
+                f"has no snapshot column in the registry. The canonical payload layer "
+                f"reads kpi_daily_snapshot; a metric without a snapshot column cannot "
+                f"be automated. Mark status: needs_build until a snapshot column exists."
             )
 
         # Derive transform from registry's higher_is_better.

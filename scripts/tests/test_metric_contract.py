@@ -239,7 +239,7 @@ class TestRegistrySchemaValidation:
         The canonical payload layer only reads kpi_daily_snapshot.
         """
         registry = {"Test Metric": {"bq_key": None, "format": "currency", "higher_is_better": True}}
-        with pytest.raises(ContractResolutionError, match="bq_key=None"):
+        with pytest.raises(ContractResolutionError, match="no snapshot column"):
             resolve_metric_contract(self._base_config(), registry=registry)
 
     def test_deprecated_metric_raises(self):
@@ -390,3 +390,66 @@ class TestRegistryCache:
 
         metric_contract.clear_registry_cache()
         assert metric_contract._REGISTRY_CACHE is None
+
+
+class TestSnapshotColumnResolution:
+    """Tests for snapshot_column vs bq_key resolution in resolve_metric_contract."""
+
+    def test_snapshot_column_preferred_over_bq_key(self):
+        """When registry has snapshot_column, it's used instead of bq_key."""
+        registry = {
+            "Demand NRR": {
+                "bq_key": "nrr",                   # internal dashboard key
+                "snapshot_column": "demand_nrr",    # actual BQ column
+                "format": "percent",
+                "higher_is_better": True,
+            },
+        }
+        config = {
+            "name": "Demand NRR", "registry_key": "Demand NRR",
+            "target": 0.50, "sensitivity": "public",
+            "status": "automated", "null_behavior": "show_dash",
+        }
+        contract = resolve_metric_contract(config, registry=registry)
+        assert contract.snapshot_column == "demand_nrr"  # snapshot_column, NOT bq_key
+
+    def test_explicit_none_snapshot_column_does_not_fallback(self):
+        """snapshot_column=None means 'no snapshot column' — should NOT fall back to bq_key.
+
+        This triggers the 'automated metric has no snapshot column' error,
+        because explicitly setting snapshot_column=None means the metric is
+        live-computed and cannot be automated via the snapshot pipeline.
+        """
+        registry = {
+            "Weighted Pipeline": {
+                "bq_key": "weighted_pipeline_internal",  # internal key, NOT a snapshot column
+                "snapshot_column": None,                  # explicit: no snapshot column
+                "format": "currency",
+                "higher_is_better": True,
+            },
+        }
+        config = {
+            "name": "Weighted Pipeline", "registry_key": "Weighted Pipeline",
+            "target": None, "sensitivity": "public",
+            "status": "automated", "null_behavior": "show_dash",
+        }
+        with pytest.raises(ContractResolutionError, match="snapshot column"):
+            resolve_metric_contract(config, registry=registry)
+
+    def test_missing_snapshot_column_falls_back_to_bq_key(self):
+        """Legacy registry without snapshot_column field → fall back to bq_key."""
+        registry = {
+            "Pipeline Coverage": {
+                "bq_key": "pipeline_coverage",
+                # no snapshot_column key at all
+                "format": "multiplier",
+                "higher_is_better": True,
+            },
+        }
+        config = {
+            "name": "Pipeline Coverage", "registry_key": "Pipeline Coverage",
+            "target": 2.5, "sensitivity": "public",
+            "status": "automated", "null_behavior": "show_dash",
+        }
+        contract = resolve_metric_contract(config, registry=registry)
+        assert contract.snapshot_column == "pipeline_coverage"  # bq_key used as fallback
