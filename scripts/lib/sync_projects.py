@@ -80,8 +80,8 @@ def asana_project_to_bq_row(project: dict) -> dict:
         "linked_rock_id": None,  # derived in Phase 2
         "status": _custom_field_value_by_name(custom_fields, "Status") or "active",
         "quarter": _custom_field_value_by_name(custom_fields, "Quarter"),
-        "task_count": 0,  # filled by sync_tasks call (later phase)
-        "completion_percent": 0.0,
+        "task_count": project.get("_task_count", 0),
+        "completion_percent": project.get("_completion_percent", 0.0),
         "last_activity_at": project.get("modified_at"),
         "custom_fields_json": _build_custom_fields_json(custom_fields),
         "synced_at": datetime.now(timezone.utc).isoformat(),
@@ -92,11 +92,40 @@ def sync_projects_to_bq(asana_client, bq_client, portfolio_gid: str) -> int:
     """Sync all projects in the portfolio to App_Recess_OS.eos_projects.
 
     SNAPSHOT table -- uses load_snapshot (WRITE_TRUNCATE). Full overwrite per sync.
+    Pulls task-level completion data for each project to compute completion %.
 
     Returns:
         Number of rows loaded (may be 0 if portfolio is empty -- still TRUNCATEs).
     """
     projects = asana_client.list_projects_in_portfolio(portfolio_gid)
+
+    # Enrich each project with task + milestone completion data
+    for p in projects:
+        gid = p.get("gid")
+        if gid:
+            try:
+                tasks = asana_client.get_project_tasks(gid)
+                total = len(tasks)
+                completed = sum(1 for t in tasks if t.get("completed"))
+                milestones = [t for t in tasks if t.get("is_milestone")]
+                milestones_done = sum(1 for t in milestones if t.get("completed"))
+
+                p["_task_count"] = total
+                # Use milestone completion if milestones exist, else task completion
+                if milestones:
+                    p["_completion_percent"] = round(milestones_done / len(milestones) * 100, 1)
+                elif total > 0:
+                    p["_completion_percent"] = round(completed / total * 100, 1)
+                else:
+                    p["_completion_percent"] = 0.0
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Failed to fetch tasks for project %s: %s", gid, e
+                )
+                p["_task_count"] = 0
+                p["_completion_percent"] = 0.0
+
     rows = [asana_project_to_bq_row(p) for p in projects]
     n = bq_client.load_snapshot("eos_projects", rows)
     return n

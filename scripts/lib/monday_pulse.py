@@ -42,6 +42,7 @@ def render_monday_pulse(
     all_payloads: dict[str, list[MetricPayload]],
     snapshot_timestamp: str,
     meeting_configs: list[dict],
+    project_data: list[dict] = None,
 ) -> tuple[list[dict], list[ConsumerResult]]:
     """Render Monday Pulse as Slack Block Kit blocks.
 
@@ -120,6 +121,35 @@ def render_monday_pulse(
             blocks.append({
                 "type": "section",
                 "text": {"type": "mrkdwn", "text": section_text},
+            })
+
+    # Rock / Project progress section (from eos_projects via sync-to-bq)
+    if project_data:
+        rocks = [p for p in project_data if "Rock" in (p.get("name") or "")]
+        projects = [p for p in project_data if p not in rocks]
+
+        if rocks:
+            rock_lines = []
+            for r in sorted(rocks, key=lambda x: x.get("name", "")):
+                pct = r.get("completion_percent", 0) or 0
+                owner = (r.get("owner_name") or "").split()[0]  # first name only
+                name = r.get("name", "?")
+                rock_lines.append(f"{name}: *{pct:.0f}%* ({owner})")
+            blocks.append({
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "*Q2 Rocks*\n" + "\n".join(rock_lines)},
+            })
+
+        if projects:
+            proj_lines = []
+            for p in sorted(projects, key=lambda x: x.get("name", "")):
+                pct = p.get("completion_percent", 0) or 0
+                owner = (p.get("owner_name") or "").split()[0]
+                name = p.get("name", "?")
+                proj_lines.append(f"{name}: *{pct:.0f}%* ({owner})")
+            blocks.append({
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "*Projects*\n" + "\n".join(proj_lines)},
             })
 
     # If no metric sections were added (all filtered), return empty blocks

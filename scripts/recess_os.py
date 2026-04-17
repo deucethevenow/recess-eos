@@ -277,7 +277,22 @@ def monday_pulse_cmd(ctx, dry_run):
 
     def _consumer(all_payloads, snapshot_ts, config, dry_run):
         meetings = config.get("meetings", [])
-        blocks, results = render_monday_pulse(all_payloads, snapshot_ts, meetings)
+
+        # Fetch project/Rock progress from BQ for the portfolio section
+        bq_client = _get_bq_client(ctx)
+        try:
+            project_data = bq_client.query(
+                "SELECT name, owner_name, status, completion_percent, task_count "
+                "FROM `" + bq_client.full_table_id("eos_projects") + "` "
+                "ORDER BY name"
+            )
+        except Exception as e:
+            click.echo(f"WARNING: Failed to fetch project data: {e}", err=True)
+            project_data = []
+
+        blocks, results = render_monday_pulse(
+            all_payloads, snapshot_ts, meetings, project_data=project_data,
+        )
 
         if dry_run:
             click.echo(json.dumps(blocks, indent=2))

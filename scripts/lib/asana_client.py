@@ -45,7 +45,7 @@ class RecessAsanaClient:
         opts = {
             "opt_fields": "name,assignee.name,assignee.email,completed,completed_at,due_on,is_milestone"
         }
-        return list(self.projects_api.get_tasks_for_project(project_gid, opts))
+        return list(self.tasks_api.get_tasks_for_project(project_gid, opts))
 
     def get_goal(self, goal_gid: str) -> dict[str, Any]:
         """Return a single goal with metric data."""
