@@ -296,119 +296,78 @@
 
   <div class="card">
     <h3>Pipeline Flow — Intake to Execution</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Everything enters through the Asana form. Each request type routes to a specific skill. Features always get full discovery. Bugs split into single (dedicated /bug-triage skill) vs QA session (multi-bug /qa-feedback workflow). Issues and Opportunities use /quick-discovery.</p>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Everything enters through the Asana form into the Scoping Pipeline. Five request types, four paths, each routed to a specific skill by Asana Rules.</p>
     <div class="mermaid">
-graph TB
-  FORM["📋 Asana Form\nAll Request Types"]
+graph LR
+  FORM["📋 Asana Form"]
 
-  subgraph FEATURE_PATH["Feature Path (Full Discovery)"]
-    F_INTAKE["Intake\nAssigned to Deuce"]
-    F_DISC["/discovery\nFull multi-session\ndeep discovery"]
-    F_NOTION["Notion Doc\nScoped + user flows\n+ pain points"]
-    F_PRD["/prd\nFull PRD\nvia recess-prd"]
-    F_APPROVE["Approve\nCOO + stakeholder\nsign-off"]
-    F_READY["Ready\nFully scoped"]
-  end
+  FORM -->|"Feature"| DISC["/discovery\nFull deep discovery\n→ Notion"]
+  FORM -->|"Single Bug"| BUG["/bug-triage\nRepro + severity + size\n→ Notion"]
+  FORM -->|"QA Session"| QA["/qa-feedback\nCapture all bugs\n→ Notion"]
+  FORM -->|"Issue"| ISSUE["/quick-discovery\n5 Whys + root cause"]
+  FORM -->|"Opportunity"| OPP["/quick-discovery\nValue + effort estimate"]
 
-  subgraph BUG_SINGLE["Single Bug Path"]
-    BUG_INTAKE["Bug Intake\nArbind or Leo\nauto-assigned"]
-    BUG_TRIAGE["/bug-triage (NEW)\nRepro + Severity\n+ Size + Assign"]
-    BUG_NOTION["Notion Doc\nBug report\n+ screenshots"]
-    BUG_READY["Ready\nSized + assigned"]
-  end
+  DISC -->|"Scoped"| PIPE["Scoping Pipeline\nDiscovery → PRD → Approve → Ready"]
+  BUG -->|"Sized"| READY["Prioritized\n(bugs skip PRD)"]
+  QA -->|"Planned"| EXEC["/receive-qa-feedback\n→ /execute-plan"]
+  ISSUE -->|"Quick solve"| TODO["To-Do\n(L10 review)"]
+  ISSUE -->|"Product work"| PIPE
+  OPP -->|"Sized"| PIPE
 
-  subgraph QA_PATH["QA Session Path (Multiple Bugs)"]
-    QA_COLLECT["/qa-feedback\nStakeholder walks\nthrough feature"]
-    QA_NOTION["Notion Doc\nStructured items\n+ screenshots"]
-    QA_PROCESS["/receive-qa-feedback\nEngineer researches\ncodebase"]
-    QA_PLAN["Implementation Plan\n(substitutes for PRD)\nBefore/After + AC"]
-    QA_APPROVE["Plan Approval\nReview cycles"]
-    QA_EXEC["/execute-plan\nAsana tasks created\nTDD implementation"]
-  end
-
-  subgraph EOS_PATH["EOS Issues + Opportunities"]
-    EOS_INTAKE["Intake\nAssigned to Deuce"]
-    EOS_DISC["/quick-discovery\nIssue: 5 Whys + pain\nOpportunity: value + effort"]
-    EOS_ROUTE{"Quick solve\nor product work?"}
-    EOS_TODO["To-Do\nCreated in Asana\nfor L10 review"]
-    EOS_PIPELINE["Route to Pipeline\nSized + tagged"]
-  end
-
-  subgraph NEW_PROJECT["New Project Path"]
-    NP_INTAKE["Intake\nAssigned to Deuce"]
-    NP_DISC["/discovery\nFull multi-session\ndeep discovery"]
-  end
-
-  FORM -->|"Feature"| F_INTAKE
-  FORM -->|"Single Bug"| BUG_INTAKE
-  FORM -->|"QA Session\n(multiple bugs)"| QA_COLLECT
-  FORM -->|"Issue or\nOpportunity"| EOS_INTAKE
-  FORM -->|"New Project"| NP_INTAKE
-
-  F_INTAKE --> F_DISC
-  F_DISC --> F_NOTION
-  F_NOTION --> F_PRD
-  F_PRD --> F_APPROVE
-  F_APPROVE --> F_READY
-
-  BUG_INTAKE --> BUG_TRIAGE
-  BUG_TRIAGE --> BUG_NOTION
-  BUG_NOTION --> BUG_READY
-
-  QA_COLLECT --> QA_NOTION
-  QA_NOTION --> QA_PROCESS
-  QA_PROCESS --> QA_PLAN
-  QA_PLAN --> QA_APPROVE
-  QA_APPROVE --> QA_EXEC
-
-  EOS_INTAKE --> EOS_DISC
-  EOS_DISC --> EOS_ROUTE
-  EOS_ROUTE -->|"Quick solve\n(< 2 weeks)"| EOS_TODO
-  EOS_ROUTE -->|"Needs product\nwork"| EOS_PIPELINE
-
-  NP_INTAKE --> NP_DISC
-  NP_DISC --> F_NOTION
-
-  F_READY -->|"→ Backlog"| BACKLOG["Backlog"]
-  BUG_READY -->|"→ Backlog"| BACKLOG
-  EOS_PIPELINE -->|"→ Backlog"| BACKLOG
-  QA_EXEC -->|"→ Active Work"| SPRINT["Active Work\nSprint Board"]
-  BACKLOG -->|"Sprint planning"| SPRINT
+  PIPE --> BACKLOG["Backlog"]
+  READY --> BACKLOG
+  EXEC -->|"Direct"| SPRINT["Active Work"]
+  BACKLOG -->|"Sprint pull"| SPRINT
 
   style FORM fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
-  style FEATURE_PATH fill:#0f1117,stroke:#8b5cf6,color:#e4e4e7
-  style BUG_SINGLE fill:#0f1117,stroke:#ef4444,color:#e4e4e7
-  style QA_PATH fill:#0f1117,stroke:#ec4899,color:#e4e4e7
-  style EOS_PATH fill:#0f1117,stroke:#F27935,color:#e4e4e7
-  style NEW_PROJECT fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style DISC fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
+  style BUG fill:#1a2332,stroke:#ef4444,color:#e4e4e7
+  style QA fill:#1a2332,stroke:#ec4899,color:#e4e4e7
+  style ISSUE fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style OPP fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style PIPE fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style READY fill:#1a2332,stroke:#ef4444,color:#e4e4e7
+  style TODO fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style EXEC fill:#1a2332,stroke:#ec4899,color:#e4e4e7
   style BACKLOG fill:#1a2332,stroke:#22c55e,color:#e4e4e7
   style SPRINT fill:#1a2332,stroke:#F27935,color:#e4e4e7
     </div>
   </div>
 
   <div class="card">
-    <h3>Bug Paths — Single Bug vs QA Session</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Bugs split into two entirely different workflows based on volume. Single bugs use a dedicated triage skill. Multiple bugs from a QA session use the full QA workflow.</p>
-    <div class="grid-3">
+    <h3>Each Path in Detail</h3>
+    <div class="grid-3" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="mini-card" style="border-left: 3px solid var(--purple);">
+        <h4 style="color: var(--purple);">Feature</h4>
+        <p><strong>Skill:</strong> <code>/discovery</code> (full multi-session)<br>
+        <strong>Who runs it:</strong> Submitter (usually Deuce)<br>
+        <strong>Time:</strong> Multiple sessions<br>
+        <strong>Output:</strong> Notion doc in Discovery database<br>
+        <strong>Then:</strong> Moves through Scoping Pipeline (PRD if needed &rarr; Approve &rarr; Backlog)</p>
+      </div>
       <div class="mini-card" style="border-left: 3px solid var(--red);">
         <h4 style="color: var(--red);">Single Bug</h4>
-        <p><strong>Who:</strong> Anyone reports, Arbind/Leo triages<br>
-        <strong>Skill:</strong> <code>/bug-triage</code> (NEW &mdash; dedicated bug skill)<br>
-        <strong>Time:</strong> 2-5 minutes<br>
-        <strong>Output:</strong> Notion bug doc + sized Asana task + assigned to engineer<br>
-        <strong>PRD:</strong> None needed &mdash; bug report IS the spec</p>
+        <p><strong>Skill:</strong> <code>/bug-triage</code><br>
+        <strong>Who runs it:</strong> Arbind or Leo (engineers)<br>
+        <strong>Time:</strong> 5 minutes<br>
+        <strong>Output:</strong> Notion bug doc + sized Asana task<br>
+        <strong>Then:</strong> Skips PRD &rarr; straight to Prioritized &rarr; Backlog</p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--pink);">
         <h4 style="color: var(--pink);">QA Session (Multiple Bugs)</h4>
-        <p><strong>Who:</strong> Deuce/stakeholder collects, Arbind/Leo processes<br>
-        <strong>Skills:</strong> <code>/qa-feedback</code> &rarr; <code>/receive-qa-feedback</code> &rarr; <code>/execute-plan</code><br>
-        <strong>Time:</strong> Collection (15-30 min) + Processing (30-60 min)<br>
-        <strong>Output:</strong> Notion doc with all items &rarr; implementation plan &rarr; Asana tasks with TDD</p>
+        <p><strong>Skills:</strong> <code>/qa-feedback</code> &rarr; <code>/receive-qa-feedback</code> &rarr; <code>/execute-plan</code><br>
+        <strong>Who runs it:</strong> Submitter collects, engineer processes<br>
+        <strong>Time:</strong> Collection 15-30 min, processing 30-60 min<br>
+        <strong>Output:</strong> Notion doc &rarr; implementation plan &rarr; Asana tasks<br>
+        <strong>Then:</strong> Skips entire pipeline &rarr; direct to Active Work</p>
       </div>
-      <div class="mini-card" style="border-left: 3px solid var(--yellow);">
-        <h4 style="color: var(--yellow);">Key Difference</h4>
-        <p>Single bugs get a <strong>quick triage</strong> (repro, severity, size, assign) and land in Backlog.<br><br>
-        QA sessions have their <strong>own pipeline</strong> (collect &rarr; research &rarr; plan &rarr; approve &rarr; execute) that <strong>skips the Scoping Pipeline</strong> entirely and feeds directly into Active Work.</p>
+      <div class="mini-card" style="border-left: 3px solid var(--orange);">
+        <h4 style="color: var(--orange);">Issue / Opportunity</h4>
+        <p><strong>Skill:</strong> <code>/quick-discovery</code><br>
+        <strong>Who runs it:</strong> Submitter<br>
+        <strong>Time:</strong> 5-10 minutes<br>
+        <strong>Output:</strong> Structured Asana task, sized + routed<br>
+        <strong>Then:</strong> Quick-solve &rarr; To-Do for L10, or sized &rarr; Scoping Pipeline</p>
       </div>
     </div>
   </div>
