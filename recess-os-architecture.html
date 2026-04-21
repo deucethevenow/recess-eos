@@ -321,16 +321,14 @@ graph TB
   DONE -->|"Small / dept-level"| DEPT["Dept Boards\nDept solves\nindependently"]
   DONE -->|"Major / cross-functional"| PRD
   DONE -->|"Quick solve"| TODO["To-Do\n(L10 review)"]
+  DONE -->|"Not now"| ICE["Icebox\n(separate project)\nReviewed quarterly"]
 
-  PRD -->|"PRD Accepted"| BACKLOG
+  PRD -->|"PRD Accepted"| PRIO
 
-  subgraph BACKLOG["Company Product Backlog"]
-    ICE["Icebox\n(not now)"]
-    PRIO["Prioritized\n(start next)"]
-    FLIGHT["In-Flight\n(actively working)\nRocks + Projects"]
-  end
+  PRIO["Prioritized\n(start next)"]
+  FLIGHT["In-Flight\n(actively working)\nRocks + Projects"]
 
-  ICE -.->|"Revisit"| PRIO
+  ICE -.->|"Revisit\n(quarterly)"| SUB
   PRIO -->|"Activated"| FLIGHT
 
   subgraph BUGS["Bugs Route to Existing Projects"]
@@ -351,29 +349,32 @@ graph TB
   </div>
 
   <div class="card">
-    <h3>Three Destinations After Discovery</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">After discovery completes, items route based on scope and ownership. Small items go to dept boards. Major items go through PRD to the company backlog. Quick solves become To-Dos.</p>
-    <div class="grid-3">
+    <h3>Four Destinations After Discovery</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">After discovery completes, items leave the Scoping Pipeline immediately. The pipeline is for active flow only &mdash; nothing sits there.</p>
+    <div class="grid-4">
       <div class="mini-card" style="border-left: 3px solid var(--orange);">
         <h4 style="color: var(--orange);">Dept Board</h4>
-        <p><strong>When:</strong> Small, dept-specific, one team can solve<br>
-        <strong>Examples:</strong> Sales report tweak, supply form field, AM process change<br>
-        <strong>Who decides:</strong> Dept lead owns it<br>
-        <strong>Tracking:</strong> On the dept&rsquo;s own board</p>
+        <p><strong>When:</strong> Small, dept-specific<br>
+        <strong>Examples:</strong> Report tweak, form field, process change<br>
+        <strong>Dept lead owns it</strong></p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--green);">
-        <h4 style="color: var(--green);">Company Product Backlog</h4>
-        <p><strong>When:</strong> Major, cross-functional, needs PRD + project<br>
-        <strong>Sections:</strong> Icebox (not now) &rarr; Prioritized (start next) &rarr; In-Flight (active)<br>
-        <strong>In-Flight includes:</strong> Rocks + active feature projects<br>
-        <strong>Who decides:</strong> COO + leadership in L10</p>
+        <h4 style="color: var(--green);">PRD &rarr; Prioritized</h4>
+        <p><strong>When:</strong> Major, cross-functional<br>
+        <strong>Goes through:</strong> PRD &rarr; Accepted &rarr; Prioritized &rarr; In-Flight<br>
+        <strong>COO + leadership decide</strong></p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--aqua);">
-        <h4 style="color: var(--aqua);">To-Do (Quick Solve)</h4>
-        <p><strong>When:</strong> Can be fixed with a process change or quick task (&lt; 2 weeks)<br>
-        <strong>Examples:</strong> Update a doc, fix a permission, change a setting<br>
-        <strong>Created:</strong> As an Asana To-Do, reviewed in L10<br>
-        <strong>No PRD needed</strong></p>
+        <h4 style="color: var(--aqua);">To-Do</h4>
+        <p><strong>When:</strong> Quick solve (&lt; 2 weeks)<br>
+        <strong>Examples:</strong> Fix a permission, update a doc<br>
+        <strong>Reviewed in L10</strong></p>
+      </div>
+      <div class="mini-card" style="border-left: 3px solid var(--text-muted);">
+        <h4 style="color: var(--text-muted);">Icebox</h4>
+        <p><strong>When:</strong> Reviewed, not doing discovery<br>
+        <strong>Separate Asana project</strong> (not in Scoping Pipeline)<br>
+        <strong>Reviewed quarterly</strong></p>
       </div>
     </div>
   </div>
