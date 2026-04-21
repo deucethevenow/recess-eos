@@ -296,41 +296,85 @@
 
   <div class="card">
     <h3>Pipeline Flow — Intake to Execution</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Everything enters through the Asana form into the Scoping Pipeline. Five request types, four paths, each routed to a specific skill by Asana Rules.</p>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Everything enters through the Asana form into the Scoping Pipeline. Five request types route to specific skills. Features flow through the pipeline to become Asana Projects. Bugs (single + QA) route to those projects once they exist.</p>
+
     <div class="mermaid">
-graph LR
-  FORM["📋 Asana Form"]
+graph TB
+  FORM["📋 Asana Form\n5 Request Types"]
 
-  FORM -->|"Feature"| DISC["/discovery\nFull deep discovery\n→ Notion"]
-  FORM -->|"Single Bug"| BUG["/bug-triage\nRepro + severity + size\n→ Notion"]
-  FORM -->|"QA Session"| QA["/qa-feedback\nCapture all bugs\n→ Notion"]
-  FORM -->|"Issue"| ISSUE["/quick-discovery\n5 Whys + root cause"]
-  FORM -->|"Opportunity"| OPP["/quick-discovery\nValue + effort estimate"]
+  subgraph INTAKE["Scoping Pipeline — Intake + Discovery"]
+    DISC["/discovery\nFull deep discovery\n→ Notion"]
+    BUG["/bug-triage\nRepro + severity + size\n→ Notion"]
+    QA["/qa-feedback\nCapture all bugs\n→ Notion"]
+    ISSUE["/quick-discovery\n5 Whys + root cause"]
+    OPP["/quick-discovery\nValue + effort"]
+  end
 
-  DISC -->|"Scoped"| PIPE["Scoping Pipeline\nDiscovery → PRD → Approve → Ready"]
-  BUG -->|"Sized"| READY["Prioritized\n(bugs skip PRD)"]
-  QA -->|"Planned"| EXEC["/receive-qa-feedback\n→ /execute-plan"]
+  FORM -->|"Feature"| DISC
+  FORM -->|"Single Bug"| BUG
+  FORM -->|"QA Session"| QA
+  FORM -->|"Issue"| ISSUE
+  FORM -->|"Opportunity"| OPP
+
+  subgraph PIPELINE["Scoping Pipeline — PRD + Approve"]
+    PRD["PRD Draft\n→ Proposed\n→ Accepted"]
+  end
+
+  DISC -->|"Scoped"| PRD
+  ISSUE -->|"Product work"| PRD
+  OPP -->|"Sized"| PRD
+
+  PROJECT["🗂 Asana Project Created\nWhen PRD is Accepted"]
+  PRD -->|"PRD Accepted"| PROJECT
+
   ISSUE -->|"Quick solve"| TODO["To-Do\n(L10 review)"]
-  ISSUE -->|"Product work"| PIPE
-  OPP -->|"Sized"| PIPE
 
-  PIPE --> BACKLOG["Backlog"]
-  READY --> BACKLOG
-  EXEC -->|"Direct"| SPRINT["Active Work"]
-  BACKLOG -->|"Sprint pull"| SPRINT
+  subgraph BUGS_TO_PROJECT["Bugs Route to Project"]
+    BUG_TO_PROJ["Single bug\n→ added to project"]
+    QA_TO_PROJ["QA bugs\n→ added to project"]
+  end
+
+  BUG -->|"Route to\nrelated project"| BUG_TO_PROJ
+  QA -->|"Route to\nrelated project"| QA_TO_PROJ
+  BUG_TO_PROJ --> PROJECT
+  QA_TO_PROJ --> PROJECT
+
+  PROJECT -->|"Sprint pull"| SPRINT["Active Work\nSprint Board"]
 
   style FORM fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
-  style DISC fill:#1a2332,stroke:#8b5cf6,color:#e4e4e7
-  style BUG fill:#1a2332,stroke:#ef4444,color:#e4e4e7
-  style QA fill:#1a2332,stroke:#ec4899,color:#e4e4e7
-  style ISSUE fill:#1a2332,stroke:#F27935,color:#e4e4e7
-  style OPP fill:#1a2332,stroke:#22c55e,color:#e4e4e7
-  style PIPE fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
-  style READY fill:#1a2332,stroke:#ef4444,color:#e4e4e7
+  style INTAKE fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style PIPELINE fill:#0f1117,stroke:#8b5cf6,color:#e4e4e7
+  style BUGS_TO_PROJECT fill:#0f1117,stroke:#ef4444,color:#e4e4e7
+  style PROJECT fill:#1a2332,stroke:#22c55e,color:#e4e4e7
   style TODO fill:#1a2332,stroke:#F27935,color:#e4e4e7
-  style EXEC fill:#1a2332,stroke:#ec4899,color:#e4e4e7
-  style BACKLOG fill:#1a2332,stroke:#22c55e,color:#e4e4e7
   style SPRINT fill:#1a2332,stroke:#F27935,color:#e4e4e7
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>The Lifecycle: Feature → Project → Bugs</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Features flow through the Scoping Pipeline to become Asana Projects. Once a project exists, bugs and QA feedback route to that project — not back through the pipeline.</p>
+    <div class="mermaid">
+sequenceDiagram
+  participant Form as Asana Form
+  participant Pipe as Scoping Pipeline
+  participant Proj as Asana Project
+  participant Work as Active Work
+
+  Note over Form,Pipe: Phase 1: Feature enters pipeline
+  Form->>Pipe: Feature submitted
+  Pipe->>Pipe: /discovery → Notion
+  Pipe->>Pipe: PRD → Approve
+
+  Note over Pipe,Proj: Phase 2: Project created
+  Pipe->>Proj: PRD Accepted → Create Project
+
+  Note over Form,Proj: Phase 3: Bugs route to project
+  Form->>Proj: Single Bug → /bug-triage → add to project
+  Form->>Proj: QA Session → /qa-feedback → add to project
+
+  Note over Proj,Work: Phase 4: Sprint execution
+  Proj->>Work: Tasks pulled into Active Work
     </div>
   </div>
 
@@ -343,7 +387,7 @@ graph LR
         <strong>Who runs it:</strong> Submitter (usually Deuce)<br>
         <strong>Time:</strong> Multiple sessions<br>
         <strong>Output:</strong> Notion doc in Discovery database<br>
-        <strong>Then:</strong> Moves through Scoping Pipeline (PRD if needed &rarr; Approve &rarr; Backlog)</p>
+        <strong>Then:</strong> PRD &rarr; Approve &rarr; <strong>Asana Project created</strong> &rarr; bugs route here</p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--red);">
         <h4 style="color: var(--red);">Single Bug</h4>
@@ -351,14 +395,14 @@ graph LR
         <strong>Who runs it:</strong> Arbind or Leo (engineers)<br>
         <strong>Time:</strong> 5 minutes<br>
         <strong>Output:</strong> Notion bug doc + sized Asana task<br>
-        <strong>Then:</strong> Skips PRD &rarr; straight to Prioritized &rarr; Backlog</p>
+        <strong>Then:</strong> Manually routed to the related Asana Project (if one exists)</p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--pink);">
         <h4 style="color: var(--pink);">QA Session (Multiple Bugs)</h4>
         <p><strong>Skills:</strong> <code>/qa-feedback</code> &rarr; <code>/receive-qa-feedback</code> &rarr; <code>/execute-plan</code><br>
         <strong>Who runs it:</strong> Submitter collects, engineer processes<br>
         <strong>Time:</strong> Collection 15-30 min, processing 30-60 min<br>
-        <strong>Output:</strong> Notion doc &rarr; implementation plan &rarr; Asana tasks<br>
+        <strong>Output:</strong> Notion doc &rarr; implementation plan &rarr; tasks added to related Asana Project<br>
         <strong>Then:</strong> Skips entire pipeline &rarr; direct to Active Work</p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--orange);">
