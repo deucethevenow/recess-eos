@@ -296,85 +296,85 @@
 
   <div class="card">
     <h3>Pipeline Flow — Intake to Execution</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Everything enters through the Asana form into the Scoping Pipeline. Five request types route to specific skills. Features flow through the pipeline to become Asana Projects. Bugs (single + QA) route to those projects once they exist.</p>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Everything enters through the Asana form. Discovery runs in the Scoping Pipeline. After discovery, items route to one of three destinations: dept boards (small/dept-level), company product backlog (major work), or To-Do (quick solve). Bugs route to existing projects.</p>
 
     <div class="mermaid">
 graph TB
   FORM["📋 Asana Form\n5 Request Types"]
 
-  subgraph INTAKE["Scoping Pipeline — Intake + Discovery"]
-    DISC["/discovery\nFull deep discovery\n→ Notion"]
-    BUG["/bug-triage\nRepro + severity + size\n→ Notion"]
-    QA["/qa-feedback\nCapture all bugs\n→ Notion"]
-    ISSUE["/quick-discovery\n5 Whys + root cause"]
-    OPP["/quick-discovery\nValue + effort"]
+  subgraph SCOPING["Scoping Pipeline"]
+    SUB["Submissions"]
+    DISC_S["In Discovery"]
+    DONE["Completed\nDiscovery"]
+    PRD["Needs PRD\n→ Draft → Proposed\n→ Accepted"]
   end
 
-  FORM -->|"Feature"| DISC
-  FORM -->|"Single Bug"| BUG
-  FORM -->|"QA Session"| QA
-  FORM -->|"Issue"| ISSUE
-  FORM -->|"Opportunity"| OPP
+  FORM -->|"Feature"| SUB
+  FORM -->|"Issue"| SUB
+  FORM -->|"Opportunity"| SUB
+  FORM -->|"Single Bug"| SUB
+  FORM -->|"QA Session"| SUB
 
-  subgraph PIPELINE["Scoping Pipeline — PRD + Approve"]
-    PRD["PRD Draft\n→ Proposed\n→ Accepted"]
+  SUB -->|"/discovery or\n/quick-discovery or\n/bug-triage"| DISC_S
+  DISC_S --> DONE
+
+  DONE -->|"Small / dept-level"| DEPT["Dept Boards\nDept solves\nindependently"]
+  DONE -->|"Major / cross-functional"| PRD
+  DONE -->|"Quick solve"| TODO["To-Do\n(L10 review)"]
+
+  PRD -->|"PRD Accepted"| BACKLOG
+
+  subgraph BACKLOG["Company Product Backlog"]
+    ICE["Icebox\n(not now)"]
+    PRIO["Prioritized\n(start next)"]
+    FLIGHT["In-Flight\n(actively working)\nRocks + Projects"]
   end
 
-  DISC -->|"Scoped"| PRD
-  ISSUE -->|"Product work"| PRD
-  OPP -->|"Sized"| PRD
+  ICE -.->|"Revisit"| PRIO
+  PRIO -->|"Activated"| FLIGHT
 
-  PROJECT["🗂 Asana Project Created\nWhen PRD is Accepted"]
-  PRD -->|"PRD Accepted"| PROJECT
-
-  ISSUE -->|"Quick solve"| TODO["To-Do\n(L10 review)"]
-
-  subgraph BUGS_TO_PROJECT["Bugs Route to Project"]
-    BUG_TO_PROJ["Single bug\n→ added to project"]
-    QA_TO_PROJ["QA bugs\n→ added to project"]
+  subgraph BUGS["Bugs Route to Existing Projects"]
+    BUG_R["Single Bug\n/bug-triage → Notion\n→ route to project"]
+    QA_R["QA Session\n/qa-feedback → Notion\n→ route to project"]
   end
 
-  BUG -->|"Route to\nrelated project"| BUG_TO_PROJ
-  QA -->|"Route to\nrelated project"| QA_TO_PROJ
-  BUG_TO_PROJ --> PROJECT
-  QA_TO_PROJ --> PROJECT
-
-  PROJECT -->|"Sprint pull"| SPRINT["Active Work\nSprint Board"]
+  BUG_R --> FLIGHT
+  QA_R --> FLIGHT
 
   style FORM fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
-  style INTAKE fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
-  style PIPELINE fill:#0f1117,stroke:#8b5cf6,color:#e4e4e7
-  style BUGS_TO_PROJECT fill:#0f1117,stroke:#ef4444,color:#e4e4e7
-  style PROJECT fill:#1a2332,stroke:#22c55e,color:#e4e4e7
+  style SCOPING fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
+  style BACKLOG fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style BUGS fill:#0f1117,stroke:#ef4444,color:#e4e4e7
+  style DEPT fill:#1a2332,stroke:#F27935,color:#e4e4e7
   style TODO fill:#1a2332,stroke:#F27935,color:#e4e4e7
-  style SPRINT fill:#1a2332,stroke:#F27935,color:#e4e4e7
     </div>
   </div>
 
   <div class="card">
-    <h3>The Lifecycle: Feature → Project → Bugs</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Features flow through the Scoping Pipeline to become Asana Projects. Once a project exists, bugs and QA feedback route to that project — not back through the pipeline.</p>
-    <div class="mermaid">
-sequenceDiagram
-  participant Form as Asana Form
-  participant Pipe as Scoping Pipeline
-  participant Proj as Asana Project
-  participant Work as Active Work
-
-  Note over Form,Pipe: Phase 1: Feature enters pipeline
-  Form->>Pipe: Feature submitted
-  Pipe->>Pipe: /discovery → Notion
-  Pipe->>Pipe: PRD → Approve
-
-  Note over Pipe,Proj: Phase 2: Project created
-  Pipe->>Proj: PRD Accepted → Create Project
-
-  Note over Form,Proj: Phase 3: Bugs route to project
-  Form->>Proj: Single Bug → /bug-triage → add to project
-  Form->>Proj: QA Session → /qa-feedback → add to project
-
-  Note over Proj,Work: Phase 4: Sprint execution
-  Proj->>Work: Tasks pulled into Active Work
+    <h3>Three Destinations After Discovery</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">After discovery completes, items route based on scope and ownership. Small items go to dept boards. Major items go through PRD to the company backlog. Quick solves become To-Dos.</p>
+    <div class="grid-3">
+      <div class="mini-card" style="border-left: 3px solid var(--orange);">
+        <h4 style="color: var(--orange);">Dept Board</h4>
+        <p><strong>When:</strong> Small, dept-specific, one team can solve<br>
+        <strong>Examples:</strong> Sales report tweak, supply form field, AM process change<br>
+        <strong>Who decides:</strong> Dept lead owns it<br>
+        <strong>Tracking:</strong> On the dept&rsquo;s own board</p>
+      </div>
+      <div class="mini-card" style="border-left: 3px solid var(--green);">
+        <h4 style="color: var(--green);">Company Product Backlog</h4>
+        <p><strong>When:</strong> Major, cross-functional, needs PRD + project<br>
+        <strong>Sections:</strong> Icebox (not now) &rarr; Prioritized (start next) &rarr; In-Flight (active)<br>
+        <strong>In-Flight includes:</strong> Rocks + active feature projects<br>
+        <strong>Who decides:</strong> COO + leadership in L10</p>
+      </div>
+      <div class="mini-card" style="border-left: 3px solid var(--aqua);">
+        <h4 style="color: var(--aqua);">To-Do (Quick Solve)</h4>
+        <p><strong>When:</strong> Can be fixed with a process change or quick task (&lt; 2 weeks)<br>
+        <strong>Examples:</strong> Update a doc, fix a permission, change a setting<br>
+        <strong>Created:</strong> As an Asana To-Do, reviewed in L10<br>
+        <strong>No PRD needed</strong></p>
+      </div>
     </div>
   </div>
 
