@@ -321,15 +321,20 @@ graph TB
   DONE -->|"Small / dept-level"| DEPT["Dept Boards\nDept solves\nindependently"]
   DONE -->|"Major / cross-functional"| PRD
   DONE -->|"Quick solve"| TODO["To-Do\n(L10 review)"]
-  DONE -->|"Not now"| ICE["Icebox\n(separate project)\nReviewed quarterly"]
+  PRD -->|"PRD Accepted\n→ Asana Project\ncreated"| ROADMAP
 
-  PRD -->|"PRD Accepted"| PRIO
+  subgraph ROADMAP["Company Roadmap"]
+    ICE_R["Icebox"]
+    PRIO_R["Prioritized\nRoadmap\n(up next)"]
+    FLIGHT["In Flight\n(Rocks + active\nprojects)"]
+    COMPLETE["Complete"]
+  end
 
-  PRIO["Prioritized\n(start next)"]
-  FLIGHT["In-Flight\n(actively working)\nRocks + Projects"]
+  ICE_R -.->|"Revisit"| PRIO_R
+  PRIO_R -->|"Activated"| FLIGHT
+  FLIGHT -->|"Done"| COMPLETE
 
-  ICE -.->|"Revisit\n(quarterly)"| SUB
-  PRIO -->|"Activated"| FLIGHT
+  DONE -->|"Not now\n(skip discovery)"| ICE_R
 
   subgraph BUGS["Bugs Route to Existing Projects"]
     BUG_R["Single Bug\n/bug-triage → Notion\n→ route to project"]
@@ -349,20 +354,20 @@ graph TB
   </div>
 
   <div class="card">
-    <h3>Four Destinations After Discovery</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">After discovery completes, items leave the Scoping Pipeline immediately. The pipeline is for active flow only &mdash; nothing sits there.</p>
+    <h3>After Discovery: Where Things Go</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Items leave the Scoping Pipeline immediately after discovery. The pipeline is for active flow only &mdash; nothing sits there. Major items become Asana Projects on the Company Roadmap.</p>
     <div class="grid-4">
+      <div class="mini-card" style="border-left: 3px solid var(--green);">
+        <h4 style="color: var(--green);">Company Roadmap</h4>
+        <p><strong>When:</strong> Major, cross-functional, needs PRD<br>
+        <strong>PRD Accepted &rarr; Asana Project created &rarr; added to Company Roadmap</strong><br>
+        Sections: Icebox &rarr; Prioritized &rarr; In Flight &rarr; Complete</p>
+      </div>
       <div class="mini-card" style="border-left: 3px solid var(--orange);">
         <h4 style="color: var(--orange);">Dept Board</h4>
-        <p><strong>When:</strong> Small, dept-specific<br>
+        <p><strong>When:</strong> Small, dept-specific, one team can solve<br>
         <strong>Examples:</strong> Report tweak, form field, process change<br>
         <strong>Dept lead owns it</strong></p>
-      </div>
-      <div class="mini-card" style="border-left: 3px solid var(--green);">
-        <h4 style="color: var(--green);">PRD &rarr; Prioritized</h4>
-        <p><strong>When:</strong> Major, cross-functional<br>
-        <strong>Goes through:</strong> PRD &rarr; Accepted &rarr; Prioritized &rarr; In-Flight<br>
-        <strong>COO + leadership decide</strong></p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--aqua);">
         <h4 style="color: var(--aqua);">To-Do</h4>
@@ -371,10 +376,10 @@ graph TB
         <strong>Reviewed in L10</strong></p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--text-muted);">
-        <h4 style="color: var(--text-muted);">Icebox</h4>
-        <p><strong>When:</strong> Reviewed, not doing discovery<br>
-        <strong>Separate Asana project</strong> (not in Scoping Pipeline)<br>
-        <strong>Reviewed quarterly</strong></p>
+        <h4 style="color: var(--text-muted);">Icebox (skip discovery)</h4>
+        <p><strong>When:</strong> Reviewed, not pursuing now<br>
+        <strong>Goes to:</strong> Company Roadmap &rarr; Icebox section<br>
+        <strong>Revisited quarterly</strong></p>
       </div>
     </div>
   </div>
