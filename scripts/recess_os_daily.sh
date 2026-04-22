@@ -37,7 +37,12 @@ CRON_TRIGGER="${CRON_TRIGGER:-local-cron}"
 # ── Day-specific dispatches (Phase 2: KPI Goal Sync + Metrics) ───────────
 case "$DOW" in
   1) # Monday
-    .venv/bin/python recess_os.py monday-pulse
+    # Monday Pulse — from KPI Dashboard (same data source as dashboard).
+    # Falls back to the legacy EOS pulse if the dashboard script exits non-zero.
+    /Users/deucethevenowworkm1/Projects/company-kpi-dashboard/.venv/bin/python \
+      /Users/deucethevenowworkm1/Projects/company-kpi-dashboard/scripts/post_monday_pulse.py \
+      --post \
+      || .venv/bin/python recess_os.py monday-pulse
     .venv/bin/python recess_os.py update-all-hands-deck --check-cadence
     ;;
   3) echo "Wednesday — would run send-preread (Phase 3)" ;;
