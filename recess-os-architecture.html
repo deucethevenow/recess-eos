@@ -318,14 +318,15 @@ graph TB
   SUB -->|"/discovery or\n/quick-discovery or\n/bug-triage"| DISC_S
   DISC_S --> DONE
 
-  DONE -->|"Small / dept-level"| DEPT["Dept Boards\nDept solves\nindependently"]
-  DONE -->|"Major / cross-functional"| PRD
-  DONE -->|"Quick solve"| TODO["To-Do\n(L10 review)"]
-  PRD -->|"PRD Accepted\n→ Asana Project\ncreated"| ROADMAP
+  DONE -->|"Task-level"| TASK["Task Created\nAssigned to owner"]
+  DONE -->|"Major / needs PRD"| PRD
+  DONE -->|"Not now"| TAG["Tagged:\nReviewed — No Discovery\n(filtered from board view)"]
+
+  PRD -->|"PRD Accepted\n→ Asana Project created"| ROADMAP
 
   subgraph ROADMAP["Company Roadmap"]
-    ICE_R["Icebox"]
-    PRIO_R["Prioritized\nRoadmap\n(up next)"]
+    ICE_R["Icebox\n(scoped, not\nprioritized yet)"]
+    PRIO_R["Prioritized\nRoadmap"]
     FLIGHT["In Flight\n(Rocks + active\nprojects)"]
     COMPLETE["Complete"]
   end
@@ -334,52 +335,40 @@ graph TB
   PRIO_R -->|"Activated"| FLIGHT
   FLIGHT -->|"Done"| COMPLETE
 
-  DONE -->|"Not now\n(skip discovery)"| ICE_R
-
-  subgraph BUGS["Bugs Route to Existing Projects"]
-    BUG_R["Single Bug\n/bug-triage → Notion\n→ route to project"]
-    QA_R["QA Session\n/qa-feedback → Notion\n→ route to project"]
-  end
-
-  BUG_R --> FLIGHT
-  QA_R --> FLIGHT
+  BUG -->|"Add to related\nIn-Flight project\n+ remove from pipeline"| FLIGHT
+  QA -->|"Add to related\nIn-Flight project\n+ remove from pipeline"| FLIGHT
 
   style FORM fill:#1a2332,stroke:#14B9D6,color:#e4e4e7
   style SCOPING fill:#0f1117,stroke:#14B9D6,color:#e4e4e7
-  style BACKLOG fill:#0f1117,stroke:#22c55e,color:#e4e4e7
-  style BUGS fill:#0f1117,stroke:#ef4444,color:#e4e4e7
-  style DEPT fill:#1a2332,stroke:#F27935,color:#e4e4e7
-  style TODO fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style ROADMAP fill:#0f1117,stroke:#22c55e,color:#e4e4e7
+  style TASK fill:#1a2332,stroke:#F27935,color:#e4e4e7
+  style TAG fill:#1a2332,stroke:#9ca3af,color:#e4e4e7
     </div>
   </div>
 
   <div class="card">
-    <h3>After Discovery: Where Things Go</h3>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Items leave the Scoping Pipeline immediately after discovery. The pipeline is for active flow only &mdash; nothing sits there. Major items become Asana Projects on the Company Roadmap.</p>
-    <div class="grid-4">
+    <h3>After Discovery: Three Exits</h3>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Items leave the Scoping Pipeline immediately. Nothing sits. Bugs skip the pipeline entirely &mdash; they get added directly to the related In-Flight project and removed from the pipeline.</p>
+    <div class="grid-3">
       <div class="mini-card" style="border-left: 3px solid var(--green);">
         <h4 style="color: var(--green);">Company Roadmap</h4>
         <p><strong>When:</strong> Major, cross-functional, needs PRD<br>
-        <strong>PRD Accepted &rarr; Asana Project created &rarr; added to Company Roadmap</strong><br>
-        Sections: Icebox &rarr; Prioritized &rarr; In Flight &rarr; Complete</p>
+        <strong>Flow:</strong> PRD Accepted &rarr; Asana Project created &rarr; Company Roadmap<br>
+        <strong>Sections:</strong> Icebox (scoped, not prioritized) &rarr; Prioritized &rarr; In Flight &rarr; Complete<br>
+        <strong>Bugs:</strong> Added directly to In-Flight projects, removed from Scoping Pipeline</p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--orange);">
-        <h4 style="color: var(--orange);">Dept Board</h4>
-        <p><strong>When:</strong> Small, dept-specific, one team can solve<br>
-        <strong>Examples:</strong> Report tweak, form field, process change<br>
-        <strong>Dept lead owns it</strong></p>
-      </div>
-      <div class="mini-card" style="border-left: 3px solid var(--aqua);">
-        <h4 style="color: var(--aqua);">To-Do</h4>
-        <p><strong>When:</strong> Quick solve (&lt; 2 weeks)<br>
-        <strong>Examples:</strong> Fix a permission, update a doc<br>
-        <strong>Reviewed in L10</strong></p>
+        <h4 style="color: var(--orange);">Task Created</h4>
+        <p><strong>When:</strong> Small / task-level (dept work, quick solve, process fix)<br>
+        <strong>Asana task assigned to owner</strong> on dept board or project backlog<br>
+        <strong>No PRD needed.</strong> Owner handles it.</p>
       </div>
       <div class="mini-card" style="border-left: 3px solid var(--text-muted);">
-        <h4 style="color: var(--text-muted);">Icebox (skip discovery)</h4>
-        <p><strong>When:</strong> Reviewed, not pursuing now<br>
-        <strong>Goes to:</strong> Company Roadmap &rarr; Icebox section<br>
-        <strong>Revisited quarterly</strong></p>
+        <h4 style="color: var(--text-muted);">Reviewed &mdash; No Discovery</h4>
+        <p><strong>When:</strong> Reviewed, not pursuing, not worth scoping<br>
+        <strong>Tagged</strong> with custom field &ldquo;Reviewed &mdash; No Discovery&rdquo;<br>
+        <strong>Filtered out</strong> of default board view (still searchable)<br>
+        <strong>Not on Company Roadmap</strong> (wasn&rsquo;t scoped)</p>
       </div>
     </div>
   </div>
