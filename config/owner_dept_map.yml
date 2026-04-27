@@ -1,0 +1,55 @@
+# Owner email → department mapping (canonical, shared)
+#
+# Single source of truth for "which dept does this person's work belong to?"
+# Read by:
+#   • scripts/post_monday_pulse.py  (Monday Pulse — KPI Dashboard repo, via filesystem path)
+#   • scripts/lib/all_hands_deck.py (All-Hands Deck Updater — Path 2)
+#   • Any future EOS consumer that needs to bucket rocks/projects/work by dept
+#
+# Maintenance:
+#   - When a new team member is added, append their entry here
+#   - When someone changes role, update the entry (don't add a duplicate)
+#   - Keys must be lowercase emails — _owner_to_dept() lowercases its input
+#   - Unknown owners fall back to "leadership" (visible failure mode, not silent)
+#
+# Dept IDs MUST match SCORECARD_DEPT_NAMES in dashboard/data/metric_registry.py:
+#   leadership, founders, sales, demand_am, supply, bizdev,
+#   marketing, ai_automations, operations, engineering, accounting
+#
+# Migrated from post_monday_pulse.py OWNER_EMAIL_TO_DEPT on 2026-04-27 per
+# Path 2 design Q1 (deck owner→dept mapping). See Asana subtask 1214279596969019.
+
+owner_dept_map:
+  # Sales
+  andy@recess.is: sales
+  danny@recess.is: sales
+  katie@recess.is: sales
+
+  # Account Management
+  claire@recess.is: demand_am   # Claire owns ProServ vendor onboarding (Rock 009)
+
+  # Supply
+  ian@recess.is: supply
+  ashton@recess.is: supply
+
+  # Marketing
+  char@recess.is: marketing
+  charlene@recess.is: marketing  # alias for char@ — accept both
+
+  # Operations
+  deuce@recess.is: operations
+  ines@recess.is: operations
+
+  # Engineering
+  arbind@recess.is: engineering
+
+  # AI Automations
+  leo@recess.is: ai_automations
+
+  # Business Development
+  jack@recess.is: bizdev
+
+# Fallback dept for unmapped owner emails. Unmapped → leadership keeps the
+# work VISIBLE on the all-hands deck (under the Leadership slide) rather than
+# silently dropping it. Surface unmapped owners as a signal to add them here.
+unmapped_default: leadership

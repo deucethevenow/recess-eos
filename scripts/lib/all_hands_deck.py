@@ -116,6 +116,80 @@ def render_deck_updates(
     return replacements, results
 
 
+def render_rock_updates(
+    rock_progress: dict[str, list[dict]],
+    snapshot_timestamp: str,
+) -> tuple[list[SlideReplacement], list[ConsumerResult]]:
+    """Build per-dept Rock summary replacements for the all-hands deck.
+
+    Each dept's rocks render as a multi-line block replacing a single
+    {{rocks_<dept_id>}} placeholder. Format per line:
+        🟢 <name> — X% (<owner_name>)
+
+    Status emoji thresholds (matching Monday Pulse):
+        🟢 >=66%   green  (on track / ahead)
+        🟡 33-65%  yellow (some risk)
+        🔴 <33%    red    (behind)
+
+    Filtering:
+      - Skips depts with no rocks (no placeholder rendered → drift error if it
+        existed in the deck, surfacing template/data mismatch).
+      - Skips rocks where status == "archived".
+      - No sensitivity filter — rocks are inherently leadership-tier visible.
+
+    Args:
+        rock_progress: dict[dept_id -> list of rock dicts]. Each rock dict has
+            keys: name, owner_name, completion_percent, status (optional),
+            asana_project_id (used for audit trail).
+        snapshot_timestamp: ISO 8601 string for audit trail.
+
+    Returns:
+        (replacements, results) — same shape as render_deck_updates.
+        ConsumerResult.consumer is "slides_deck_rocks" to distinguish from
+        metric-side audit entries.
+    """
+    replacements: list[SlideReplacement] = []
+    results: list[ConsumerResult] = []
+
+    for dept_id, rocks in rock_progress.items():
+        active_rocks = [r for r in rocks if r.get("status") != "archived"]
+        if not active_rocks:
+            continue
+
+        lines = []
+        for r in active_rocks:
+            try:
+                pct = float(r.get("completion_percent") or 0)
+            except (TypeError, ValueError):
+                pct = 0.0
+            if pct >= 66:
+                icon = "\U0001F7E2"  # green circle
+            elif pct >= 33:
+                icon = "\U0001F7E1"  # yellow circle
+            else:
+                icon = "\U0001F534"  # red circle
+            name = r.get("name") or "Unnamed"
+            owner = r.get("owner_name") or "Unassigned"
+            lines.append(icon + " " + name + " — " + str(round(pct)) + "% (" + owner + ")")
+
+            results.append(ConsumerResult(
+                registry_key=r.get("asana_project_id") or name,
+                dept_id=dept_id,
+                consumer="slides_deck_rocks",
+                action="delivered",
+            ))
+
+        replacements.append(SlideReplacement(
+            placeholder="{{rocks_" + dept_id + "}}",
+            replacement="\n".join(lines),
+            dept_id=dept_id,
+            metric_name="<rocks summary>",
+            registry_key="rocks_" + dept_id,
+        ))
+
+    return replacements, results
+
+
 def apply_deck_updates(
     replacements: list[SlideReplacement],
     deck_id: str = DECK_ID,
