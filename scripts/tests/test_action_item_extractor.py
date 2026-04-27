@@ -85,11 +85,10 @@ def _mock_parse_response(items: list[dict] | None):
 
 
 class TestExtraction:
-    def test_default_model_is_sonnet_4_6(self):
-        # User chose Sonnet 4.6 over Opus 4.7 for this task: action-item
-        # extraction is bounded structured-output work and Sonnet handles it
-        # at ~40% lower cost. The model is overridable per-instance via the
-        # constructor's `model=` kwarg.
+    def test_default_model_is_opus_4_7(self):
+        # User chose Opus 4.7 default after a 2026-04-27 verification test
+        # showed it catches ~83% more action items than Sonnet 4.6 on real
+        # Recess transcripts. Accuracy > cost at this call volume.
         mock_client = MagicMock()
         mock_client.messages.parse.return_value = _mock_parse_response([])
 
@@ -97,7 +96,7 @@ class TestExtraction:
         extractor.extract("Some real transcript text", meeting_title="Sales L10")
 
         call_kwargs = mock_client.messages.parse.call_args[1]
-        assert call_kwargs["model"] == "claude-sonnet-4-6"
+        assert call_kwargs["model"] == "claude-opus-4-7"
         # output_format is the Pydantic schema, not raw JSON schema
         assert call_kwargs["output_format"] is ActionItemList
         # System prompt mentions the extraction task
@@ -106,15 +105,15 @@ class TestExtraction:
         assert "action item" in system_text.lower()
 
     def test_model_is_overridable_via_constructor(self):
-        # Escape hatch: callers can flip to Opus 4.7 per-instance if a
-        # specific dept's transcripts show extraction issues.
+        # Escape hatch: callers can flip to Sonnet 4.6 per-instance for
+        # high-volume / low-stakes batch work where cost matters more.
         mock_client = MagicMock()
         mock_client.messages.parse.return_value = _mock_parse_response([])
 
-        extractor = ActionItemExtractor(client=mock_client, model="claude-opus-4-7")
+        extractor = ActionItemExtractor(client=mock_client, model="claude-sonnet-4-6")
         extractor.extract("transcript", meeting_title="L10")
 
-        assert mock_client.messages.parse.call_args[1]["model"] == "claude-opus-4-7"
+        assert mock_client.messages.parse.call_args[1]["model"] == "claude-sonnet-4-6"
 
     def test_passes_transcript_and_title_in_user_message(self):
         mock_client = MagicMock()

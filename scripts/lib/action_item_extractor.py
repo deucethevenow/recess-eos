@@ -7,8 +7,16 @@ import anthropic
 from pydantic import BaseModel, Field
 
 
-# Sonnet 4.6: cheaper than Opus 4.7 and equivalent on bounded structured-output work.
-DEFAULT_MODEL = "claude-sonnet-4-6"
+# Opus 4.7: ~83% higher recall than Sonnet on real Recess transcripts (verified
+# 2026-04-27 across Sales/AM/AI-Auto contexts — see
+# context/evidence/2026-04-27-phase4-tasks-1-2-smoke-tests.log). The extra
+# ~$0.05/call buys meaningful additional commitments — particularly subtle
+# budget/operational nuances Sonnet misses. At ~7 dept L10s/week the cost
+# delta is ~$18/year vs the cost of dept leads losing trust in missed action
+# items.
+# Override to claude-sonnet-4-6 via constructor `model=` arg for high-volume
+# / low-stakes batch work.
+DEFAULT_MODEL = "claude-opus-4-7"
 
 # 20 items × ~150 tokens/item ≈ 3K. 8K gives ~2.5x headroom; bump if real
 # meetings ever hit the cap (verifiable via response.usage.output_tokens).
