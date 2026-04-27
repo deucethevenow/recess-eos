@@ -25,3 +25,4 @@ context/
 
 # OS
 .DS_Store
+_dashboard_src/

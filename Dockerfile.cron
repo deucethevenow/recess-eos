@@ -1,0 +1,42 @@
+# Dockerfile.cron — recess-cron container for Cloud Run Jobs.
+#
+# Builds a single image used by all 3 Cloud Run Jobs (monday-jobs, daily-sync-to-bq,
+# friday-push-kpi-goals). Each job overrides --command/--args to run its specific
+# wrapper script.
+#
+# Build context: ~/Projects/eos (this directory).
+# Dashboard repo files are staged into _dashboard_src/ at build time — see
+# Task 5 build steps in context/plans/2026-04-23-cloud-run-jobs-monday-pulse-migration.md.
+
+FROM python:3.11-slim
+
+ENV TZ=America/New_York \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/dashboard
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY scripts/requirements-cloud.txt .
+RUN pip install --no-cache-dir -r requirements-cloud.txt
+
+COPY scripts/ ./scripts/
+COPY config/ ./config/
+
+# Layout matches what post_monday_pulse.py self-bootstraps to (PROJECT_ROOT/dashboard).
+# Without this, the script's `sys.path.insert(0, PROJECT_ROOT / "dashboard")` would
+# silently no-op and imports would resolve only via PYTHONPATH — fragile.
+COPY _dashboard_src/dashboard/ ./dashboard/
+COPY _dashboard_src/scripts/post_monday_pulse.py ./scripts/post_monday_pulse.py
+
+RUN chmod +x ./scripts/monday_cron.sh \
+             ./scripts/daily_sync_cron.sh \
+             ./scripts/friday_kpi_goals_cron.sh
+
+CMD ["python", "--version"]
