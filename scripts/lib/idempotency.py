@@ -58,13 +58,30 @@ def build_cell_write_requests(
     row: int,
     col: int,
     text: str,
+    cell_is_empty: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Paired deleteText (ALL) + insertText (insertionIndex=0) for one cell.
+    """Build requests to write `text` into one table cell, idempotent on re-run.
 
-    Slides API insertText accumulates a trailing newline per call. The deleteText
-    pre-clears the cell's text range so writes are idempotent — run 2 yields
-    the same cell content as run 1.
+    Slides API insertText accumulates a trailing newline per call, so we MUST
+    deleteText before inserting whenever the cell already has content. But the
+    Slides API REJECTS deleteText on an empty cell: `textRange: ALL` resolves
+    to a zero-length range, and the API enforces startIndex < endIndex.
+
+    Caller must inspect the cell first and pass `cell_is_empty=True` for cells
+    with no text. First-run writes against pre-padded scorecard slides hit
+    this case for every metric row. Re-runs hit `cell_is_empty=False` and need
+    the deleteText pair.
     """
+    insert_request = {
+        "insertText": {
+            "objectId": table_object_id,
+            "cellLocation": {"rowIndex": row, "columnIndex": col},
+            "text": text,
+            "insertionIndex": 0,
+        }
+    }
+    if cell_is_empty:
+        return [insert_request]
     return [
         {
             "deleteText": {
@@ -73,14 +90,7 @@ def build_cell_write_requests(
                 "textRange": {"type": "ALL"},
             }
         },
-        {
-            "insertText": {
-                "objectId": table_object_id,
-                "cellLocation": {"rowIndex": row, "columnIndex": col},
-                "text": text,
-                "insertionIndex": 0,
-            }
-        },
+        insert_request,
     ]
 
 
@@ -91,8 +101,11 @@ def write_cell(
     row: int,
     col: int,
     text: str,
+    cell_is_empty: bool = False,
 ) -> None:
-    requests = build_cell_write_requests(table_object_id, row, col, text)
+    requests = build_cell_write_requests(
+        table_object_id, row, col, text, cell_is_empty=cell_is_empty
+    )
     slides_service.presentations().batchUpdate(
         presentationId=presentation_id, body={"requests": requests}
     ).execute()

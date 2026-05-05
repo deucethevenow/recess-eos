@@ -48,17 +48,32 @@ def run_preflight(
 
     # 2a. Slide-idx resolution — runs unconditionally UNLESS skip_deck=True.
     #     A dept with rendered rows but no slide_idx is a manual-prep gap
-    #     regardless of whether the row-count fetcher is wired. Session 3 NIT-3:
-    #     skip_deck=True bypasses these checks entirely so callers running
-    #     without a Slides API binding (DECK_ENABLED=0, --skip-deck flag) get
-    #     a clean preflight rather than N confusing "no slide_idx" errors.
+    #     ONLY IF the dept is expected to have a slide (i.e., is in
+    #     DEPT_TITLE_MAP). Some depts (bizdev, operations as of 2026-05-05)
+    #     are intentionally rendered for Slack/leadership-doc but NOT for
+    #     the deck — they're absent from DEPT_TITLE_MAP and the resolver
+    #     correctly omits them. Pre-flight should not fail-loud for those.
+    #
+    #     Session 3 NIT-3: skip_deck=True bypasses these checks entirely
+    #     for callers running without a Slides API binding (DECK_ENABLED=0,
+    #     --skip-deck flag).
+    #
+    #     Session 3.6: introduce DEPT_TITLE_MAP dependency to distinguish
+    #     "missing slide is a manual-prep error" (dept IS in map but slide
+    #     not found) from "dept has no slide by design" (dept absent from
+    #     map).
     if not skip_deck:
+        from .dept_slide_map import DEPT_TITLE_MAP  # noqa: E402
+
         for dept_id, payload in rendered_per_dept.items():
+            if dept_id not in DEPT_TITLE_MAP:
+                continue  # dept intentionally has no slide; not a failure
             if payload.get("slide_idx") is None:
+                expected_title = DEPT_TITLE_MAP[dept_id]
                 failures.append(
-                    f"{dept_id}: no slide_idx resolved (DEPT_SLIDE_MAP missed it; "
-                    "manual prep — create slide titled "
-                    f"'<dept> · Auto-Updated Scorecard')."
+                    f"{dept_id}: no slide_idx resolved (expected slide title "
+                    f"'{expected_title}'). Manual prep — create or rename a "
+                    "slide with that exact title."
                 )
 
     # 2b. Deck table row counts — closes Probe 9-8 / Session 0 PROBE 2.
@@ -67,6 +82,8 @@ def run_preflight(
     #     C4 fix: if any dept has a slide_idx, fetch_table_row_count is required.
     #     Silent skip would defeat the entire Patch 5 contract.
     if not skip_deck:
+        from .dept_slide_map import DEPT_TITLE_MAP  # noqa: E402
+
         if fetch_table_row_count is None:
             if has_resolved_slides:
                 failures.append(
@@ -76,6 +93,8 @@ def run_preflight(
                 )
         else:
             for dept_id, payload in rendered_per_dept.items():
+                if dept_id not in DEPT_TITLE_MAP:
+                    continue  # dept intentionally has no deck slide
                 slide_idx = payload.get("slide_idx")
                 if slide_idx is None:
                     continue  # already reported in 2a

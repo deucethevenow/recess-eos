@@ -15,16 +15,26 @@ Per v3.8 Patch 1 + Patch 3 + Patch 4 (Session 3 wiring):
     into `preflight.run_preflight` — it caches the presentation fetch per
     deck_id so a 7-dept run hits the Slides API exactly once for row counts.
 
-Cell layout per dept slide:
+Cell layout per dept slide (5-column scorecard):
   Row 0 = header (untouched by writer; shaped during manual prep).
   Row 1..N = one row per RenderedRow:
-    Col 0 = display_label
-    Col 1 = display
+    Col 0 = Metric → display_label
+    Col 1 = Target → blank (Phase 2 will populate from RenderedRow.target_raw)
+    Col 2 = Actual → display (combined value+target string from cron's
+                     _render_live_metric — informationally complete)
+    Col 3 = Status → status_icon
+    Col 4 = Trend  → blank (Phase 2 will populate from a trend computation)
+
+The Target and Trend columns are intentionally left blank in Phase 1 — the
+cron's render output combines target+actual into a single display string,
+so the Actual column is informationally complete on its own. Phase 2 will
+split the render path so target_raw, actual_raw, and a trend signal can
+populate cols 1 + 4 separately.
 """
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from .failure_alert import emit_failure_alert
-from .idempotency import write_cell
+from .idempotency import build_cell_write_requests
 
 
 def _filter_visible_rows(rows: Iterable, max_sensitivity: str) -> List:
@@ -39,19 +49,48 @@ def _filter_visible_rows(rows: Iterable, max_sensitivity: str) -> List:
     return [r for r in rows if _sensitivity_allowed(r.sensitivity, max_sensitivity)]
 
 
-def _resolve_table_object_id(
+def _resolve_table_object(
     slide: Dict[str, Any],
-) -> Optional[str]:
-    """Find the first table on the slide and return its object_id.
+) -> Optional[Dict[str, Any]]:
+    """Find the first table element on the slide and return the full element.
 
-    Pre-flight Patch 5 already guarantees there's a table on every dept
-    slide before we get here — but we still return None defensively so
-    the per-slide try/except can emit a clean failure alert.
+    Returns the pageElement dict containing both `objectId` and `table.tableRows[]`,
+    or None if no table is on the slide. The full element is needed so the
+    writer can inspect existing cell text to decide whether to include a
+    `deleteText` request (which fails on empty cells with a Slides API
+    `startIndex < endIndex` error).
     """
     for el in slide.get("pageElements", []) or []:
         if "table" in el:
-            return el.get("objectId")
+            return el
     return None
+
+
+def _resolve_table_object_id(
+    slide: Dict[str, Any],
+) -> Optional[str]:
+    """Backward-compat shim — returns just the objectId of the first table."""
+    el = _resolve_table_object(slide)
+    return el.get("objectId") if el else None
+
+
+def _cell_is_empty(table: Dict[str, Any], row_idx: int, col_idx: int) -> bool:
+    """Return True if the cell at [row_idx, col_idx] has no text content.
+
+    Slides API quirk: `deleteText` with `textRange.type=ALL` rejects empty
+    cells (zero-length range). Pre-padded scorecard slides have empty cells
+    on first run, so the writer must skip `deleteText` for those.
+    """
+    try:
+        cell = table["tableRows"][row_idx]["tableCells"][col_idx]
+    except (KeyError, IndexError, TypeError):
+        return True  # missing cell ⇒ behave as empty (skip deleteText)
+    text_obj = cell.get("text") or {}
+    for te in text_obj.get("textElements", []) or []:
+        tr = te.get("textRun") or {}
+        if tr.get("content"):
+            return False
+    return True
 
 
 def apply_via_slides_api(
@@ -92,8 +131,8 @@ def apply_via_slides_api(
 
         try:
             slide = slides[slide_idx]
-            table_id = _resolve_table_object_id(slide)
-            if table_id is None:
+            table_elem = _resolve_table_object(slide)
+            if table_elem is None:
                 emit_failure_alert(
                     surface="deck",
                     detail="No table object found on slide.",
@@ -101,24 +140,37 @@ def apply_via_slides_api(
                     slide_idx=slide_idx,
                 )
                 continue
+            table_id = table_elem.get("objectId")
+            table = table_elem.get("table") or {}
+
+            # Collect ALL requests for this dept's slide in one batch — sends
+            # a single batchUpdate per dept instead of one per cell. Reduces
+            # API call count from ~3*N to 1 per dept.
+            requests: List[Dict[str, Any]] = []
             for offset, row in enumerate(rows):
                 table_row = 1 + offset  # row 0 reserved for header
-                write_cell(
-                    slides_service,
-                    presentation_id,
-                    table_id,
-                    table_row,
-                    0,
-                    row.display_label,
-                )
-                write_cell(
-                    slides_service,
-                    presentation_id,
-                    table_id,
-                    table_row,
-                    1,
-                    row.display,
-                )
+                # Phase 1 writes 3 of the deck's 5 columns:
+                #   col 0 = Metric  → display_label
+                #   col 2 = Actual  → display (value + target combined)
+                #   col 3 = Status  → status_icon
+                # Cols 1 (Target) and 4 (Trend) are Phase 2.
+                cell_writes = [
+                    (0, row.display_label),
+                    (2, row.display),
+                    (3, row.status_icon),
+                ]
+                for col, text in cell_writes:
+                    is_empty = _cell_is_empty(table, table_row, col)
+                    requests.extend(
+                        build_cell_write_requests(
+                            table_id, table_row, col, text, cell_is_empty=is_empty
+                        )
+                    )
+
+            if requests:
+                slides_service.presentations().batchUpdate(
+                    presentationId=presentation_id, body={"requests": requests}
+                ).execute()
         except Exception as e:  # noqa: BLE001 — per-slide isolation per Patch 4d
             emit_failure_alert(
                 surface="deck",

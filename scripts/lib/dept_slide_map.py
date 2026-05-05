@@ -29,25 +29,38 @@ DEPT_TITLE_MAP: Dict[str, str] = {
     "sales": "Sales · Auto-Updated Scorecard",
     "demand_am": "Account Management · Auto-Updated Scorecard",
     "supply": "Supply · Auto-Updated Scorecard",
+    "bizdev": "BizDev · Auto-Updated Scorecard",
     "marketing": "Marketing · Auto-Updated Scorecard",
+    "ai_automations": "AI Automations · Auto-Updated Scorecard",
+    "operations": "Operations · Auto-Updated Scorecard",
     "engineering": "Engineering · Auto-Updated Scorecard",
     "accounting": "Accounting · Auto-Updated Scorecard",
 }
+# All 10 depts have deck slides as of 2026-05-05. The resolver returns
+# {dept_id: slide_idx} for each dept whose title is found; pre-flight fails
+# loud for any dept in DEPT_TITLE_MAP whose slide is missing (manual prep
+# error). Depts NOT in DEPT_TITLE_MAP would be silently skipped — the
+# preflight optional-slide pattern is preserved for future flexibility (e.g.,
+# adding a dept that's only in Slack but not on the deck).
 
 
-def _extract_slide_title(slide: Dict[str, Any]) -> Optional[str]:
-    """Return the title text of a slide, or None if no title placeholder is set.
+def _extract_slide_titles(slide: Dict[str, Any]) -> List[str]:
+    """Return ALL non-empty text strings on a slide.
 
-    Slides API returns each slide with `pageElements[]`. A title is a
-    `shape` whose `placeholder.type == "TITLE"` (or `CENTERED_TITLE`); its
-    text lives in `shape.text.textElements[*].textRun.content` (newlines
-    stripped, joined).
+    Slides API returns each slide with `pageElements[]`. Title text may live
+    in a TITLE placeholder OR in a regular text-box shape (the all-hands deck
+    uses plain text boxes for the scorecard slide titles, so the placeholder
+    type is empty rather than "TITLE"). We accept any shape with text content.
+
+    The caller (`resolve_dept_slide_map`) decides which strings constitute a
+    title by matching against the expected dept title strings. This is more
+    robust than filtering by placeholder type — the deck owner can use any
+    shape style (text box, title placeholder, group element) as long as the
+    string matches exactly.
     """
+    out: List[str] = []
     for elem in slide.get("pageElements", []) or []:
         shape = elem.get("shape") or {}
-        placeholder = shape.get("placeholder") or {}
-        if placeholder.get("type") not in {"TITLE", "CENTERED_TITLE"}:
-            continue
         text = shape.get("text") or {}
         runs: List[str] = []
         for te in text.get("textElements", []) or []:
@@ -55,10 +68,21 @@ def _extract_slide_title(slide: Dict[str, Any]) -> Optional[str]:
             content = tr.get("content")
             if content:
                 runs.append(content)
-        title = "".join(runs).strip()
-        if title:
-            return title
-    return None
+        joined = "".join(runs).strip()
+        if joined:
+            out.append(joined)
+    return out
+
+
+def _extract_slide_title(slide: Dict[str, Any]) -> Optional[str]:
+    """Return the FIRST non-empty text string on a slide.
+
+    Kept for backward compatibility with tests that fixture a single-shape
+    slide. New code should call `_extract_slide_titles` (plural) and match
+    against the expected title set.
+    """
+    titles = _extract_slide_titles(slide)
+    return titles[0] if titles else None
 
 
 def resolve_dept_slide_map(
@@ -86,10 +110,13 @@ def resolve_dept_slide_map(
         )
 
     slides = pres.get("slides", []) or []
+    # Build title → first-occurrence-idx by walking ALL text on every slide.
+    # A slide can carry multiple text shapes; setdefault preserves the FIRST
+    # match so duplicate titles (e.g., the legacy slides 34/35 with the same
+    # "Sales" title) resolve to the canonical first instance.
     title_to_idx: Dict[str, int] = {}
     for idx, slide in enumerate(slides):
-        title = _extract_slide_title(slide)
-        if title:
+        for title in _extract_slide_titles(slide):
             title_to_idx.setdefault(title, idx)
 
     return {

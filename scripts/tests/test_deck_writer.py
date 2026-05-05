@@ -62,9 +62,16 @@ def _make_slides_service(presentation_dict):
 # ----- apply_via_slides_api: write contract -------------------------------- #
 
 
-def test_apply_writes_display_label_and_display_in_paired_calls():
-    """Each row produces 2 batchUpdate calls (label + value), each with the
-    deleteText+insertText pair from idempotency.write_cell."""
+def test_apply_writes_three_cells_per_row_metric_actual_status():
+    """Session 3.6: deck has 5 columns (Metric/Target/Actual/Status/Trend).
+    Phase 1 writes 3 of them: col 0 (Metric=display_label), col 2
+    (Actual=display), col 3 (Status=status_icon). Cols 1 + 4 left blank
+    pending Phase 2 split of target_raw + trend computation.
+
+    Session 3.6 follow-up: the writer now sends ONE batchUpdate per dept
+    containing all of that dept's cell writes — reducing API call count
+    from ~3*N rows to 1 per dept.
+    """
     rendered = {
         "leadership": {
             "scorecard_rows": [_row("Net Revenue YTD", display="$1.04M")],
@@ -82,22 +89,87 @@ def test_apply_writes_display_label_and_display_in_paired_calls():
         presentation=pres,
     )
 
-    # Two batchUpdate calls: one for label cell, one for value cell.
+    # ONE batchUpdate per dept containing all three cell writes.
     calls = service.presentations.return_value.batchUpdate.call_args_list
-    assert len(calls) == 2
+    assert len(calls) == 1
 
-    # Each batchUpdate request must have deleteText THEN insertText pair.
-    for call in calls:
-        kwargs = call.kwargs or {}
-        body = kwargs.get("body") or call.args[1] if call.args else {}
-        if "body" in kwargs:
-            body = kwargs["body"]
-        requests = body["requests"]
-        assert len(requests) == 2
-        assert "deleteText" in requests[0]
-        assert "insertText" in requests[1]
-        # insertText preserves the raw text — no re-format.
-        assert requests[1]["insertText"]["insertionIndex"] == 0
+    body = calls[0].kwargs.get("body") or calls[0].args[1]
+    requests = body["requests"]
+
+    # Cells in the fake fixture are empty → each write is insertText only
+    # (no deleteText, which would fail the Slides API on empty cells).
+    # 1 row × 3 cells × 1 request each = 3 requests total.
+    assert len(requests) == 3
+    assert all("insertText" in r for r in requests)
+    assert not any("deleteText" in r for r in requests)
+
+    cols_written = sorted(
+        r["insertText"]["cellLocation"]["columnIndex"] for r in requests
+    )
+    assert cols_written == [0, 2, 3]
+    # All inserts at index 0 — preserves the no-re-format invariant.
+    for r in requests:
+        assert r["insertText"]["insertionIndex"] == 0
+
+
+def test_apply_emits_delete_text_for_populated_cells():
+    """When existing cell content is non-empty, the writer pairs deleteText
+    + insertText to maintain idempotency on re-runs (re-runs MUST replace
+    rather than append, otherwise text accumulates per Slides API
+    insertText newline semantics)."""
+    rendered = {
+        "leadership": {
+            "scorecard_rows": [_row("Re-run Metric", display="$2.0M")],
+            "slide_idx": 0,
+        }
+    }
+    # Build a presentation where row 1 cells already have text — i.e.,
+    # the slide has been written to before.
+    populated_table = {
+        "tableRows": [
+            {"tableCells": [{}, {}, {}, {}, {}]},  # row 0 (header — untouched)
+            {
+                "tableCells": [
+                    {"text": {"textElements": [{"textRun": {"content": "OLD"}}]}},
+                    {},
+                    {"text": {"textElements": [{"textRun": {"content": "OLDV"}}]}},
+                    {"text": {"textElements": [{"textRun": {"content": "⚪"}}]}},
+                    {},
+                ]
+            },
+            {"tableCells": [{}, {}, {}, {}, {}]},
+            {"tableCells": [{}, {}, {}, {}, {}]},
+        ],
+        "columns": 5,
+    }
+    pres = {
+        "slides": [
+            {
+                "objectId": "slide_lead",
+                "pageElements": [
+                    {"objectId": "tbl_0", "table": populated_table}
+                ],
+            }
+        ]
+    }
+    service = _make_slides_service(pres)
+
+    apply_via_slides_api(
+        rendered_per_dept=rendered,
+        max_sensitivity="public",
+        slides_service=service,
+        presentation_id="DECK_X",
+        presentation=pres,
+    )
+
+    body = service.presentations.return_value.batchUpdate.call_args.kwargs["body"]
+    requests = body["requests"]
+    # 3 cells, each with deleteText + insertText pair = 6 requests.
+    assert len(requests) == 6
+    delete_count = sum(1 for r in requests if "deleteText" in r)
+    insert_count = sum(1 for r in requests if "insertText" in r)
+    assert delete_count == 3
+    assert insert_count == 3
 
 
 def test_apply_skips_founders_only_rows():
@@ -123,8 +195,14 @@ def test_apply_skips_founders_only_rows():
         presentation=pres,
     )
 
-    # Only the public row writes — 1 row × 2 cells = 2 batchUpdate calls.
-    assert service.presentations.return_value.batchUpdate.call_count == 2
+    # One batchUpdate for the dept (all writes batched).
+    assert service.presentations.return_value.batchUpdate.call_count == 1
+    body = service.presentations.return_value.batchUpdate.call_args.kwargs["body"]
+    requests = body["requests"]
+    # Only public row writes (founders_only filtered): 1 row × 3 cells = 3
+    # insertText requests (cells empty in fixture, so no deleteText).
+    assert len(requests) == 3
+    assert all("insertText" in r for r in requests)
 
     # Verify $200 (founders_only) never appears in any insertText payload.
     for call in service.presentations.return_value.batchUpdate.call_args_list:
