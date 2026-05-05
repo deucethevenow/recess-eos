@@ -19,17 +19,15 @@ Cell layout per dept slide (5-column scorecard):
   Row 0 = header (untouched by writer; shaped during manual prep).
   Row 1..N = one row per RenderedRow:
     Col 0 = Metric → display_label
-    Col 1 = Target → blank (Phase 2 will populate from RenderedRow.target_raw)
-    Col 2 = Actual → display (combined value+target string from cron's
-                     _render_live_metric — informationally complete)
-    Col 3 = Status → status_icon
+    Col 1 = Target → target_display (Session 3.7: now populated)
+    Col 2 = Actual → actual_display (the value WITHOUT trailing target suffix)
+    Col 3 = Status → status_icon (⚪ in Phase 1; on/off-track in Phase 2)
     Col 4 = Trend  → blank (Phase 2 will populate from a trend computation)
 
-The Target and Trend columns are intentionally left blank in Phase 1 — the
-cron's render output combines target+actual into a single display string,
-so the Actual column is informationally complete on its own. Phase 2 will
-split the render path so target_raw, actual_raw, and a trend signal can
-populate cols 1 + 4 separately.
+The Trend column stays blank in Phase 1 — computing pace/gap requires
+quarter-progress math against target_raw + actual_raw which the cron's
+render path doesn't expose today. Status stays neutral (⚪) until the
+target/actual numeric comparison is wired.
 """
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
@@ -145,21 +143,28 @@ def apply_via_slides_api(
 
             # Collect ALL requests for this dept's slide in one batch — sends
             # a single batchUpdate per dept instead of one per cell. Reduces
-            # API call count from ~3*N to 1 per dept.
+            # API call count from ~4*N to 1 per dept.
             requests: List[Dict[str, Any]] = []
             for offset, row in enumerate(rows):
                 table_row = 1 + offset  # row 0 reserved for header
-                # Phase 1 writes 3 of the deck's 5 columns:
+                # Phase 1 writes 4 of the deck's 5 columns:
                 #   col 0 = Metric  → display_label
-                #   col 2 = Actual  → display (value + target combined)
+                #   col 1 = Target  → target_display (None → empty string)
+                #   col 2 = Actual  → actual_display (value WITHOUT target suffix)
                 #   col 3 = Status  → status_icon
-                # Cols 1 (Target) and 4 (Trend) are Phase 2.
+                # Col 4 (Trend) is Phase 2.
                 cell_writes = [
                     (0, row.display_label),
-                    (2, row.display),
+                    (1, row.target_display or ""),
+                    (2, row.actual_display),
                     (3, row.status_icon),
                 ]
                 for col, text in cell_writes:
+                    if not text and _cell_is_empty(table, table_row, col):
+                        # Skip cells that are already empty AND we have nothing
+                        # to write. Writing empty insertText is a no-op and
+                        # wastes an API request slot.
+                        continue
                     is_empty = _cell_is_empty(table, table_row, col)
                     requests.extend(
                         build_cell_write_requests(

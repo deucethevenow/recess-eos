@@ -25,6 +25,8 @@ def _row(name="X"):
         target_raw=None,
         status_icon="⚪",
         display="$1",
+        actual_display="$1",
+        target_display=None,
         is_phase2_placeholder=False,
         is_special_override=False,
     )

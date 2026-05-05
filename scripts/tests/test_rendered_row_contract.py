@@ -28,6 +28,11 @@ from lib.scorecard_renderer import (
 
 
 def test_rendered_row_has_all_contract_fields():
+    """Session 3.7: RenderedRow now includes actual_display + target_display
+    so the deck writer can split the combined display string into the deck's
+    per-column layout (col 1 Target, col 2 Actual). The single `display`
+    field stays in place for Slack/leadership-doc which still consume the
+    combined form."""
     row = RenderedRow(
         metric_name="X",
         display_label="X (Per Dept)",
@@ -36,13 +41,17 @@ def test_rendered_row_has_all_contract_fields():
         actual_raw=1.0,
         target_raw=2.0,
         status_icon="🟢",
-        display="$1 / $2 (50%)",
+        display="$1 / $2 (50%)  ·  target $2",
+        actual_display="$1 / $2 (50%)",
+        target_display="$2",
         is_phase2_placeholder=False,
         is_special_override=False,
     )
     assert row.metric_name == "X"
     assert row.display_label == "X (Per Dept)"
-    assert row.display == "$1 / $2 (50%)"
+    assert row.display == "$1 / $2 (50%)  ·  target $2"
+    assert row.actual_display == "$1 / $2 (50%)"
+    assert row.target_display == "$2"
     assert row.is_phase2_placeholder is False
     assert row.is_special_override is False
 

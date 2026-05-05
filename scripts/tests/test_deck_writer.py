@@ -15,7 +15,7 @@ from lib.deck_writer import apply_via_slides_api, build_table_row_count_fetcher
 from lib.rendered_row import RenderedRow
 
 
-def _row(name, sensitivity="public", display="$1"):
+def _row(name, sensitivity="public", display="$1", target_display=None):
     return RenderedRow(
         metric_name=name,
         display_label=name,
@@ -25,6 +25,8 @@ def _row(name, sensitivity="public", display="$1"):
         target_raw=None,
         status_icon="⚪",
         display=display,
+        actual_display=display,
+        target_display=target_display,
         is_phase2_placeholder=False,
         is_special_override=False,
     )

@@ -31,6 +31,8 @@ def _row(name, sensitivity="public", display="$1"):
         target_raw=None,
         status_icon="⚪",
         display=display,
+        actual_display=display,
+        target_display=None,
         is_phase2_placeholder=False,
         is_special_override=False,
     )

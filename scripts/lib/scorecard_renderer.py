@@ -20,9 +20,10 @@ Target resolution (Patch 7 wiring):
   code instead of the registry).
 """
 import os
+import re
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 DASHBOARD_REPO = Path(
     os.environ.get(
@@ -53,6 +54,29 @@ from .static_scorecard_targets import STATIC_SCORECARD_TARGETS
 PHASE2_PLACEHOLDER = "\U0001F528 (Phase 2 migration)"
 DATA_UNAVAILABLE_PLACEHOLDER = "\U0001F528 (data unavailable)"
 SPECIAL_METRIC_NAMES = {"Demand NRR", "Pipeline Coverage", "Bill Payment Timeliness"}
+
+# Trailing "  ·  target X" pattern that some special-override metrics embed
+# inline in the body returned by _render_live_metric (e.g., Pipeline Coverage,
+# which appends "· target $5.62M (2.5x)" inside its body rather than going
+# through the suffix-append path). Session 3.7 splits these so deck col 1
+# (Target) gets the X portion and deck col 2 (Actual) gets everything before.
+_INLINE_TARGET_RE = re.compile(r"\s*·\s*target\s+(.+?)\s*$", re.IGNORECASE)
+
+
+def _split_inline_target(body: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+    """Split body on inline '  ·  target X' suffix.
+
+    Returns (actual_display, target_display). If body has no inline target,
+    target_display is None and actual_display is the unchanged body.
+    """
+    if not body:
+        return body, None
+    match = _INLINE_TARGET_RE.search(body)
+    if match:
+        target = match.group(1).strip()
+        actual = body[: match.start()].rstrip()
+        return actual, target
+    return body, None
 
 # Live-function dispatch table for engineering metrics. Populated in Phase 2 by
 # Engineering live wiring (out of scope for Session 2). Empty dict here is
@@ -107,6 +131,8 @@ def render_one_row(
         live_fn = ENGINEERING_LIVE_METRICS[canonical_name]
         try:
             actual_raw, display = live_fn(entry, dept_id, company_metrics)
+            # Live functions return a single combined display string today.
+            # actual_display == display, no separate target until Phase 2.
             return RenderedRow(
                 metric_name=canonical_name,
                 display_label=display_label,
@@ -116,6 +142,8 @@ def render_one_row(
                 target_raw=None,
                 status_icon="⚪",
                 display=display,
+                actual_display=display,
+                target_display=None,
                 is_phase2_placeholder=False,
                 is_special_override=False,
             )
@@ -129,6 +157,8 @@ def render_one_row(
                 target_raw=None,
                 status_icon="⚪",
                 display=DATA_UNAVAILABLE_PLACEHOLDER,
+                actual_display=DATA_UNAVAILABLE_PLACEHOLDER,
+                target_display=None,
                 is_phase2_placeholder=False,
                 is_special_override=False,
             )
@@ -144,6 +174,8 @@ def render_one_row(
             target_raw=None,
             status_icon="\U0001F528",
             display=PHASE2_PLACEHOLDER,
+            actual_display=PHASE2_PLACEHOLDER,
+            target_display=None,
             is_phase2_placeholder=True,
             is_special_override=False,
         )
@@ -164,6 +196,8 @@ def render_one_row(
             target_raw=None,
             status_icon="⚪",
             display=f"{body}{target_suffix}",
+            actual_display=body,
+            target_display=target_str,
             is_phase2_placeholder=False,
             is_special_override=False,
         )
@@ -178,6 +212,18 @@ def render_one_row(
     target_suffix = f"  ·  target {target_str}" if target_str else ""
     display = f"{body}{target_suffix}"
 
+    # Session 3.7: split actual vs target for the deck's per-column layout.
+    # Two cases produce a target_display:
+    #   (a) target_str is non-None — the cascade resolved a target via
+    #       registry/static map, and the suffix appends it to display.
+    #   (b) target_str is None but body has an inline "  ·  target X" suffix
+    #       (special-overrides like Pipeline Coverage embed target this way).
+    if target_str is not None:
+        actual_display = body
+        target_display: Optional[str] = target_str
+    else:
+        actual_display, target_display = _split_inline_target(body)
+
     return RenderedRow(
         metric_name=canonical_name,
         display_label=display_label,
@@ -187,6 +233,8 @@ def render_one_row(
         target_raw=None,
         status_icon="⚪",
         display=display,
+        actual_display=actual_display,
+        target_display=target_display,
         is_phase2_placeholder=False,
         is_special_override=(canonical_name in SPECIAL_METRIC_NAMES),
     )

@@ -13,8 +13,18 @@ Field semantics:
   display_label  - per-dept user-facing label resolved via get_scorecard_label
                    (handles per-dept overrides like "Revenue YTD" → "Net Revenue YTD").
   display        - the canonical value-and-target string (e.g., "Q: $49K / $1.38M
-                   (4%)  ·  target $1.5M"). Surface writers concatenate this with
-                   their own bullet/separator formatting.
+                   (4%)  ·  target $1.5M"). Surface writers consume this for
+                   single-column rendering (Slack bullet line, leadership doc
+                   inline).
+  actual_display - Session 3.7: the value WITHOUT the trailing target suffix
+                   (e.g., "Q: $49K / $1.38M (4%)"). The deck writer puts this in
+                   col 2 (Actual) so col 1 (Target) can hold target_display
+                   separately, matching the scorecard's 5-column shape.
+  target_display - Session 3.7: just the formatted target string (e.g., "$1.5M",
+                   "30 days", "95%") or None when the metric has no target.
+                   Goes into deck col 1 (Target). Slack/leadership-doc still
+                   read `display` for the combined form so no behavior change
+                   on those surfaces.
   is_phase2_placeholder - True iff display == "🔨 (Phase 2 migration)". Lets the
                    deck writer style the cell differently (gray, italics, etc.).
 """
@@ -30,5 +40,7 @@ class RenderedRow(NamedTuple):
     target_raw: Optional[float]
     status_icon: str
     display: str
+    actual_display: str
+    target_display: Optional[str]
     is_phase2_placeholder: bool
     is_special_override: bool
