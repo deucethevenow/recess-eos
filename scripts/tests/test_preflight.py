@@ -54,7 +54,7 @@ def test_preflight_fails_when_rocks_unavailable(monkeypatch):
 def test_preflight_fails_when_table_row_underflow(monkeypatch):
     _disable_alert(monkeypatch)
     rendered = {
-        "leadership": {
+        "sales": {
             "scorecard_rows": [_row(f"M{i}") for i in range(12)],
             "slide_idx": 28,
         }
@@ -70,7 +70,7 @@ def test_preflight_fails_when_table_row_underflow(monkeypatch):
             fetch_table_row_count=lambda d, s: 9,
         )
     msg = str(exc.value)
-    assert "leadership" in msg
+    assert "sales" in msg
     assert "9" in msg
     assert "15" in msg
 
@@ -78,7 +78,7 @@ def test_preflight_fails_when_table_row_underflow(monkeypatch):
 def test_preflight_fails_when_slide_has_no_table(monkeypatch):
     _disable_alert(monkeypatch)
     rendered = {
-        "leadership": {"scorecard_rows": [_row()], "slide_idx": 28}
+        "sales": {"scorecard_rows": [_row()], "slide_idx": 28}
     }
     with pytest.raises(PreflightError, match="has NO table"):
         run_preflight(
@@ -150,7 +150,7 @@ def test_preflight_fails_loud_when_fetch_table_row_count_is_none_but_slides_reso
     slide_idx, the row-count fetcher is required."""
     _disable_alert(monkeypatch)
     rendered = {
-        "leadership": {"scorecard_rows": [_row()], "slide_idx": 28}
+        "sales": {"scorecard_rows": [_row()], "slide_idx": 28}
     }
     with pytest.raises(PreflightError, match="fetch_table_row_count is None"):
         run_preflight(
@@ -168,7 +168,7 @@ def test_preflight_allows_skip_when_no_slides_resolved_and_fetcher_is_none(monke
     DEPT_SLIDE_MAP is intentionally empty), it's fine to omit the fetcher."""
     _disable_alert(monkeypatch)
     rendered = {
-        "leadership": {"scorecard_rows": [_row()], "slide_idx": None}
+        "sales": {"scorecard_rows": [_row()], "slide_idx": None}
     }
     # The single failure here is the 'no slide_idx resolved' message,
     # NOT the 'fetch_table_row_count is None' message.
@@ -187,7 +187,7 @@ def test_preflight_allows_skip_when_no_slides_resolved_and_fetcher_is_none(monke
 def test_preflight_passes_when_all_conditions_met(monkeypatch):
     _disable_alert(monkeypatch)
     rendered = {
-        "leadership": {
+        "sales": {
             "scorecard_rows": [_row(f"M{i}") for i in range(5)],
             "slide_idx": 28,
         }

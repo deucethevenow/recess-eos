@@ -20,7 +20,6 @@ Title-based resolver auto-picks whichever has the EXACT target title.
 from typing import Any, Callable, Dict, List, Optional
 
 DEPT_TITLE_MAP: Dict[str, str] = {
-    "leadership": "Leadership · Auto-Updated Scorecard",
     "sales": "Sales · Auto-Updated Scorecard",
     "demand_am": "Account Management · Auto-Updated Scorecard",
     "supply": "Supply · Auto-Updated Scorecard",
@@ -31,12 +30,13 @@ DEPT_TITLE_MAP: Dict[str, str] = {
     "engineering": "Engineering · Auto-Updated Scorecard",
     "accounting": "Accounting · Auto-Updated Scorecard",
 }
-# All 10 depts have deck slides as of 2026-05-05. The resolver returns
-# {dept_id: slide_idx} for each dept whose title is found; pre-flight fails
-# loud for any dept in DEPT_TITLE_MAP whose slide is missing (manual prep
-# error). Depts NOT in DEPT_TITLE_MAP would be silently skipped — the
-# preflight optional-slide pattern is preserved for future flexibility (e.g.,
-# adding a dept that's only in Slack but not on the deck).
+# 9 depts have deck slides (Leadership intentionally excluded per Deuce
+# 2026-05-05). The resolver returns {dept_id: slide_idx} for each dept whose
+# title is found; pre-flight fails loud for any dept in DEPT_TITLE_MAP whose
+# slide is missing (manual prep error). Depts NOT in DEPT_TITLE_MAP — like
+# Leadership — are silently skipped by the deck writer; their data still flows
+# into Slack and leadership-doc surfaces (those use DEPT_METRIC_ORDER, not
+# this map).
 
 
 DEPT_ROCKS_TITLE_MAP: Dict[str, str] = {

@@ -184,16 +184,18 @@ def test_main_skip_deck_false_with_fakes_runs_end_to_end(monkeypatch):
         "get_scorecard_metrics_for_dept",
         lambda dept_id: (
             [{"key": "Y", "scorecard_status": "needs_build"}]
-            if dept_id == "leadership"
+            if dept_id == "sales"
             else []
         ),
     )
 
-    # Fake Slides presentation: leadership slide at index 0 with a 4-row table
+    # Fake Slides presentation: sales slide at index 0 with a 4-row table.
+    # (Session 4.1: Leadership was removed from DEPT_TITLE_MAP — fixture must
+    # use a dept that's still in the map so the deck dispatch fires.)
     fake_pres = {
         "slides": [
             {
-                "objectId": "slide_lead",
+                "objectId": "slide_sales",
                 "pageElements": [
                     {
                         "objectId": "title_shape",
@@ -203,7 +205,7 @@ def test_main_skip_deck_false_with_fakes_runs_end_to_end(monkeypatch):
                                 "textElements": [
                                     {
                                         "textRun": {
-                                            "content": "Leadership · Auto-Updated Scorecard"
+                                            "content": "Sales · Auto-Updated Scorecard"
                                         }
                                     }
                                 ]
@@ -211,7 +213,7 @@ def test_main_skip_deck_false_with_fakes_runs_end_to_end(monkeypatch):
                         },
                     },
                     {
-                        "objectId": "tbl_lead",
+                        "objectId": "tbl_sales",
                         "table": {"tableRows": [{}, {}, {}, {}], "columns": 2},
                     },
                 ],
@@ -262,6 +264,7 @@ def test_main_skip_deck_false_with_fakes_runs_end_to_end(monkeypatch):
 
     rendered = monday_kpi_update.main(
         skip_deck=False,
+        skip_rocks_deck=True,  # rocks slide isn't in fixture; not testing rocks here
         skip_slack=False,
         include_leadership_doc=False,
         fetch_presentation=fetch_presentation,
@@ -272,7 +275,7 @@ def test_main_skip_deck_false_with_fakes_runs_end_to_end(monkeypatch):
         input_fn=lambda _: "y",
     )
 
-    assert "leadership" in rendered
+    assert "sales" in rendered
     # Deck writes happened — at least one batchUpdate to slides
     assert fake_slides_service.presentations.return_value.batchUpdate.called
     # Slack posted

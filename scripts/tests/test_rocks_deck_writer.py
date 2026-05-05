@@ -56,11 +56,12 @@ def _slide_with_title(title):
     }
 
 
-def test_resolve_rocks_finds_all_ten_depts():
+def test_resolve_rocks_finds_all_nine_depts():
+    """Session 4.1: Leadership dropped from both maps (Deuce 2026-05-05 —
+    Leadership has no dedicated deck slides). 9 dept rocks slides expected."""
     pres = {
         "slides": [
             _slide_with_title("Cover slide"),
-            _slide_with_title(DEPT_ROCKS_TITLE_MAP["leadership"]),
             _slide_with_title(DEPT_ROCKS_TITLE_MAP["sales"]),
             _slide_with_title(DEPT_ROCKS_TITLE_MAP["demand_am"]),
             _slide_with_title(DEPT_ROCKS_TITLE_MAP["supply"]),
@@ -76,18 +77,19 @@ def test_resolve_rocks_finds_all_ten_depts():
         "DECK", fetch_presentation=lambda _id: pres
     )
     assert set(result.keys()) == set(DEPT_ROCKS_TITLE_MAP.keys())
+    assert "leadership" not in result
 
 
 def test_resolve_rocks_omits_depts_with_no_slide():
     pres = {
         "slides": [
-            _slide_with_title(DEPT_ROCKS_TITLE_MAP["leadership"]),
+            _slide_with_title(DEPT_ROCKS_TITLE_MAP["sales"]),
         ]
     }
     result = resolve_dept_rocks_slide_map(
         "DECK", fetch_presentation=lambda _id: pres
     )
-    assert result == {"leadership": 0}
+    assert result == {"sales": 0}
 
 
 def test_resolve_rocks_distinct_from_scorecard():
@@ -233,12 +235,12 @@ def test_preflight_fails_when_rocks_slide_missing(monkeypatch):
     from lib import preflight as pf
     monkeypatch.setattr(pf, "emit_failure_alert", lambda **kw: None)
 
-    rendered_per_dept = {"leadership": _scorecard_dept(slide_idx=39)}
+    rendered_per_dept = {"sales": _scorecard_dept(slide_idx=39)}
     rendered_rocks_per_dept = {
-        "leadership": {
+        "sales": {
             "scorecard_rows": [
                 render_rock_or_project_row(
-                    {"name": "R", "completion_percent": 50}, "leadership"
+                    {"name": "R", "completion_percent": 50}, "sales"
                 )
             ],
             "slide_idx": None,  # missing rocks slide

@@ -59,13 +59,14 @@ def test_extract_slide_title_returns_none_when_no_title_placeholder():
     assert _extract_slide_title(_slide_without_title()) is None
 
 
-def test_resolve_dept_slide_map_finds_all_ten_depts():
-    """Session 3.6: DEPT_TITLE_MAP grew from 7 → 10 once bizdev, ai_automations,
-    and operations got their slides added. Test covers all 10."""
+def test_resolve_dept_slide_map_finds_all_nine_depts():
+    """Session 3.6 grew the map from 7 → 10 (added bizdev, ai_automations,
+    operations). Session 4.1 dropped Leadership per Deuce 2026-05-05 — Leadership
+    has no dedicated deck slides; its data still flows into Slack +
+    leadership-doc via DEPT_METRIC_ORDER. Net: 9 depts in DEPT_TITLE_MAP."""
     pres = {
         "slides": [
             _slide_with_title("Cover slide"),
-            _slide_with_title(DEPT_TITLE_MAP["leadership"]),
             _slide_with_title(DEPT_TITLE_MAP["engineering"]),
             _slide_with_title(DEPT_TITLE_MAP["bizdev"]),
             _slide_with_title(DEPT_TITLE_MAP["supply"]),
@@ -79,24 +80,23 @@ def test_resolve_dept_slide_map_finds_all_ten_depts():
     }
     result = resolve_dept_slide_map("DECK", fetch_presentation=lambda _id: pres)
     assert set(result.keys()) == set(DEPT_TITLE_MAP.keys())
-    assert result["leadership"] == 1
-    assert result["engineering"] == 2
-    assert result["accounting"] == 10
+    assert "leadership" not in result
+    assert result["engineering"] == 1
+    assert result["accounting"] == 9
 
 
 def test_resolve_dept_slide_map_handles_missing_dept_slides():
-    """Per Session 0 PROBE 2: only 3 of 7 dept slides exist today. The
-    resolver returns just those that match — pre-flight then surfaces the
-    missing ones."""
+    """Resolver returns only the depts whose titles match — others are
+    silently absent and pre-flight surfaces them."""
     pres = {
         "slides": [
-            _slide_with_title(DEPT_TITLE_MAP["leadership"]),
             _slide_with_title(DEPT_TITLE_MAP["sales"]),
             _slide_with_title(DEPT_TITLE_MAP["demand_am"]),
+            _slide_with_title(DEPT_TITLE_MAP["supply"]),
         ]
     }
     result = resolve_dept_slide_map("DECK", fetch_presentation=lambda _id: pres)
-    assert set(result.keys()) == {"leadership", "sales", "demand_am"}
+    assert set(result.keys()) == {"sales", "demand_am", "supply"}
     assert "marketing" not in result
     assert "engineering" not in result
 
@@ -119,8 +119,8 @@ def test_resolve_dept_slide_map_skips_titleless_slides():
     pres = {
         "slides": [
             _slide_without_title(),
-            _slide_with_title(DEPT_TITLE_MAP["leadership"]),
+            _slide_with_title(DEPT_TITLE_MAP["sales"]),
         ]
     }
     result = resolve_dept_slide_map("DECK", fetch_presentation=lambda _id: pres)
-    assert result == {"leadership": 1}
+    assert result == {"sales": 1}
