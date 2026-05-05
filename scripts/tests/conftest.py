@@ -5,6 +5,13 @@ from pathlib import Path
 # Add scripts/ to path so tests can import recess_os modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# v3.8 Patch 1: Add company-kpi-dashboard repo paths so tests can import the
+# rendering pipeline reused by /monday-kpi-update from the existing cron.
+DASHBOARD_REPO = Path("/Users/deucethevenowworkm1/Projects/company-kpi-dashboard")
+sys.path.insert(0, str(DASHBOARD_REPO))
+sys.path.insert(0, str(DASHBOARD_REPO / "dashboard"))
+sys.path.insert(0, str(DASHBOARD_REPO / "scripts"))
+
 
 import pytest
 
