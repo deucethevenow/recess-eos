@@ -6,6 +6,7 @@ Three contract assertions:
   3. "Overdue Bill Amount" does NOT exist (no matching dashboard card).
   4. "Days to First Offer" target is 30 (matches dashboard).
 """
+import os
 import re
 from pathlib import Path
 
@@ -14,7 +15,12 @@ import pytest
 from lib.static_scorecard_targets import STATIC_SCORECARD_TARGETS
 
 
-DASHBOARD_REPO = Path("/Users/deucethevenowworkm1/Projects/company-kpi-dashboard")
+DASHBOARD_REPO = Path(
+    os.environ.get(
+        "KPI_DASHBOARD_REPO",
+        "/Users/deucethevenowworkm1/Projects/company-kpi-dashboard",
+    )
+)
 
 
 def test_static_scorecard_targets_has_exactly_18_keys():

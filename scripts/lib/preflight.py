@@ -32,6 +32,7 @@ def run_preflight(
     rendered_per_dept: Dict[str, Dict[str, Any]],
     deck_id: str,
     fetch_table_row_count: Optional[Callable[[str, int], Optional[int]]] = None,
+    skip_deck: bool = False,
 ) -> None:
     failures: List[str] = []
     has_resolved_slides = any(
@@ -45,47 +46,52 @@ def run_preflight(
             "Asana → BQ ETL likely broken. Aborting before any write."
         )
 
-    # 2a. Slide-idx resolution — runs unconditionally. A dept with rendered
-    #     rows but no slide_idx is a manual-prep gap regardless of whether the
-    #     row-count fetcher is wired.
-    for dept_id, payload in rendered_per_dept.items():
-        if payload.get("slide_idx") is None:
-            failures.append(
-                f"{dept_id}: no slide_idx resolved (DEPT_SLIDE_MAP missed it; "
-                "manual prep — create slide titled "
-                f"'<dept> · Auto-Updated Scorecard')."
-            )
+    # 2a. Slide-idx resolution — runs unconditionally UNLESS skip_deck=True.
+    #     A dept with rendered rows but no slide_idx is a manual-prep gap
+    #     regardless of whether the row-count fetcher is wired. Session 3 NIT-3:
+    #     skip_deck=True bypasses these checks entirely so callers running
+    #     without a Slides API binding (DECK_ENABLED=0, --skip-deck flag) get
+    #     a clean preflight rather than N confusing "no slide_idx" errors.
+    if not skip_deck:
+        for dept_id, payload in rendered_per_dept.items():
+            if payload.get("slide_idx") is None:
+                failures.append(
+                    f"{dept_id}: no slide_idx resolved (DEPT_SLIDE_MAP missed it; "
+                    "manual prep — create slide titled "
+                    f"'<dept> · Auto-Updated Scorecard')."
+                )
 
     # 2b. Deck table row counts — closes Probe 9-8 / Session 0 PROBE 2.
     #     fetch_table_row_count is injected for testability — the production
     #     binding lives in the deck writer module so this lib stays import-light.
     #     C4 fix: if any dept has a slide_idx, fetch_table_row_count is required.
     #     Silent skip would defeat the entire Patch 5 contract.
-    if fetch_table_row_count is None:
-        if has_resolved_slides:
-            failures.append(
-                "Pre-flight cannot run deck table-row check: fetch_table_row_count "
-                "is None but at least one dept has a resolved slide_idx. Either "
-                "wire the Slides API row-count fetcher or rerun with --skip-deck."
-            )
-    else:
-        for dept_id, payload in rendered_per_dept.items():
-            slide_idx = payload.get("slide_idx")
-            if slide_idx is None:
-                continue  # already reported in 2a
-            row_count = len(payload.get("scorecard_rows", []))
-            required = 1 + row_count + 2  # header + N + 2 buffer
-            actual = fetch_table_row_count(deck_id, slide_idx)
-            if actual is None:
+    if not skip_deck:
+        if fetch_table_row_count is None:
+            if has_resolved_slides:
                 failures.append(
-                    f"{dept_id}: slide {slide_idx} has NO table — manual prep required."
+                    "Pre-flight cannot run deck table-row check: fetch_table_row_count "
+                    "is None but at least one dept has a resolved slide_idx. Either "
+                    "wire the Slides API row-count fetcher or rerun with skip_deck=True."
                 )
-            elif actual < required:
-                failures.append(
-                    f"{dept_id}: slide {slide_idx} has {actual} rows, "
-                    f"needs {required} (1 header + {row_count} metrics + 2 buffer). "
-                    "Pad table manually or rerun with --skip-deck."
-                )
+        else:
+            for dept_id, payload in rendered_per_dept.items():
+                slide_idx = payload.get("slide_idx")
+                if slide_idx is None:
+                    continue  # already reported in 2a
+                row_count = len(payload.get("scorecard_rows", []))
+                required = 1 + row_count + 2  # header + N + 2 buffer
+                actual = fetch_table_row_count(deck_id, slide_idx)
+                if actual is None:
+                    failures.append(
+                        f"{dept_id}: slide {slide_idx} has NO table — manual prep required."
+                    )
+                elif actual < required:
+                    failures.append(
+                        f"{dept_id}: slide {slide_idx} has {actual} rows, "
+                        f"needs {required} (1 header + {row_count} metrics + 2 buffer). "
+                        "Pad table manually or rerun with skip_deck=True."
+                    )
 
     # 3. Either fail loud, or log the audit trail. I3 fix: do NOT print "OK"
     # before raising — operators scanning logs would miss the trace below.

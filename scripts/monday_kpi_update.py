@@ -1,16 +1,26 @@
 """/monday-kpi-update — slash command entry point.
 
-v3.8 Patches 1, 2, 5, 10 wired together:
+v3.8 Patches 1, 2, 5, 10, 11 wired together:
   - Patch 1: pin company_metrics + today ONCE per run; render every metric via
              render_one_row; all surface writers consume RenderedRow.display.
   - Patch 2: mandatory sensitivity confirmation gate before any write.
   - Patch 5: pre-flight runtime checks (rocks available, deck table rows, today logged).
   - Patch 10: title-based DEPT_SLIDE_MAP resolver (drift-resilient).
+  - Patch 11: cron transition — Week 1 verify defaults to test channel.
 
-Surface writers (deck_writer, slack_writer, leadership_doc_writer) are intentionally
-NOT wired in Session 2 — they're scaffolded as TODO call-sites with clear contracts.
-Session 3 (or a follow-up) wires the actual Slides API / Slack / Docs writers, all
-consuming RenderedRow.display so cross-output parity is enforced by the contract.
+Surface writers (deck_writer, slack_writer, leadership_doc_writer) are wired
+in Session 3. Each consumes RenderedRow.display so cross-output parity is
+enforced by the contract.
+
+Phase 11 cron transition (decided 2026-05-04):
+  - Week 1+ verify: DEFAULT_SLACK_CHANNEL targets the test channel
+    (#kpi-dashboard-notifications, C0AN5N36HDM). Run manually each Monday;
+    compare output against the live KPI dashboard for parity.
+  - Cut-over criterion: 2 consecutive clean Mondays where slash-command output
+    matches the dashboard within tolerance.
+  - Post-cutover: change DEFAULT_SLACK_CHANNEL to PROD_SLACK_CHANNEL and pause
+    the existing weekly-digest-monday cron via:
+      gcloud scheduler jobs pause weekly-digest-monday --location us-central1
 
 Defaults per memory rule "easier to downgrade than leak":
   - deck:           max_sensitivity = "public"      (all-hands audience)
@@ -19,12 +29,18 @@ Defaults per memory rule "easier to downgrade than leak":
 """
 from __future__ import annotations
 
+import os
 import sys
 from datetime import date as _date
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Optional
 
-DASHBOARD_REPO = Path("/Users/deucethevenowworkm1/Projects/company-kpi-dashboard")
+DASHBOARD_REPO = Path(
+    os.environ.get(
+        "KPI_DASHBOARD_REPO",
+        "/Users/deucethevenowworkm1/Projects/company-kpi-dashboard",
+    )
+)
 for _p in (DASHBOARD_REPO, DASHBOARD_REPO / "dashboard", DASHBOARD_REPO / "scripts"):
     _ps = str(_p)
     if _ps not in sys.path:
@@ -56,7 +72,11 @@ from lib.scorecard_renderer import render_one_row  # noqa: E402
 
 
 DEFAULT_DECK_ID = "1kjg1ObSO1l15_R82w6hgQNOz8YYk3oUXPllBs-eGhow"
-DEFAULT_SLACK_CHANNEL = "C0AQP3WH7AB"  # #recess-goals-kpis
+
+# Phase 11 channel routing — see module docstring for cut-over protocol.
+PROD_SLACK_CHANNEL = "C0AQP3WH7AB"  # #recess-goals-kpis (post-cutover target)
+VERIFY_SLACK_CHANNEL = "C0AN5N36HDM"  # #kpi-dashboard-notifications (Week 1+ verify)
+DEFAULT_SLACK_CHANNEL = VERIFY_SLACK_CHANNEL  # Cut-over: switch to PROD_SLACK_CHANNEL
 
 
 # --------------------------------------------------------------------------- #
@@ -203,8 +223,15 @@ def main(
     deck_id: str = DEFAULT_DECK_ID,
     slack_channel: str = DEFAULT_SLACK_CHANNEL,
     include_leadership_doc: bool = False,
+    leadership_doc_id: Optional[str] = None,
+    skip_deck: bool = False,
+    skip_slack: bool = False,
     fetch_presentation: Optional[Callable[[str], Dict[str, Any]]] = None,
     fetch_table_row_count: Optional[Callable[[str, int], Optional[int]]] = None,
+    slides_service: Any = None,
+    docs_service: Any = None,
+    slack_post_fn: Optional[Callable[..., str]] = None,
+    firestore_client: Any = None,
     input_fn: Callable[[str], str] = input,
 ) -> Dict[str, Dict[str, Any]]:
     """Run the slash command end-to-end.
@@ -215,7 +242,44 @@ def main(
     hatch (C5 fix from review): the Apr 29 leak post-mortem in
     feedback_decision_sensitivity_gate.md established that any bypass parameter
     becomes a foot-gun.
+
+    Session 3 NIT-3: deck integration is opt-in. With `skip_deck=False` (default),
+    `fetch_presentation`, `fetch_table_row_count`, and `slides_service` are all
+    required — main() raises ValueError early if any is None. With
+    `skip_deck=True`, the deck step is bypassed entirely and the deck-related
+    preflight checks are silenced.
+
+    Surface writer dispatch order:
+        1. Deck (Slides API) — if not skip_deck
+        2. Slack — if not skip_slack
+        3. Leadership doc — if include_leadership_doc
+    Each surface has its own try/except wrapper that emits a failure alert and
+    continues to the next surface. Slack idempotency uses a Firestore marker
+    keyed on run_date. Deck idempotency relies on deleteText+insertText pairing
+    inside lib.idempotency.write_cell.
     """
+    if not skip_deck:
+        missing_deck = [
+            name
+            for name, val in (
+                ("fetch_presentation", fetch_presentation),
+                ("fetch_table_row_count", fetch_table_row_count),
+                ("slides_service", slides_service),
+            )
+            if val is None
+        ]
+        if missing_deck:
+            raise ValueError(
+                "skip_deck=False requires Slides API bindings: "
+                f"missing {missing_deck}. Pass them as keyword args, or set "
+                "skip_deck=True to bypass deck integration entirely."
+            )
+    if include_leadership_doc and (docs_service is None or leadership_doc_id is None):
+        raise ValueError(
+            "include_leadership_doc=True requires both docs_service and "
+            "leadership_doc_id keyword args."
+        )
+
     today = _date.today()
 
     company_metrics = get_company_metrics()
@@ -224,9 +288,11 @@ def main(
     rock_data = get_rock_project_progress() or {"available": False}
     rocks_by_dept = _bucket_rocks_by_dept(rock_data)
 
-    dept_to_slide = resolve_dept_slide_map(
-        deck_id, fetch_presentation=fetch_presentation
-    ) if fetch_presentation else {}
+    dept_to_slide = (
+        resolve_dept_slide_map(deck_id, fetch_presentation=fetch_presentation)
+        if not skip_deck
+        else {}
+    )
 
     rendered_per_dept: Dict[str, Dict[str, Any]] = {}
     for dept_id in DEPT_METRIC_ORDER.keys():
@@ -247,18 +313,68 @@ def main(
         rock_data=rock_data,
         rendered_per_dept=rendered_per_dept,
         deck_id=deck_id,
-        fetch_table_row_count=fetch_table_row_count,
+        fetch_table_row_count=fetch_table_row_count if not skip_deck else None,
+        skip_deck=skip_deck,
     )
 
     confirm_sensitivity_gate(rendered_per_dept, input_fn=input_fn)
 
-    # Surface writers — wired in Session 3+. Each consumes RenderedRow.display.
-    # NotImplementedError fail-loud is intentional so a partial Session 2 deploy
-    # can't accidentally write to production.
-    print(
-        f"Session 2 contract complete: rendered {sum(len(p['scorecard_rows']) for p in rendered_per_dept.values())} "
-        f"rows across {len(rendered_per_dept)} depts; surface writers TBD in Session 3."
-    )
+    # ---- Surface writers (Session 3) -------------------------------------- #
+    # Each surface is independently wrapped: a failure on the deck does not
+    # block Slack, and a Slack failure does not block leadership-doc.
+
+    if not skip_deck:
+        try:
+            from lib.deck_writer import apply_via_slides_api  # noqa: E402
+            apply_via_slides_api(
+                rendered_per_dept=rendered_per_dept,
+                max_sensitivity="public",
+                slides_service=slides_service,
+                presentation_id=deck_id,
+            )
+        except Exception as e:  # noqa: BLE001
+            emit_failure_alert(
+                surface="deck",
+                detail="apply_via_slides_api failed at the top level (not per-slide).",
+                exc=e,
+            )
+
+    if not skip_slack:
+        try:
+            from lib.slack_writer import post_pulse  # noqa: E402
+            post_pulse(
+                rendered_per_dept=rendered_per_dept,
+                rocks_by_dept=rocks_by_dept,
+                channel_id=slack_channel,
+                run_date=today,
+                max_sensitivity="public",
+                post_fn=slack_post_fn,
+                firestore_client=firestore_client,
+            )
+        except Exception as e:  # noqa: BLE001
+            emit_failure_alert(
+                surface="slack",
+                detail="post_pulse failed.",
+                exc=e,
+            )
+
+    if include_leadership_doc:
+        try:
+            from lib.leadership_doc_writer import apply_to_leadership_doc  # noqa: E402
+            apply_to_leadership_doc(
+                rendered_per_dept=rendered_per_dept,
+                rocks_by_dept=rocks_by_dept,
+                doc_id=leadership_doc_id,
+                docs_service=docs_service,
+                max_sensitivity="leadership",
+            )
+        except Exception as e:  # noqa: BLE001
+            emit_failure_alert(
+                surface="leadership_doc",
+                detail="apply_to_leadership_doc failed.",
+                exc=e,
+            )
+
     return rendered_per_dept
 
 

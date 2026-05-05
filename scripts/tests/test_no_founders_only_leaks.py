@@ -14,6 +14,12 @@ from monday_kpi_update import (
     confirm_sensitivity_gate,
 )
 
+# Session 3 IMPORTANT-1 fix: pin the cross-repo `_sensitivity_allowed` semantics
+# so a future dashboard refactor cannot silently change the rank order. All 3
+# Session 3 writers depend on `founders_only` being filtered at every
+# `max_sensitivity` level — this pin is the canary if that ever drifts.
+from post_monday_pulse import _sensitivity_allowed  # type: ignore
+
 
 def _row(name, sensitivity, display_label=None):
     return RenderedRow(
@@ -28,6 +34,26 @@ def _row(name, sensitivity, display_label=None):
         is_phase2_placeholder=False,
         is_special_override=False,
     )
+
+
+def test_sensitivity_allowed_filters_founders_only_at_every_max_level():
+    """Pin the rank order: founders_only > leadership > public. Any drift
+    (rank inversion, alias rename, return-type change) must fail this test
+    BEFORE Session 3 writers ship a regression to the surfaces."""
+    # founders_only is filtered at every threshold.
+    assert _sensitivity_allowed("founders_only", "public") is False
+    assert _sensitivity_allowed("founders_only", "leadership") is False
+    assert _sensitivity_allowed("founders_only", "founders_only") is True
+
+    # leadership is filtered at public, allowed at leadership and above.
+    assert _sensitivity_allowed("leadership", "public") is False
+    assert _sensitivity_allowed("leadership", "leadership") is True
+    assert _sensitivity_allowed("leadership", "founders_only") is True
+
+    # public is allowed everywhere.
+    assert _sensitivity_allowed("public", "public") is True
+    assert _sensitivity_allowed("public", "leadership") is True
+    assert _sensitivity_allowed("public", "founders_only") is True
 
 
 def test_founders_only_row_filtered_from_public_slack_section():

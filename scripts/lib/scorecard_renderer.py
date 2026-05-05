@@ -19,11 +19,17 @@ Target resolution (Patch 7 wiring):
   owned 18-key map for metrics whose targets are hardcoded in dashboard render
   code instead of the registry).
 """
+import os
 import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
-DASHBOARD_REPO = Path("/Users/deucethevenowworkm1/Projects/company-kpi-dashboard")
+DASHBOARD_REPO = Path(
+    os.environ.get(
+        "KPI_DASHBOARD_REPO",
+        "/Users/deucethevenowworkm1/Projects/company-kpi-dashboard",
+    )
+)
 for _p in (DASHBOARD_REPO, DASHBOARD_REPO / "dashboard", DASHBOARD_REPO / "scripts"):
     _ps = str(_p)
     if _ps not in sys.path:

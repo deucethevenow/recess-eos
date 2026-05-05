@@ -7,12 +7,18 @@ return None and render as '—' in the dashboard — no error, no log.
 
 This contract test fails LOUD at CI time so SQL drift can't ship silently.
 """
+import os
 import re
 from pathlib import Path
 
 import pytest
 
-DASHBOARD_REPO = Path("/Users/deucethevenowworkm1/Projects/company-kpi-dashboard")
+DASHBOARD_REPO = Path(
+    os.environ.get(
+        "KPI_DASHBOARD_REPO",
+        "/Users/deucethevenowworkm1/Projects/company-kpi-dashboard",
+    )
+)
 VIEW5_SQL = DASHBOARD_REPO / "dashboard" / "data" / "engineering_queries" / "view5-discovery-funnel.sql"
 
 
