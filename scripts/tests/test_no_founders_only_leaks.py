@@ -33,6 +33,7 @@ def _row(name, sensitivity, display_label=None):
         display="$1",
         actual_display="$1",
         target_display=None,
+        trend_display=None,
         is_phase2_placeholder=False,
         is_special_override=False,
     )

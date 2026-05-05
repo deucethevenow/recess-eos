@@ -44,6 +44,7 @@ def test_rendered_row_has_all_contract_fields():
         display="$1 / $2 (50%)  ·  target $2",
         actual_display="$1 / $2 (50%)",
         target_display="$2",
+        trend_display=None,
         is_phase2_placeholder=False,
         is_special_override=False,
     )
@@ -52,6 +53,7 @@ def test_rendered_row_has_all_contract_fields():
     assert row.display == "$1 / $2 (50%)  ·  target $2"
     assert row.actual_display == "$1 / $2 (50%)"
     assert row.target_display == "$2"
+    assert row.trend_display is None
     assert row.is_phase2_placeholder is False
     assert row.is_special_override is False
 

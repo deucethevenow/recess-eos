@@ -25,6 +25,10 @@ Field semantics:
                    Goes into deck col 1 (Target). Slack/leadership-doc still
                    read `display` for the combined form so no behavior change
                    on those surfaces.
+  trend_display  - Session 4: optional trend signal for deck col 4 (Trend).
+                   Today only rocks/projects populate this with "Owner: {name}".
+                   Phase 2 will add pace/gap math for scorecard metrics.
+                   None when the metric has no trend signal.
   is_phase2_placeholder - True iff display == "🔨 (Phase 2 migration)". Lets the
                    deck writer style the cell differently (gray, italics, etc.).
 """
@@ -42,5 +46,6 @@ class RenderedRow(NamedTuple):
     display: str
     actual_display: str
     target_display: Optional[str]
+    trend_display: Optional[str]
     is_phase2_placeholder: bool
     is_special_override: bool

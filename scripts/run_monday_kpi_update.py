@@ -138,6 +138,14 @@ def _parse_args(argv: Optional[list] = None) -> argparse.Namespace:
              "running before manual slide prep is complete.",
     )
     parser.add_argument(
+        "--skip-rocks-deck",
+        action="store_true",
+        help="Skip rocks/projects deck slides (default: False — rocks "
+             "deck is included). Use this when the rocks slides "
+             "(<Dept> · Auto-Updated Rocks & Projects) haven't been "
+             "added to the deck yet. Scorecard slides still write.",
+    )
+    parser.add_argument(
         "--skip-slack",
         action="store_true",
         help="Skip Slack post (default: False). Useful for dry runs.",
@@ -225,6 +233,7 @@ def main(argv: Optional[list] = None) -> int:
     kwargs: Dict[str, Any] = {
         "deck_id": args.deck_id,
         "skip_deck": args.skip_deck,
+        "skip_rocks_deck": args.skip_rocks_deck,
         "skip_slack": args.skip_slack,
         "include_leadership_doc": args.include_leadership_doc,
         "leadership_doc_id": args.leadership_doc_id,

@@ -147,17 +147,19 @@ def apply_via_slides_api(
             requests: List[Dict[str, Any]] = []
             for offset, row in enumerate(rows):
                 table_row = 1 + offset  # row 0 reserved for header
-                # Phase 1 writes 4 of the deck's 5 columns:
+                # Writes all 5 deck columns (Session 4 adds Trend):
                 #   col 0 = Metric  → display_label
                 #   col 1 = Target  → target_display (None → empty string)
                 #   col 2 = Actual  → actual_display (value WITHOUT target suffix)
-                #   col 3 = Status  → status_icon
-                # Col 4 (Trend) is Phase 2.
+                #   col 3 = Status  → status_icon (icon + optional label)
+                #   col 4 = Trend   → trend_display (None → empty string;
+                #                     populated for rocks with "Owner: X")
                 cell_writes = [
                     (0, row.display_label),
                     (1, row.target_display or ""),
                     (2, row.actual_display),
                     (3, row.status_icon),
+                    (4, row.trend_display or ""),
                 ]
                 for col, text in cell_writes:
                     if not text and _cell_is_empty(table, table_row, col):

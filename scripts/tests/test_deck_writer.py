@@ -27,6 +27,7 @@ def _row(name, sensitivity="public", display="$1", target_display=None):
         display=display,
         actual_display=display,
         target_display=target_display,
+        trend_display=None,
         is_phase2_placeholder=False,
         is_special_override=False,
     )
@@ -108,6 +109,11 @@ def test_apply_writes_three_cells_per_row_metric_actual_status():
     cols_written = sorted(
         r["insertText"]["cellLocation"]["columnIndex"] for r in requests
     )
+    # Session 4: writer now writes ALL 5 cols when populated. With
+    # target_display=None and trend_display=None (this fixture is a
+    # scorecard row), cols 1 and 4 have empty text AND cells are empty,
+    # so the skip-empty-cell optimization elides those writes. Only
+    # cols 0/2/3 are sent.
     assert cols_written == [0, 2, 3]
     # All inserts at index 0 — preserves the no-re-format invariant.
     for r in requests:

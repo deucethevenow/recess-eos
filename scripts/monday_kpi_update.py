@@ -64,11 +64,17 @@ _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _SCRIPTS_DIR)
 
-from lib.dept_slide_map import resolve_dept_slide_map  # noqa: E402
+from lib.dept_slide_map import (  # noqa: E402
+    resolve_dept_rocks_slide_map,
+    resolve_dept_slide_map,
+)
 from lib.failure_alert import emit_failure_alert  # noqa: E402
 from lib.preflight import PreflightError, run_preflight  # noqa: E402
 from lib.rendered_row import RenderedRow  # noqa: E402
-from lib.scorecard_renderer import render_one_row  # noqa: E402
+from lib.scorecard_renderer import (  # noqa: E402
+    render_one_row,
+    render_rock_or_project_row,
+)
 
 
 DEFAULT_DECK_ID = "1kjg1ObSO1l15_R82w6hgQNOz8YYk3oUXPllBs-eGhow"
@@ -225,6 +231,7 @@ def main(
     include_leadership_doc: bool = False,
     leadership_doc_id: Optional[str] = None,
     skip_deck: bool = False,
+    skip_rocks_deck: bool = False,
     skip_slack: bool = False,
     fetch_presentation: Optional[Callable[[str], Dict[str, Any]]] = None,
     fetch_table_row_count: Optional[Callable[[str, int], Optional[int]]] = None,
@@ -293,8 +300,14 @@ def main(
         if not skip_deck
         else {}
     )
+    dept_to_rocks_slide = (
+        resolve_dept_rocks_slide_map(deck_id, fetch_presentation=fetch_presentation)
+        if (not skip_deck and not skip_rocks_deck)
+        else {}
+    )
 
     rendered_per_dept: Dict[str, Dict[str, Any]] = {}
+    rendered_rocks_per_dept: Dict[str, Dict[str, Any]] = {}
     for dept_id in DEPT_METRIC_ORDER.keys():
         entries = get_scorecard_metrics_for_dept(dept_id) or []
         rocks_for_dept = rocks_by_dept.get(dept_id, {})
@@ -306,6 +319,22 @@ def main(
             "rocks_section": rocks_for_dept,
             "slide_idx": dept_to_slide.get(dept_id),
         }
+        # Build a parallel "scorecard_rows" payload from rocks+projects for
+        # the rocks deck writer. The deck writer consumes any payload with a
+        # `scorecard_rows` list + `slide_idx`, so we reuse the same shape.
+        rock_rows = [
+            render_rock_or_project_row(item, dept_id)
+            for item in (rocks_for_dept.get("rocks") or [])
+        ]
+        project_rows = [
+            render_rock_or_project_row(item, dept_id)
+            for item in (rocks_for_dept.get("projects") or [])
+        ]
+        if rock_rows or project_rows:
+            rendered_rocks_per_dept[dept_id] = {
+                "scorecard_rows": rock_rows + project_rows,
+                "slide_idx": dept_to_rocks_slide.get(dept_id),
+            }
 
     run_preflight(
         today=today,
@@ -315,6 +344,8 @@ def main(
         deck_id=deck_id,
         fetch_table_row_count=fetch_table_row_count if not skip_deck else None,
         skip_deck=skip_deck,
+        rendered_rocks_per_dept=rendered_rocks_per_dept,
+        skip_rocks_deck=skip_rocks_deck,
     )
 
     confirm_sensitivity_gate(rendered_per_dept, input_fn=input_fn)
@@ -336,6 +367,26 @@ def main(
             emit_failure_alert(
                 surface="deck",
                 detail="apply_via_slides_api failed at the top level (not per-slide).",
+                exc=e,
+            )
+
+    if not skip_deck and not skip_rocks_deck and rendered_rocks_per_dept:
+        try:
+            from lib.deck_writer import apply_via_slides_api  # noqa: E402
+            # max_sensitivity="leadership" because rocks/projects are typically
+            # not appropriate for public-channel rendering (they reflect ongoing
+            # internal initiatives). The deck audience IS leadership-tier,
+            # so this is the right scope.
+            apply_via_slides_api(
+                rendered_per_dept=rendered_rocks_per_dept,
+                max_sensitivity="leadership",
+                slides_service=slides_service,
+                presentation_id=deck_id,
+            )
+        except Exception as e:  # noqa: BLE001
+            emit_failure_alert(
+                surface="deck_rocks",
+                detail="apply_via_slides_api (rocks) failed at the top level.",
                 exc=e,
             )
 

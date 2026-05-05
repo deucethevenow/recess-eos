@@ -33,6 +33,8 @@ def run_preflight(
     deck_id: str,
     fetch_table_row_count: Optional[Callable[[str, int], Optional[int]]] = None,
     skip_deck: bool = False,
+    rendered_rocks_per_dept: Optional[Dict[str, Dict[str, Any]]] = None,
+    skip_rocks_deck: bool = False,
 ) -> None:
     failures: List[str] = []
     has_resolved_slides = any(
@@ -110,6 +112,46 @@ def run_preflight(
                         f"{dept_id}: slide {slide_idx} has {actual} rows, "
                         f"needs {required} (1 header + {row_count} metrics + 2 buffer). "
                         "Pad table manually or rerun with skip_deck=True."
+                    )
+
+    # 2c. Rocks/Projects slides — Session 4. Same shape as 2a/2b but against
+    #     DEPT_ROCKS_TITLE_MAP. If skip_rocks_deck is True OR rocks rendering
+    #     produced nothing, this check is silently bypassed.
+    if not skip_deck and not skip_rocks_deck and rendered_rocks_per_dept:
+        from .dept_slide_map import DEPT_ROCKS_TITLE_MAP  # noqa: E402
+
+        for dept_id, payload in rendered_rocks_per_dept.items():
+            if dept_id not in DEPT_ROCKS_TITLE_MAP:
+                continue
+            if payload.get("slide_idx") is None:
+                expected_title = DEPT_ROCKS_TITLE_MAP[dept_id]
+                failures.append(
+                    f"{dept_id}: no rocks slide_idx resolved (expected slide title "
+                    f"'{expected_title}'). Manual prep — create or rename a slide "
+                    "with that exact title (or rerun with skip_rocks_deck=True)."
+                )
+
+        if fetch_table_row_count is not None:
+            for dept_id, payload in rendered_rocks_per_dept.items():
+                if dept_id not in DEPT_ROCKS_TITLE_MAP:
+                    continue
+                slide_idx = payload.get("slide_idx")
+                if slide_idx is None:
+                    continue  # already reported above
+                row_count = len(payload.get("scorecard_rows", []))
+                required = 1 + row_count + 2
+                actual = fetch_table_row_count(deck_id, slide_idx)
+                if actual is None:
+                    failures.append(
+                        f"{dept_id}: rocks slide {slide_idx} has NO table — "
+                        "manual prep required."
+                    )
+                elif actual < required:
+                    failures.append(
+                        f"{dept_id}: rocks slide {slide_idx} has {actual} rows, "
+                        f"needs {required} (1 header + {row_count} rocks/projects "
+                        "+ 2 buffer). Pad table manually or rerun with "
+                        "skip_rocks_deck=True."
                     )
 
     # 3. Either fail loud, or log the audit trail. I3 fix: do NOT print "OK"

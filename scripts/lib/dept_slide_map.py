@@ -5,22 +5,17 @@ LOOKUP, not fixed slide-index renumber. Rationale: drift-resilient against futur
 deck reorganizations — when slides are moved or new ones inserted, the slash command
 keeps working with no code change.
 
-Expected slide titles (case + spacing must match exactly):
-  "Leadership · Auto-Updated Scorecard"
-  "Sales · Auto-Updated Scorecard"
-  "Account Management · Auto-Updated Scorecard"
-  "Supply · Auto-Updated Scorecard"
-  "Marketing · Auto-Updated Scorecard"
-  "Engineering · Auto-Updated Scorecard"
-  "Accounting · Auto-Updated Scorecard"
+Two parallel maps as of Session 4:
+  DEPT_TITLE_MAP       — scorecard slides ("<Dept> · Auto-Updated Scorecard")
+  DEPT_ROCKS_TITLE_MAP — rocks/projects slides ("<Dept> · Auto-Updated Rocks & Projects")
 
-Per Session 0 PROBE 2: only 3 of 7 dept slides exist today. The resolver returns
-just the slides that match — pre-flight (Patch 5) then surfaces missing ones loudly.
+Both maps share the same dept_id keys but with different title suffixes. The
+resolver is generic via `_resolve_slide_map_for_titles(deck_id, title_map, ...)`
+so the same code handles both maps without duplication.
 
-Slide 34/35 disambiguation (Sales has duplicates today; PROBE 2 noted slide 35 is
-"(DT V)"-suffixed): manual prep BEFORE first run picks one canonical and renames
-or deletes the other. Title-based resolver auto-picks whichever has the EXACT
-target title.
+Slide 34/35 disambiguation (legacy Sales duplicates noted in PROBE 2): manual
+prep BEFORE first run picks one canonical and renames or deletes the other.
+Title-based resolver auto-picks whichever has the EXACT target title.
 """
 from typing import Any, Callable, Dict, List, Optional
 
@@ -42,6 +37,15 @@ DEPT_TITLE_MAP: Dict[str, str] = {
 # error). Depts NOT in DEPT_TITLE_MAP would be silently skipped — the
 # preflight optional-slide pattern is preserved for future flexibility (e.g.,
 # adding a dept that's only in Slack but not on the deck).
+
+
+DEPT_ROCKS_TITLE_MAP: Dict[str, str] = {
+    dept_id: title.replace("Auto-Updated Scorecard", "Auto-Updated Rocks & Projects")
+    for dept_id, title in DEPT_TITLE_MAP.items()
+}
+# Same dept_ids as DEPT_TITLE_MAP, with the "Scorecard" → "Rocks & Projects"
+# title suffix. Each dept slide pair is rendered in lock-step: scorecard +
+# rocks/projects. Manual-prep adds 10 slides matching this title pattern.
 
 
 def _extract_slide_titles(slide: Dict[str, Any]) -> List[str]:
@@ -85,20 +89,19 @@ def _extract_slide_title(slide: Dict[str, Any]) -> Optional[str]:
     return titles[0] if titles else None
 
 
-def resolve_dept_slide_map(
+def _resolve_slide_map_for_titles(
     deck_id: str,
+    title_map: Dict[str, str],
     slides_service=None,
     fetch_presentation: Optional[Callable[[str], Dict[str, Any]]] = None,
 ) -> Dict[str, int]:
-    """Find each dept's scorecard slide by exact title match.
+    """Generic resolver — match `title_map` keys to slide indexes by title.
 
-    Returns {dept_id: slide_index} for every dept whose title is found. Depts
-    with no matching slide are simply absent from the result — the pre-flight
-    in Patch 5 surfaces them loudly so manual prep is unambiguous.
-
-    Either `slides_service` (Google API client) or `fetch_presentation`
-    (callable returning the parsed presentation dict) may be supplied for
-    testability. If both are None, raises ValueError.
+    Used by both `resolve_dept_slide_map` (scorecard) and
+    `resolve_dept_rocks_slide_map` (rocks/projects). Either `slides_service`
+    (Google API client) or `fetch_presentation` (callable returning the parsed
+    presentation dict) may be supplied for testability. If both are None,
+    raises ValueError.
     """
     if fetch_presentation is not None:
         pres = fetch_presentation(deck_id)
@@ -106,14 +109,10 @@ def resolve_dept_slide_map(
         pres = slides_service.presentations().get(presentationId=deck_id).execute()
     else:
         raise ValueError(
-            "resolve_dept_slide_map requires slides_service or fetch_presentation"
+            "_resolve_slide_map_for_titles requires slides_service or fetch_presentation"
         )
 
     slides = pres.get("slides", []) or []
-    # Build title → first-occurrence-idx by walking ALL text on every slide.
-    # A slide can carry multiple text shapes; setdefault preserves the FIRST
-    # match so duplicate titles (e.g., the legacy slides 34/35 with the same
-    # "Sales" title) resolve to the canonical first instance.
     title_to_idx: Dict[str, int] = {}
     for idx, slide in enumerate(slides):
         for title in _extract_slide_titles(slide):
@@ -121,6 +120,37 @@ def resolve_dept_slide_map(
 
     return {
         dept_id: title_to_idx[expected_title]
-        for dept_id, expected_title in DEPT_TITLE_MAP.items()
+        for dept_id, expected_title in title_map.items()
         if expected_title in title_to_idx
     }
+
+
+def resolve_dept_slide_map(
+    deck_id: str,
+    slides_service=None,
+    fetch_presentation: Optional[Callable[[str], Dict[str, Any]]] = None,
+) -> Dict[str, int]:
+    """Find each dept's SCORECARD slide by exact title match.
+
+    Returns {dept_id: slide_index} for every dept whose scorecard slide title
+    is found. Depts with no matching slide are simply absent from the result —
+    the pre-flight in Patch 5 surfaces them loudly so manual prep is
+    unambiguous.
+    """
+    return _resolve_slide_map_for_titles(
+        deck_id, DEPT_TITLE_MAP, slides_service, fetch_presentation
+    )
+
+
+def resolve_dept_rocks_slide_map(
+    deck_id: str,
+    slides_service=None,
+    fetch_presentation: Optional[Callable[[str], Dict[str, Any]]] = None,
+) -> Dict[str, int]:
+    """Find each dept's ROCKS & PROJECTS slide by exact title match.
+
+    Symmetric with resolve_dept_slide_map but uses DEPT_ROCKS_TITLE_MAP.
+    """
+    return _resolve_slide_map_for_titles(
+        deck_id, DEPT_ROCKS_TITLE_MAP, slides_service, fetch_presentation
+    )

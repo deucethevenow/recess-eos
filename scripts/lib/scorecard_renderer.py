@@ -116,6 +116,104 @@ def _resolve_target_string(entry: Dict[str, Any], dept_id: str) -> Optional[str]
         return str(static_target)
 
 
+# --------------------------------------------------------------------------- #
+# Rocks/Projects rendering — Session 4                                        #
+# --------------------------------------------------------------------------- #
+#
+# `get_rock_project_progress()` returns dicts with:
+#   name, owner_name, project_type, status, completion_percent (0-100),
+#   task_count (int or None), asana_project_id.
+#
+# It does NOT include due_date today, so we use completion-only status
+# thresholds (matching cron's _format_rock_line):
+#   ≥ 66% → 🟢 On-track
+#   ≥ 33% → 🟡 At-risk
+#   <  33% → 🔴 Off-track
+#
+# When task_count is present, Actual is "X% (Y tasks)"; otherwise "X%".
+# Trend always shows "Owner: <name>".
+
+
+_ROCK_STATUS_THRESHOLDS = (
+    (66.0, "\U0001F7E2", "On-track"),
+    (33.0, "\U0001F7E1", "At-risk"),
+    (0.0, "\U0001F534", "Off-track"),
+)
+
+
+def _rock_status(pct: float) -> tuple:
+    """Return (icon, label) for a completion percentage."""
+    for threshold, icon, label in _ROCK_STATUS_THRESHOLDS:
+        if pct >= threshold:
+            return icon, label
+    return "\U0001F534", "Off-track"  # defensive fallback
+
+
+def render_rock_or_project_row(
+    item: Dict[str, Any],
+    dept_id: str,
+    sensitivity: str = "leadership",
+) -> RenderedRow:
+    """Render one rock or project as a RenderedRow for the deck's rocks slide.
+
+    Field mapping for the deck's 5-column shape:
+      Metric  → name
+      Target  → "100%" (rocks always target 100% complete)
+      Actual  → "{pct:.0f}% ({task_count} tasks)" or "{pct:.0f}%"
+      Status  → 🟢/🟡/🔴 icon + " " + label (e.g., "🟢 On-track")
+      Trend   → "Owner: {owner_name}"
+
+    Note: deck_writer reads `display_label` for col 0, `target_display` for
+    col 1, `actual_display` for col 2, `status_icon` for col 3 — and now
+    Session 4 also reads a new field `trend_display` for col 4. The combined
+    `display` field (used by Slack/leadership-doc) is "{name} — {pct:.0f}%
+    ({owner_name})" so the existing Slack rock formatter is unaffected.
+
+    Sensitivity defaults to "leadership" because rocks/projects are typically
+    not public-channel content. Caller can override.
+    """
+    name = (item.get("name") or "Unnamed").strip()
+    owner = (item.get("owner_name") or "Unassigned").strip()
+    pct_raw = item.get("completion_percent")
+    try:
+        pct = float(pct_raw) if pct_raw is not None else 0.0
+    except (TypeError, ValueError):
+        pct = 0.0
+    task_count = item.get("task_count")
+
+    icon, label = _rock_status(pct)
+
+    if task_count:
+        try:
+            actual_str = f"{pct:.0f}% ({int(task_count)} tasks)"
+        except (TypeError, ValueError):
+            actual_str = f"{pct:.0f}%"
+    else:
+        actual_str = f"{pct:.0f}%"
+
+    target_str = "100%"
+    status_str = f"{icon} {label}"
+    trend_str = f"Owner: {owner}"
+
+    combined_display = f"{icon} *{name}* — {pct:.0f}% _({owner})_"
+
+    return RenderedRow(
+        metric_name=name,
+        display_label=name,
+        dept_id=dept_id,
+        sensitivity=sensitivity,
+        actual_raw=pct,
+        target_raw=100.0,
+        status_icon=status_str,  # Session 4: now includes label not just icon
+        display=combined_display,
+        actual_display=actual_str,
+        target_display=target_str,
+        trend_display=trend_str,  # Session 4: deck col 4 (Trend) — owner
+        is_phase2_placeholder=False,
+        is_special_override=False,
+    )
+
+
 def render_one_row(
     entry: Dict[str, Any],
     dept_id: str,
@@ -144,6 +242,7 @@ def render_one_row(
                 display=display,
                 actual_display=display,
                 target_display=None,
+                trend_display=None,
                 is_phase2_placeholder=False,
                 is_special_override=False,
             )
@@ -159,6 +258,7 @@ def render_one_row(
                 display=DATA_UNAVAILABLE_PLACEHOLDER,
                 actual_display=DATA_UNAVAILABLE_PLACEHOLDER,
                 target_display=None,
+                trend_display=None,
                 is_phase2_placeholder=False,
                 is_special_override=False,
             )
@@ -176,6 +276,7 @@ def render_one_row(
             display=PHASE2_PLACEHOLDER,
             actual_display=PHASE2_PLACEHOLDER,
             target_display=None,
+            trend_display=None,
             is_phase2_placeholder=True,
             is_special_override=False,
         )
@@ -198,6 +299,7 @@ def render_one_row(
             display=f"{body}{target_suffix}",
             actual_display=body,
             target_display=target_str,
+            trend_display=None,
             is_phase2_placeholder=False,
             is_special_override=False,
         )
@@ -235,6 +337,7 @@ def render_one_row(
         display=display,
         actual_display=actual_display,
         target_display=target_display,
+        trend_display=None,
         is_phase2_placeholder=False,
         is_special_override=(canonical_name in SPECIAL_METRIC_NAMES),
     )
