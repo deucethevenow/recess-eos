@@ -174,6 +174,33 @@ def apply_via_slides_api(
                         )
                     )
 
+            # Idempotency tail: clear any non-header cells BEYOND the current
+            # data rows. Without this, stale content from previous runs (or
+            # from manually-duplicated slides) lingers — e.g., when a rock is
+            # removed week-over-week, or when the operator duplicated a
+            # scorecard slide to create a rocks slide and the original cells
+            # carried over. This makes the writer fully idempotent: rerunning
+            # always produces the same end-state, regardless of prior content.
+            n_data_rows = len(rows)
+            total_table_rows = len(table.get("tableRows", []) or [])
+            n_cols = (table.get("columns") or 5) or 5
+            for stale_row in range(1 + n_data_rows, total_table_rows):
+                for col in range(n_cols):
+                    if _cell_is_empty(table, stale_row, col):
+                        continue
+                    requests.append(
+                        {
+                            "deleteText": {
+                                "objectId": table_id,
+                                "cellLocation": {
+                                    "rowIndex": stale_row,
+                                    "columnIndex": col,
+                                },
+                                "textRange": {"type": "ALL"},
+                            }
+                        }
+                    )
+
             if requests:
                 slides_service.presentations().batchUpdate(
                     presentationId=presentation_id, body={"requests": requests}

@@ -120,6 +120,82 @@ def test_apply_writes_three_cells_per_row_metric_actual_status():
         assert r["insertText"]["insertionIndex"] == 0
 
 
+def test_apply_clears_stale_cells_beyond_data_rows():
+    """Session 4.2 idempotency tail: when a slide has stale content from
+    prior runs (or from manually-duplicated source slides), the writer
+    clears all non-header cells beyond the current data. Re-runs always
+    produce the same end-state regardless of pre-existing content."""
+    rendered = {
+        "leadership": {
+            "scorecard_rows": [_row("OnlyMetric", display="$1")],
+            "slide_idx": 0,
+        }
+    }
+    # Build a presentation where rows 2+ have stale content
+    populated_table = {
+        "tableRows": [
+            {"tableCells": [{}, {}, {}, {}, {}]},  # row 0 (header — untouched)
+            {"tableCells": [{}, {}, {}, {}, {}]},  # row 1 (gets new write)
+            {  # row 2 — STALE content
+                "tableCells": [
+                    {"text": {"textElements": [{"textRun": {"content": "STALE A"}}]}},
+                    {"text": {"textElements": [{"textRun": {"content": "STALE B"}}]}},
+                    {},
+                    {},
+                    {},
+                ]
+            },
+            {  # row 3 — STALE content
+                "tableCells": [
+                    {"text": {"textElements": [{"textRun": {"content": "STALE C"}}]}},
+                    {},
+                    {},
+                    {},
+                    {},
+                ]
+            },
+            {"tableCells": [{}, {}, {}, {}, {}]},  # row 4 — already empty
+        ],
+        "columns": 5,
+    }
+    pres = {
+        "slides": [
+            {
+                "objectId": "slide_lead",
+                "pageElements": [{"objectId": "tbl_0", "table": populated_table}],
+            }
+        ]
+    }
+    service = _make_slides_service(pres)
+
+    apply_via_slides_api(
+        rendered_per_dept=rendered,
+        max_sensitivity="public",
+        slides_service=service,
+        presentation_id="DECK_X",
+        presentation=pres,
+    )
+
+    body = service.presentations.return_value.batchUpdate.call_args.kwargs["body"]
+    requests = body["requests"]
+    # Clear-tail must emit deleteText for the 3 STALE cells in rows 2-3.
+    # No deleteText for row 4 (already empty — skipped).
+    delete_requests = [r for r in requests if "deleteText" in r]
+    cleared_locations = [
+        (
+            r["deleteText"]["cellLocation"]["rowIndex"],
+            r["deleteText"]["cellLocation"]["columnIndex"],
+        )
+        for r in delete_requests
+    ]
+    # Row 2 cols 0+1 stale, row 3 col 0 stale = 3 deletes
+    assert (2, 0) in cleared_locations
+    assert (2, 1) in cleared_locations
+    assert (3, 0) in cleared_locations
+    # Row 4 cells were empty — should NOT have a delete
+    assert (4, 0) not in cleared_locations
+
+
 def test_apply_emits_delete_text_for_populated_cells():
     """When existing cell content is non-empty, the writer pairs deleteText
     + insertText to maintain idempotency on re-runs (re-runs MUST replace
