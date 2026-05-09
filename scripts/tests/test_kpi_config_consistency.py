@@ -181,7 +181,7 @@ class TestRecessOsGoalsResolveCleanly:
                     )
 
         assert errors == [], "\n".join(errors)
-        assert resolved >= 50, f"Expected ~59 scorecard metrics, got {resolved}"
+        assert resolved >= 50, f"Expected ~63 scorecard metrics, got {resolved}"
 
     def test_goals_section_has_no_forbidden_logic_fields(self):
         """Recess os goals entries cannot contain transform/threshold logic."""
@@ -197,3 +197,106 @@ class TestRecessOsGoalsResolveCleanly:
                         f"field '{forbidden}'"
                     )
         assert violations == [], "\n".join(violations)
+
+
+class TestPhase0Canonicalization:
+    """Phase 0 — yaml founders fixes + Renewal canonical rename + Q NR adds.
+
+    Verifies the data corrections for founders sensitivity (Bank Cash and
+    Conservative Runway are manual-entry, not automated), the Renewal canonical
+    display name, and the new Net Revenue Q (Actual/Forecast) entries on Sales
+    and Leadership scorecards. New entries follow the L&E Bookings Pacing
+    pattern (registry_key=null, status=needs_build) until Phase W.2 wires the
+    live handlers.
+    """
+
+    @staticmethod
+    def _meetings_by_id(data: dict) -> dict:
+        return {
+            m.get("id"): m
+            for m in data.get("meetings", [])
+            if isinstance(m, dict)
+        }
+
+    def test_founders_bank_cash_status_is_manual(self):
+        data = _load_yaml(RECESS_OS_YML)
+        founders = self._meetings_by_id(data).get("founders") or {}
+        metrics = {
+            m["name"]: m
+            for m in founders.get("scorecard_metrics", [])
+            if isinstance(m, dict) and m.get("name")
+        }
+        bc = metrics.get("Bank Cash (Available)")
+        assert bc is not None, "Bank Cash (Available) must exist in founders meeting"
+        assert bc.get("status") == "manual", (
+            f"Bank Cash (Available) status is {bc.get('status')!r}; expected 'manual' "
+            f"(no automated source — exec dashboard owns the value)"
+        )
+
+    def test_founders_conservative_runway_status_is_manual(self):
+        data = _load_yaml(RECESS_OS_YML)
+        founders = self._meetings_by_id(data).get("founders") or {}
+        metrics = {
+            m["name"]: m
+            for m in founders.get("scorecard_metrics", [])
+            if isinstance(m, dict) and m.get("name")
+        }
+        cr = metrics.get("Conservative Runway")
+        assert cr is not None, "Conservative Runway must exist in founders meeting"
+        assert cr.get("status") == "manual", (
+            f"Conservative Runway status is {cr.get('status')!r}; expected 'manual'"
+        )
+
+    def test_sales_renewal_pipeline_label_is_canonical(self):
+        """The legacy display label 'Renewal Bookings Pacing' is misleading —
+        the registry_key is 'Renewal Pipeline' (weighted open pipeline).
+        Display name must match registry."""
+        data = _load_yaml(RECESS_OS_YML)
+        sales = self._meetings_by_id(data).get("sales") or {}
+        names = [
+            m.get("name")
+            for m in sales.get("scorecard_metrics", [])
+            if isinstance(m, dict)
+        ]
+        assert "Renewal Pipeline" in names, (
+            f"sales scorecard missing 'Renewal Pipeline' — got {names}"
+        )
+        assert "Renewal Bookings Pacing" not in names, (
+            "sales scorecard still has legacy label 'Renewal Bookings Pacing'"
+        )
+
+    def test_sales_meeting_has_q_nr_actual_and_forecast(self):
+        """Sales scorecard surfaces the Q-internal NR pair (Actual + Forecast).
+
+        Replaces the awkward 'Net Revenue YTD vs Q quota' framing with a
+        coherent intra-quarter pair derived from the dashboard forecast engine.
+        """
+        data = _load_yaml(RECESS_OS_YML)
+        sales = self._meetings_by_id(data).get("sales") or {}
+        names = [
+            m.get("name")
+            for m in sales.get("scorecard_metrics", [])
+            if isinstance(m, dict)
+        ]
+        assert "Net Revenue Q (Actual)" in names, (
+            f"sales scorecard missing 'Net Revenue Q (Actual)' — got {names}"
+        )
+        assert "Net Revenue Q (Forecast)" in names, (
+            f"sales scorecard missing 'Net Revenue Q (Forecast)' — got {names}"
+        )
+
+    def test_leadership_meeting_has_q_nr_actual_and_forecast(self):
+        """Leadership pre-read surfaces the same Q-internal NR pair as Sales."""
+        data = _load_yaml(RECESS_OS_YML)
+        leadership = self._meetings_by_id(data).get("leadership") or {}
+        names = [
+            m.get("name")
+            for m in leadership.get("scorecard_metrics", [])
+            if isinstance(m, dict)
+        ]
+        assert "Net Revenue Q (Actual)" in names, (
+            f"leadership scorecard missing 'Net Revenue Q (Actual)' — got {names}"
+        )
+        assert "Net Revenue Q (Forecast)" in names, (
+            f"leadership scorecard missing 'Net Revenue Q (Forecast)' — got {names}"
+        )

@@ -118,6 +118,20 @@ meetings:
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
+      - name: "Net Revenue Q (Actual)"
+        registry_key: null
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Q-internal NR pair. Wired in Phase W.2 via dashboard forecast_engine.forecast_for_quarter()."
+      - name: "Net Revenue Q (Forecast)"
+        registry_key: null
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Q-internal NR pair. Wired in Phase W.2 via dashboard forecast_engine.forecast_for_quarter()."
     members: []
 
   # ── Founders (4 metrics, all founders_only) ────────────────────────
@@ -149,13 +163,13 @@ meetings:
         registry_key: "Bank Cash (Available)"
         target: null
         sensitivity: "founders_only"
-        status: "automated"
+        status: "manual"
         null_behavior: "show_dash"
       - name: "Conservative Runway"
         registry_key: "Conservative Runway"
         target: null
         sensitivity: "founders_only"
-        status: "automated"
+        status: "manual"
         null_behavior: "show_dash"
     members:
       - "deuce@recess.is"
@@ -208,7 +222,7 @@ meetings:
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Renewal Bookings Pacing"
+      - name: "Renewal Pipeline"
         registry_key: "Renewal Pipeline"
         target: null
         sensitivity: "public"
@@ -221,6 +235,20 @@ meetings:
         status: "needs_build"
         null_behavior: "show_needs_build"
         notes: "Uses Pipeline by Deal Type on dashboard. No registry key yet."
+      - name: "Net Revenue Q (Actual)"
+        registry_key: null
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Q-internal NR pair. Wired in Phase W.2 via dashboard forecast_engine.forecast_for_quarter()."
+      - name: "Net Revenue Q (Forecast)"
+        registry_key: null
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Q-internal NR pair. Wired in Phase W.2 via dashboard forecast_engine.forecast_for_quarter()."
     members: []
 
   # ── Demand AM / Char (7 metrics: 5 registry + 2 needs_build) ──────
