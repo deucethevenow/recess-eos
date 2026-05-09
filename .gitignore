@@ -20,8 +20,12 @@ eos-system-diagram.html
 # Session context (local only)
 context/
 
-# Claude Code project config
-.claude/
+# Claude Code — local config gitignored, shared knowledge committed
+.claude/*
+!.claude/CLAUDE.md
+!.claude/learnings/
+!.claude/skills/
+!.claude/agents/
 
 # OS
 .DS_Store

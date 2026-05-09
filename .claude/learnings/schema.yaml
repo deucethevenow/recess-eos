@@ -1,0 +1,111 @@
+# Recess OS (EOS) Learning Loop Schema
+# Adapted from KPI Dashboard pattern for Python orchestration + multi-system integration
+# Reference only — not enforced programmatically
+# All YAML list fields MUST use inline array format for grep-based retrieval
+
+required_fields:
+  module:
+    description: "Domain area within the EOS project"
+    examples:
+      - "Config/Contract"
+      - "Metric Payloads"
+      - "Orchestrator"
+      - "BigQuery Client"
+      - "Asana Integration"
+      - "Airtable Integration"
+      - "Slack/Monday Pulse"
+      - "All-Hands Deck"
+      - "KPI Goals Pusher"
+      - "Cron/Dispatch"
+      - "Audit Layer"
+      - "NaN Safety"
+      - "Tests"
+      - "Deployment/Cloud Run"
+
+  date:
+    format: "YYYY-MM-DD"
+
+  problem_type:
+    enum:
+      - config_logic_duplication    # Registry fields duplicated in recess_os.yml
+      - contract_validation_error   # Missing registry key, malformed contract, forbidden fields
+      - api_escaping_error          # Airtable/Asana/Slack escaping issues
+      - immutable_event_violation   # UPDATE attempted on write-once event table
+      - sensitivity_routing_error   # Wrong visibility level for sensitive data
+      - type_contract_violation     # Return type doesn't match function signature
+      - external_match_failure      # Fireflies titles, Asana names don't match config
+      - silent_default_corruption   # .get() defaults hiding missing/corrupt fields
+      - deployment_misconfiguration # Cron, Cloud Run, credentials, env vars
+      - test_pattern_error          # Missing drift guard, test gap, wrong assertion
+      - nan_safety_violation        # Unsafe numeric coercion on BQ data
+      - payload_build_error         # Transform/format/routing error in payload layer
+
+  component:
+    enum:
+      - config_yml            # config/recess_os.yml
+      - metric_contract       # scripts/lib/metric_contract.py
+      - metric_payloads       # scripts/lib/metric_payloads.py
+      - bq_client             # scripts/lib/bq_client.py
+      - orchestrator          # scripts/lib/orchestrator.py
+      - kpi_goals_pusher      # scripts/lib/kpi_goals_pusher.py
+      - monday_pulse          # scripts/lib/monday_pulse.py
+      - all_hands_deck        # scripts/lib/all_hands_deck.py
+      - airtable_client       # scripts/lib/airtable_client.py
+      - action_item_extractor # scripts/lib/action_item_extractor.py
+      - asana_eos_sync        # scripts/asana_eos_sync.py
+      - cron_dispatch         # scripts/lib/cron_dispatch.py + recess_os_daily.sh
+      - run_audit             # scripts/lib/run_audit.py
+      - nan_safety            # scripts/lib/nan_safety.py
+      - percentage_transforms # scripts/lib/percentage_transforms.py
+      - instrumentation       # scripts/lib/instrumentation.py
+      - recess_os_cli         # scripts/recess_os.py
+      - owner_dept_map        # config/owner_dept_map.yml
+      - test_unit             # scripts/tests/test_*.py
+      - test_integration      # scripts/tests/ (marked @integration)
+
+  symptoms:
+    type: "array[string]"
+    min_items: 1
+    max_items: 5
+    format: "MUST be inline: [a, b, c]"
+
+  root_cause:
+    enum:
+      - registry_override         # Config attempted to override registry field
+      - missing_registry_key      # Metric not in KPI Dashboard metric_registry.py
+      - wrong_escape_syntax       # Airtable/API escaping incorrect
+      - immutable_design_conflict # Tried to UPDATE write-once table
+      - visibility_leak           # Sensitive data in public consumer
+      - type_signature_violation  # Return type doesn't match contract
+      - fuzzy_match_failure       # External system name doesn't match config
+      - silent_degradation        # Default value hiding actual error
+      - credential_misconfiguration # Env var, Secret Manager, ADC issues
+      - test_gap                  # Missing drift guard or integration test
+      - pandas_null_behavior      # BQ data returns NaN not None
+      - wrong_transform           # Percent/format/higher_is_better logic error
+
+  severity:
+    enum: [critical, high, medium, low]
+
+optional_fields:
+  tags:
+    type: "array[string]"
+    max_items: 8
+    format: "MUST be inline: [a, b, c]"
+
+  affected_files:
+    type: "array[string]"
+    format: "MUST be inline"
+
+  resolution_type:
+    enum: [code_fix, config_change, test_fix, sql_fix, documentation_update]
+
+  elevated_to_critical:
+    type: boolean
+
+notes:
+  - "All YAML list fields MUST use inline array format for grep-based retrieval"
+  - "Severity 'critical' = production impact, data corruption, or silent wrong output"
+  - "Severity 'high' = wrong metric value pushed to Asana/Slack/Slides"
+  - "Severity 'medium' = pattern violation that works but creates maintenance burden"
+  - "Severity 'low' = style/convention issue unlikely to cause bugs"
