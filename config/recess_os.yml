@@ -575,9 +575,11 @@ meetings:
     members:
       - "deuce@recess.is"
 
-  # ── Engineering / Arbind (0 metrics — TBD) ────────────────────────
-  # No metrics defined yet. Arbind will define his own later.
-  # Meeting context exists so infrastructure is ready when metrics are added.
+  # ── Engineering / Arbind (3 metrics, live-query path) ─────────────
+  # Phase W.1 (2026-05-10): wired 3 engineering metrics through live BQ queries
+  # via metric_payloads._LIVE_HANDLERS. status="live" routes through the
+  # registered handler keyed by registry_key. Snapshot migration deferred to
+  # teammate handoff ticket — see TODO(snapshot) comments in metric_payloads.py.
   - id: engineering
     name: "Engineering L10"
     facilitator_email: "arbind@recess.is"
@@ -587,7 +589,25 @@ meetings:
     slack_channel: null
     sensitive: false
     pre_read_format: "asana_card"
-    scorecard_metrics: []
+    scorecard_metrics:
+      - name: "Features Fully Scoped"
+        registry_key: "Features Fully Scoped"
+        target: null
+        sensitivity: "public"     # public so Slack pulse + all-hands deck show it (max_sensitivity="public" on those surfaces)
+        status: "live"            # routes via _LIVE_HANDLERS in metric_payloads.py
+        null_behavior: "show_dash"
+      - name: "PRDs Generated"
+        registry_key: "PRDs Generated"
+        target: null
+        sensitivity: "public"
+        status: "live"
+        null_behavior: "show_dash"
+      - name: "FSDs Generated"
+        registry_key: "FSDs Generated"
+        target: null
+        sensitivity: "public"
+        status: "live"
+        null_behavior: "show_dash"
     members: []
 
   # ── Accounting / Andres (5 metrics, all registry, deck-only) ──────

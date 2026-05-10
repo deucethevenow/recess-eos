@@ -5,13 +5,16 @@ dept L10 scorecards) calls build_metric_payloads() and receives the SAME frozen
 MetricPayload objects. No consumer queries BQ directly. No consumer computes transforms.
 No consumer formats display values. This module does ALL of that, once, correctly.
 """
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
-from typing import Literal, Optional, TypedDict, get_args
+from pathlib import Path
+from typing import Callable, Literal, Optional, TypedDict, get_args
 
+from .failure_alert import emit_failure_alert
 from .metric_contract import resolve_metric_contract, MetricContract, ContractResolutionError
+from .nan_safety import _is_bad_number, safe_int
 from .percentage_transforms import apply_transform
-from .nan_safety import _is_bad_number
 
 STALE_THRESHOLD_HOURS = 25  # if snapshot_timestamp > 25h old, mark stale
 
@@ -146,6 +149,16 @@ def build_metric_payloads(
 
         if contract.status == "asana_goal":
             payloads.append(_asana_goal_payload(contract, dept_id, snapshot_timestamp))
+            continue
+
+        # "live" status (Phase W.1) — registered live BQ handler. Dispatch by
+        # registry_key (not contract.live_handler — that field is W.2). Handler
+        # returning None means failure: the payload's availability_state="error"
+        # so consumers render a dash, not a fabricated 0.
+        if contract.status == "live":
+            payloads.append(_live_payload(
+                contract, dept_id, snapshot_timestamp, pinned_today,
+            ))
             continue
 
         # Automated — pull from snapshot
@@ -435,5 +448,215 @@ def _asana_goal_payload(contract: MetricContract, dept_id: str, ts: str) -> Metr
         transform="raw", snapshot_timestamp=ts, sensitivity=contract.sensitivity,
         availability_state="live", dept_id=dept_id,
         notes=f"Asana Goal {contract.asana_goal_id}",
+        target_display=_compute_target_display(contract.target, contract.format_spec),
+    )
+
+
+# Phase W.1 — Live-handler dispatch.
+# We re-implement the SQL runner locally instead of importing from
+# dashboard.data.engineering_client because that module imports `streamlit as st`
+# at top, and streamlit is not in the cron container's deps (requirements-cloud.txt).
+# TODO(snapshot, teammate handoff): convert the 3 metrics below to COMPANY_METRICS
+# snapshot reads — live queries cost 1-3s/pulse vs <500ms for the snapshot.
+
+_BQ_PROJECT = os.environ.get("BQ_PROJECT", "stitchdata-384118")
+_BQ_DATASET = os.environ.get("BQ_DATASET", "App_KPI_Dashboard")
+
+
+def _engineering_queries_dir() -> Path:
+    """Resolve the engineering_queries SQL directory across runtimes.
+
+    1. Cron container: /app/dashboard/data/engineering_queries (Dockerfile.cron
+       stages it via `COPY _dashboard_src/dashboard/`).
+    2. Local/test: $KPI_DASHBOARD_REPO/dashboard/data/engineering_queries, or
+       fall back to ~/Projects/company-kpi-dashboard.
+    """
+    cron_path = Path("/app/dashboard/data/engineering_queries")
+    if cron_path.exists():
+        return cron_path
+    repo_root = os.environ.get("KPI_DASHBOARD_REPO", "~/Projects/company-kpi-dashboard")
+    return Path(repo_root).expanduser() / "dashboard" / "data" / "engineering_queries"
+
+
+def _get_bq_query_client():
+    """Lazy-construct a RecessOSBQClient for live engineering queries.
+
+    Indirected as a module-level function so tests can monkeypatch the
+    constructor without touching the global. RecessOSBQClient is in lib/
+    (the canonical BQ wrapper); calling it from here does NOT violate the
+    "only bq_client.py instantiates google.cloud.bigquery.Client" policy
+    because we're instantiating the WRAPPER, which is what bq_client.py
+    is for.
+    """
+    from .bq_client import RecessOSBQClient
+    return RecessOSBQClient(project_id=_BQ_PROJECT, dataset=_BQ_DATASET)
+
+
+def _run_engineering_query(sql_filename: str, primary_subkey: str) -> Optional[int]:
+    """Run a bundled engineering SQL file and extract a named subkey from row 0.
+
+    Returns None on:
+      - SQL file not found (dashboard mount missing in cron — degrade to error)
+      - BQ query exception (network, IAM, throttle)
+      - Zero rows returned
+      - primary_subkey absent from result (column rename → fail loud, no fabrication)
+
+    The plan-as-drafted pattern `(... or {}).get("scoped", 0)` masks BQ failures
+    as "0 features scoped" — caught in W.1 learnings research bug PA5. We propagate
+    None upstream so availability_state="error" can fire instead.
+    """
+    sql_path = _engineering_queries_dir() / sql_filename
+    try:
+        sql = sql_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        # OSError covers FileNotFoundError + permission/IO. UnicodeError catches
+        # encoding glitches (e.g., a smart-quote pasted from Notion) which would
+        # otherwise crash the entire dept render with no alert. Degrade gracefully.
+        return None
+
+    try:
+        client = _get_bq_query_client()
+        rows = client.query(sql)
+    except Exception as e:  # noqa: BLE001 — BQ outages cascade as None
+        emit_failure_alert(
+            surface="bq",
+            detail=f"engineering live query failed: {sql_filename}",
+            exc=e,
+        )
+        return None
+
+    if not rows:
+        return None
+
+    first = rows[0]
+    # Subkey absent ⇒ schema drift; do NOT silently default to 0.
+    if primary_subkey not in first:
+        return None
+    val = first[primary_subkey]
+    # BQ NULL surfaces as Python None; safe_int(None) returns its 0 default and
+    # would fabricate "0 features" instead of propagating the missing-data signal.
+    # Dormant for COUNTIF/COUNT(*) used today; arms when W.2+ wire SUM/AVG/SAFE_DIVIDE.
+    if val is None:
+        return None
+    return safe_int(val)
+
+
+def _get_features_fully_scoped() -> Optional[int]:
+    """W.1: Engineering — Features Fully Scoped (count of features past PRD acceptance).
+
+    Sub-key 'scoped' verified against engineering_client.py:98 (2026-05-10).
+    SQL: card1-features-fully-scoped.sql.
+    """
+    return _run_engineering_query("card1-features-fully-scoped.sql", "scoped")
+
+
+def _get_prds_generated() -> Optional[int]:
+    """W.1: Engineering — PRDs Generated (cumulative count).
+
+    Sub-key 'total_prds' verified against engineering_client.py:113 (2026-05-10).
+    SQL: card3-prds-generated.sql.
+    """
+    return _run_engineering_query("card3-prds-generated.sql", "total_prds")
+
+
+def _get_fsds_generated() -> Optional[int]:
+    """W.1: Engineering — FSDs Generated (count of features with playbook directory).
+
+    Sub-key 'fsds_generated' verified against engineering_client.py:130 (2026-05-10).
+    SQL: card4-fsds-generated.sql.
+    """
+    return _run_engineering_query("card4-fsds-generated.sql", "fsds_generated")
+
+
+# Registry of live-query handlers keyed by KPI Dashboard registry display name.
+# Phase W.1 ships 3; W.2/W.3/W.4 will append more without changing this contract.
+_LIVE_HANDLERS: dict[str, Callable[[], Optional[int]]] = {
+    "Features Fully Scoped": _get_features_fully_scoped,
+    "PRDs Generated": _get_prds_generated,
+    "FSDs Generated": _get_fsds_generated,
+}
+
+
+def _live_payload(
+    contract: MetricContract,
+    dept_id: str,
+    ts: str,
+    today: Optional[datetime],
+) -> MetricPayload:
+    """Build a MetricPayload from a live-handler dispatch.
+
+    Looks up _LIVE_HANDLERS[contract.registry_key]. Missing handler → error
+    payload (defense-in-depth: silently dropping or producing 'needs_build'
+    would mask a real wiring bug).
+    """
+    handler = _LIVE_HANDLERS.get(contract.registry_key or "")
+    if handler is None:
+        return MetricPayload(
+            metric_name=contract.metric_name,
+            config_key=contract.metric_name,
+            registry_key=contract.registry_key or "",
+            snapshot_column=contract.snapshot_column or "",
+            raw_value=None, transformed_value=None, target=contract.target,
+            display_value=_format_display(None, contract.format_spec, contract.null_behavior),
+            metric_unit=contract.format_spec, format_spec=contract.format_spec,
+            transform=contract.transform, snapshot_timestamp=ts,
+            sensitivity=contract.sensitivity, availability_state="error",
+            dept_id=dept_id,
+            notes=f"No live handler registered for registry_key={contract.registry_key!r}",
+            target_display=_compute_target_display(contract.target, contract.format_spec),
+        )
+
+    # Isolate handler exceptions: today's 3 handlers funnel through
+    # _run_engineering_query's broad except, but W.2+ may add inline handlers
+    # that raise. Without this guard, one bad handler kills the whole dept render.
+    try:
+        raw_value = _safe_optional_float(handler())
+    except Exception as e:  # noqa: BLE001 — handler errors must not cascade
+        emit_failure_alert(
+            surface="bq",
+            detail=f"live handler raised for registry_key={contract.registry_key!r}",
+            exc=e,
+            dept=dept_id,
+        )
+        raw_value = None
+    availability = "live" if raw_value is not None else "error"
+
+    # Path B fields — engineering 3-pack has no target → all-None by short-circuit
+    # in _compute_path_b_fields. Computed for parity with the snapshot path so a
+    # future live metric WITH a target gets pace/gap/status for free.
+    period = contract.period or _infer_period(contract.snapshot_column)
+    path_b = _compute_path_b_fields(
+        raw_value=raw_value,
+        target=contract.target,
+        period=period,
+        today=today,
+    )
+
+    # Live status currently always lands transform="raw" (contract.py:127-181 only
+    # derives percent transforms inside the status=="automated" branch). When a
+    # future live metric needs a transform, restore the apply_transform branch
+    # — single-line collapse here keeps dead code out of the hot path.
+    transformed = raw_value
+
+    return MetricPayload(
+        metric_name=contract.metric_name,
+        config_key=contract.metric_name,
+        registry_key=contract.registry_key or "",
+        snapshot_column=contract.snapshot_column or "",
+        raw_value=raw_value,
+        transformed_value=transformed,
+        target=contract.target,
+        display_value=_format_display(raw_value, contract.format_spec, contract.null_behavior),
+        metric_unit=contract.format_spec,
+        format_spec=contract.format_spec,
+        transform=contract.transform,
+        snapshot_timestamp=ts,
+        sensitivity=contract.sensitivity,
+        availability_state=availability,
+        dept_id=dept_id,
+        notes=contract.notes,
+        pace_value=path_b["pace_value"],
+        gap_value=path_b["gap_value"],
+        status_3state=path_b["status_3state"],
         target_display=_compute_target_display(contract.target, contract.format_spec),
     )
