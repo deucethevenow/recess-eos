@@ -25,7 +25,13 @@ from lib.orchestrator import ConsumerResult
 
 
 def _payload(**overrides) -> MetricPayload:
-    """Create a MetricPayload with sensible defaults."""
+    """Create a MetricPayload with sensible defaults.
+
+    Mirrors production: target_display is auto-populated from target+format_spec
+    via _compute_target_display, exactly like build_metric_payloads does. Tests
+    that need a custom target_display can pass it explicitly via overrides.
+    """
+    from lib.metric_payloads import _compute_target_display
     defaults = dict(
         metric_name="Pipeline Coverage",
         config_key="Pipeline Coverage",
@@ -45,6 +51,10 @@ def _payload(**overrides) -> MetricPayload:
         notes=None,
     )
     defaults.update(overrides)
+    if "target_display" not in defaults:
+        defaults["target_display"] = _compute_target_display(
+            defaults.get("target"), defaults.get("format_spec", "")
+        )
     return MetricPayload(**defaults)
 
 

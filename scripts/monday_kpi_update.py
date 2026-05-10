@@ -70,7 +70,7 @@ from lib.dept_slide_map import (  # noqa: E402
 )
 from lib.failure_alert import emit_failure_alert  # noqa: E402
 from lib.founders_preread import build_payloads_for_founders_preread  # noqa: E402
-from lib.metric_payloads import MetricPayload, _format_display  # noqa: E402
+from lib.metric_payloads import MetricPayload  # noqa: E402
 from lib.preflight import PreflightError, run_preflight  # noqa: E402
 from lib.rendered_row import RenderedRow  # noqa: E402
 from lib.scorecard_renderer import (  # noqa: E402
@@ -132,15 +132,12 @@ def _payload_to_rendered_row(payload: MetricPayload) -> RenderedRow:
     """Shim — convert a MetricPayload to a RenderedRow for backward compat with
     deck/Slack/leadership-doc writers that still consume RenderedRow downstream.
 
-    Phase B+ scaffolding only. Phase C+E migrates those writers to consume
-    MetricPayload directly and this shim disappears. Until then, the founders
-    branch (and any other Phase B+ adapter consumers) routes through here so
-    the rest of the pipeline keeps working.
+    Phase B+ scaffolding. Phase C+E moved `target_display` formatting onto
+    MetricPayload itself, so this shim no longer reaches into private
+    formatters — it just forwards `payload.target_display` through.
+    Migrating writers off RenderedRow remains future work; this shim
+    disappears when that happens.
     """
-    target_display = None
-    if payload.target is not None:
-        target_display = _format_display(payload.target, payload.format_spec, "show_dash")
-
     return RenderedRow(
         metric_name=payload.metric_name,
         display_label=payload.config_key or payload.metric_name,
@@ -151,7 +148,7 @@ def _payload_to_rendered_row(payload: MetricPayload) -> RenderedRow:
         status_icon=_STATUS_3STATE_TO_ICON.get(payload.status_3state, "⚪"),
         display=payload.display_value,
         actual_display=payload.display_value,
-        target_display=target_display,
+        target_display=payload.target_display,
         trend_display=None,
         is_phase2_placeholder=(payload.availability_state == "needs_build"),
         is_special_override=False,

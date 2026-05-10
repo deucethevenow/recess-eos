@@ -60,9 +60,8 @@ def extract_goal_progress_text(payload: MetricPayload) -> str:
     if payload.availability_state == "stale":
         value = value + " [stale]"
 
-    if payload.target is not None and payload.availability_state not in ("needs_build", "null"):
-        target_str = _format_target(payload.target, payload.format_spec)
-        return value + " / " + target_str
+    if payload.target_display and payload.availability_state not in ("needs_build", "null"):
+        return value + " / " + payload.target_display
 
     return value
 
@@ -184,22 +183,3 @@ def _to_placeholder_key(dept_id: str, registry_key: str) -> str:
     return dept_id + "_" + key
 
 
-def _format_target(target: float, format_spec: str) -> str:
-    """Format a target value for inline display in the deck."""
-    if format_spec == "percent":
-        if abs(target) <= 1:
-            return str(round(target * 100, 1)) + "%"
-        return str(round(target, 1)) + "%"
-    elif format_spec in ("multiplier", "pipeline_gap"):
-        return str(round(target, 1)) + "x"
-    elif format_spec == "currency":
-        if abs(target) >= 1_000_000:
-            return "$" + str(round(target / 1_000_000, 1)) + "M"
-        elif abs(target) >= 1_000:
-            return "$" + str(round(target / 1_000)) + "K"
-        return "$" + str(round(target))
-    elif format_spec == "days":
-        return str(round(target)) + " days"
-    elif format_spec in ("count", "number"):
-        return "{:,.0f}".format(target)
-    return str(target)

@@ -7,13 +7,28 @@ No consumer formats display values. This module does ALL of that, once, correctl
 """
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Literal, Optional, TypedDict, get_args
 
 from .metric_contract import resolve_metric_contract, MetricContract, ContractResolutionError
 from .percentage_transforms import apply_transform
 from .nan_safety import _is_bad_number
 
 STALE_THRESHOLD_HOURS = 25  # if snapshot_timestamp > 25h old, mark stale
+
+Status3State = Literal["on_track", "at_risk", "off_track"]
+# Mirrors dashboard.utils.pacing.Period verbatim — kept local because that
+# module is imported lazily inside _compute_path_b_fields (Cloud Run cron
+# may run without the dashboard mount). Annotations need Period at import
+# time, so we can't import it lazily. If the dashboard adds a period value,
+# update this in lockstep.
+Period = Literal["month", "quarter", "year"]
+_VALID_PERIODS = frozenset(get_args(Period))
+
+
+class PathBFields(TypedDict):
+    pace_value: Optional[float]
+    gap_value: Optional[float]
+    status_3state: Optional[Status3State]
 
 
 def _safe_optional_float(value) -> Optional[float]:
@@ -58,7 +73,8 @@ class MetricPayload:
     # through cleanly without fabricating signals.
     pace_value: Optional[float] = None       # signed delta from expected (positive=ahead)
     gap_value: Optional[float] = None        # max(0, target - raw_value), always >= 0
-    status_3state: Optional[str] = None      # "on_track" | "at_risk" | "off_track" | None
+    status_3state: Optional[Status3State] = None
+    target_display: Optional[str] = None     # formatted target ("$1.5M", "92%", etc.) or None when target is None
 
 
 def build_metric_payloads(
@@ -66,6 +82,7 @@ def build_metric_payloads(
     snapshot_row: dict,
     snapshot_timestamp: str,
     registry: dict = None,
+    today: Optional[datetime] = None,
 ) -> list[MetricPayload]:
     """Build canonical metric payloads for a single meeting/dept from a BQ snapshot row.
 
@@ -74,12 +91,39 @@ def build_metric_payloads(
         snapshot_row: A dict from the latest kpi_daily_snapshot row.
         snapshot_timestamp: ISO timestamp of when the snapshot was computed.
         registry: Optional METRIC_REGISTRY dict. Passed through to resolve_metric_contract.
+        today: Optional pinned NAIVE timestamp threaded into pace math.
+            When None, this function pins a deterministic naive-UTC
+            timestamp once and threads it through to _compute_path_b_fields
+            -> compute_pacing. Within a single call, day-math
+            (days_elapsed, days_total) inside compute_pacing is therefore
+            computed once instead of per-metric (~63x reduction within one
+            dept's payloads). Aware timestamps (tzinfo not None) are
+            stripped for compatibility with dashboard.utils.pacing's naive
+            datetime arithmetic.
+            Production path: orchestrator.build_all_payloads pins `today`
+            ONCE for the whole pulse and threads it through every dept
+            call, so all depts share the same `today` (no UTC-day-boundary
+            drift mid-run). Direct callers (tests, the four surface
+            adapters) get an independent per-call `today` when they don't
+            pass it.
 
     Returns:
         List of MetricPayload objects — one per scorecard metric. Frozen, immutable.
     """
     dept_id = meeting_config.get("id", "unknown")
     payloads = []
+    # Pin a NAIVE datetime to match dashboard.utils.pacing._days_in_period,
+    # which constructs naive q_start/q_end/year_start. Subtracting an
+    # aware datetime against a naive one raises TypeError, which the
+    # _compute_path_b_fields exception handler silently absorbs into
+    # all-None Path B fields — a footgun caught by the C+E critic round 1.
+    if today is not None and today.tzinfo is not None:
+        today = today.replace(tzinfo=None)
+    # When caller didn't pin, derive a deterministic naive-UTC `today`
+    # (NOT `datetime.now()` — that returns naive in the container's TZ,
+    # which Dockerfile.cron may set to America/New_York, leading to
+    # day-boundary surprises around midnight UTC).
+    pinned_today = today if today is not None else datetime.now(timezone.utc).replace(tzinfo=None)
 
     for metric_config in meeting_config.get("scorecard_metrics", []):
         if not isinstance(metric_config, dict):
@@ -142,6 +186,7 @@ def build_metric_payloads(
             raw_value=raw_value,
             target=contract.target,
             period=period,
+            today=pinned_today,
         )
 
         payloads.append(MetricPayload(
@@ -164,15 +209,13 @@ def build_metric_payloads(
             pace_value=path_b["pace_value"],
             gap_value=path_b["gap_value"],
             status_3state=path_b["status_3state"],
+            target_display=_compute_target_display(contract.target, contract.format_spec),
         ))
 
     return payloads
 
 
-_VALID_PERIODS = {"month", "quarter", "year"}
-
-
-def _infer_period(snapshot_column: Optional[str]) -> Optional[str]:
+def _infer_period(snapshot_column: Optional[str]) -> Optional[Period]:
     """Best-effort period inference from a snapshot column name.
 
     Used as fallback when the registry entry doesn't declare a `period` field.
@@ -196,10 +239,16 @@ def _infer_period(snapshot_column: Optional[str]) -> Optional[str]:
 def _compute_path_b_fields(
     raw_value: Optional[float],
     target: Optional[float],
-    period: Optional[str] = "quarter",
+    period: Optional[Period] = None,
     today: Optional[datetime] = None,
-) -> dict[str, Optional[float]]:
+) -> PathBFields:
     """Path B: pace + gap + 3-state status via dashboard.utils.pacing.compute_pacing.
+
+    `period` defaults to None (was "quarter" before Phase C+E). The production
+    caller in this module passes `period` explicitly, so the default change
+    is benign today — but a future direct caller that omits `period` now
+    safely degrades to None-fields rather than silently mis-pacing an annual
+    or monthly metric against a quarter fraction.
 
     Returns {pace_value, gap_value, status_3state}. Every field is None if any
     guard fails — never fabricates signals from missing/bad data.
@@ -235,6 +284,16 @@ def _compute_path_b_fields(
         from dashboard.utils.pacing import compute_pacing
     except ImportError:
         return {"pace_value": None, "gap_value": None, "status_3state": None}
+
+    # Defense-in-depth: dashboard.utils.pacing._days_in_period subtracts
+    # `today` against naive q_start / year_start datetimes. An aware `today`
+    # raises TypeError that the except-clause below absorbs into all-None
+    # Path B fields. Strip tzinfo here so direct callers (tests, ad-hoc
+    # invocations) can pass aware safely. The two pinning sites
+    # (build_metric_payloads, build_all_payloads) already strip; this is
+    # a redundant safety net for direct callers. See C+E critic round 1.
+    if today is not None and today.tzinfo is not None:
+        today = today.replace(tzinfo=None)
 
     try:
         pacing = compute_pacing(raw_value, target, period, today=today)
@@ -280,6 +339,17 @@ def _is_stale(timestamp_str: str) -> bool:
         return age > timedelta(hours=STALE_THRESHOLD_HOURS)
     except (ValueError, TypeError):
         return True  # unparseable = stale
+
+
+def _compute_target_display(target: Optional[float], format_spec: str) -> Optional[str]:
+    """Format a target for human display, or return None when target is missing.
+
+    Lifted out of consumers so MetricPayload carries the formatted string
+    directly — no consumer needs to import private formatters or reformat.
+    """
+    if target is None:
+        return None
+    return _format_display(target, format_spec, "show_dash")
 
 
 def _format_display(value: Optional[float], format_spec: str, null_behavior: str) -> str:
@@ -336,6 +406,7 @@ def _needs_build_payload(contract: MetricContract, dept_id: str, ts: str) -> Met
         format_spec=contract.format_spec, transform=contract.transform,
         snapshot_timestamp=ts, sensitivity=contract.sensitivity,
         availability_state="needs_build", dept_id=dept_id, notes=contract.notes,
+        target_display=_compute_target_display(contract.target, contract.format_spec),
     )
 
 
@@ -348,6 +419,7 @@ def _manual_payload(contract: MetricContract, dept_id: str, ts: str) -> MetricPa
         format_spec=contract.format_spec, transform="raw",
         snapshot_timestamp=ts, sensitivity=contract.sensitivity,
         availability_state="manual", dept_id=dept_id, notes=contract.notes,
+        target_display=_compute_target_display(contract.target, contract.format_spec),
     )
 
 
@@ -363,4 +435,5 @@ def _asana_goal_payload(contract: MetricContract, dept_id: str, ts: str) -> Metr
         transform="raw", snapshot_timestamp=ts, sensitivity=contract.sensitivity,
         availability_state="live", dept_id=dept_id,
         notes=f"Asana Goal {contract.asana_goal_id}",
+        target_display=_compute_target_display(contract.target, contract.format_spec),
     )

@@ -54,7 +54,7 @@ WHY the snapshot_row fixture uses registry snapshot_column names directly:
   keys MUST match the registry's actual snapshot_column field, verified
   via _dashboard_src/dashboard/data/metric_registry.py.
 """
-import re
+import ast
 
 import pytest
 import yaml
@@ -277,60 +277,224 @@ def test_founders_preread_uses_metric_payload_pipeline(founders_meeting, snapsho
 # parallel render_one_row-based path can't sneak back in.
 
 
+def _is_founders_dept_id_check(node) -> bool:
+    """AST helper: True iff `node` is an `ast.If` whose test is
+    `dept_id == "founders"` (single-string-literal compare, ignoring quote style
+    since AST normalizes both to a Constant)."""
+    return (
+        isinstance(node, ast.If)
+        and isinstance(node.test, ast.Compare)
+        and isinstance(node.test.left, ast.Name)
+        and node.test.left.id == "dept_id"
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.Eq)
+        and len(node.test.comparators) == 1
+        and isinstance(node.test.comparators[0], ast.Constant)
+        and node.test.comparators[0].value == "founders"
+    )
+
+
+def _render_one_row_calls_with_founders(tree) -> list:
+    """Walk the AST and return ast.Call nodes that are render_one_row(...) calls
+    with "founders" as a positional or `dept_id=` keyword argument."""
+    hits = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "render_one_row"):
+            continue
+        positional_founders = any(
+            isinstance(arg, ast.Constant) and arg.value == "founders"
+            for arg in node.args
+        )
+        kw_founders = any(
+            kw.arg == "dept_id" and isinstance(kw.value, ast.Constant) and kw.value.value == "founders"
+            for kw in node.keywords
+        )
+        if positional_founders or kw_founders:
+            hits.append(node)
+    return hits
+
+
+def _render_one_row_calls_under_founders_branch(tree) -> list:
+    """For every `if dept_id == "founders":` block — including elif chains, which
+    AST encodes as a nested If in `orelse` — return any render_one_row calls in
+    its body subtree. Catches the regression the regex-based check missed."""
+    hits = []
+    for node in ast.walk(tree):
+        if not _is_founders_dept_id_check(node):
+            continue
+        for stmt in node.body:
+            for sub in ast.walk(stmt):
+                if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Name) and sub.func.id == "render_one_row":
+                    hits.append(sub)
+    return hits
+
+
 def test_phase_b_plus_no_render_one_row_call_for_founders_dept():
     """Phase B+ Test #7 — monday_kpi_update.py must not call render_one_row
     in any branch where dept_id is "founders".
 
-    Structural source-level assertion. Catches:
-      1. `render_one_row(entry, "founders", ...)` — direct positional founders arg
-      2. `render_one_row(entry, 'founders', ...)` — single-quoted variant
-      3. `render_one_row(entry, dept_id="founders", ...)` — kwarg variant
-      4. Any `render_one_row(...)` call inside an `if dept_id == "founders":` block
+    Structural AST assertion (Phase C+E F11 — replaces the prior regex-based
+    check, which silently allowed `elif dept_id == "founders":` branches).
+    Catches:
+      1. `render_one_row(entry, "founders", ...)` — positional founders arg
+      2. `render_one_row(entry, dept_id="founders", ...)` — keyword arg
+      3. Any `render_one_row(...)` call inside an `if dept_id == "founders":`
+         OR `elif dept_id == "founders":` block — `ast.walk` traverses both
+         branch flavors uniformly because elif is encoded as nested If in
+         orelse.
 
-    Future-proofing: if Phase 3 founders pre-read is ever wired by anyone other
-    than the adapter, this test fails loud. The adapter
+    Future-proofing: if Phase 3 founders pre-read is ever wired by anyone
+    other than the adapter, this test fails loud. The adapter
     (lib.founders_preread.build_payloads_for_founders_preread) is the only
     blessed founders code path.
     """
-    src = MONDAY_KPI_UPDATE_PATH.read_text()
+    tree = ast.parse(MONDAY_KPI_UPDATE_PATH.read_text())
 
-    # Direct render_one_row(... "founders" ...) anywhere in the source — covers
-    # cases 1, 2, 3 above. The literal string "founders" must not appear within
-    # the same call expression as render_one_row.
-    direct_call_patterns = [
-        r'render_one_row\([^)]*"founders"',
-        r"render_one_row\([^)]*'founders'",
-        r'render_one_row\([^)]*dept_id\s*=\s*"founders"',
-        r"render_one_row\([^)]*dept_id\s*=\s*'founders'",
-    ]
-    for pattern in direct_call_patterns:
-        match = re.search(pattern, src, flags=re.DOTALL)
-        assert match is None, (
-            f"Phase B+ Test #7 FAILED: monday_kpi_update.py contains a "
-            f"render_one_row call with founders dept_id (matched pattern "
-            f"{pattern!r}). Use build_payloads_for_founders_preread() instead. "
-            f"Adapter location: scripts/lib/founders_preread.py."
-        )
-
-    # Block-level check: inside any `if dept_id == "founders":` branch (or
-    # equivalent single-quoted variant), the body must NOT call render_one_row.
-    # Match the if-block opening through the next non-indented line, an else:
-    # clause, OR end-of-string. The `\Z` alternation in the lookahead handles
-    # the case where an `if dept_id == "founders":` block is the LAST statement
-    # in its enclosing function — without it, re.findall returns nothing for
-    # that block and a regression slips through. Closes critic round 1 W7.
-    if_founders_blocks = re.findall(
-        r'if\s+dept_id\s*==\s*["\']founders["\']\s*:\s*\n(.*?)(?=\n[^ \t]|\n[ \t]+else:|\Z)',
-        src,
-        flags=re.DOTALL,
+    direct_hits = _render_one_row_calls_with_founders(tree)
+    assert not direct_hits, (
+        "Phase B+ Test #7 FAILED: monday_kpi_update.py calls render_one_row "
+        f"with 'founders' as an argument ({len(direct_hits)} occurrence(s) at "
+        f"line(s) {[n.lineno for n in direct_hits]}). Use "
+        "build_payloads_for_founders_preread() instead — see "
+        "scripts/lib/founders_preread.py."
     )
-    for block in if_founders_blocks:
-        assert "render_one_row" not in block, (
-            "Phase B+ Test #7 FAILED: an `if dept_id == \"founders\":` block "
-            "in monday_kpi_update.py calls render_one_row in its body. The "
-            "founders branch must route through build_payloads_for_founders_preread "
-            "instead. Block contents: " + block[:200]
+
+    branch_hits = _render_one_row_calls_under_founders_branch(tree)
+    assert not branch_hits, (
+        "Phase B+ Test #7 FAILED: an `if/elif dept_id == \"founders\":` block "
+        "in monday_kpi_update.py contains a render_one_row call (at line(s) "
+        f"{[n.lineno for n in branch_hits]}). The founders branch must route "
+        "through build_payloads_for_founders_preread instead."
+    )
+
+
+def test_phase_c_plus_e_test_7_ast_check_catches_elif_regression():
+    """Phase C+E F11 — the AST-based Test #7 must catch an `elif dept_id ==
+    "founders":` block that calls render_one_row. The prior regex-based check
+    failed on this pattern (the regex anchor matched only `if`, not `elif`).
+    Asserts that the AST helpers used by Test #7 fire on a synthetic source
+    snippet containing the regression pattern.
+    """
+    bad_source = (
+        "def f(entry, dept_id, ctx):\n"
+        "    if dept_id == 'sales':\n"
+        "        return render_one_row(entry, dept_id, ctx)\n"
+        "    elif dept_id == 'founders':\n"
+        "        return render_one_row(entry, dept_id, ctx)\n"
+    )
+    tree = ast.parse(bad_source)
+
+    branch_hits = _render_one_row_calls_under_founders_branch(tree)
+    assert len(branch_hits) == 1, (
+        "F11 regression: AST helper must catch render_one_row inside an "
+        f"elif dept_id == 'founders': block (got {len(branch_hits)} hits)."
+    )
+
+
+def test_phase_c_plus_e_pinned_today_compatible_with_real_compute_pacing():
+    """Phase C+E T3 (regression) — `_compute_path_b_fields` must produce
+    populated Path B fields when given a normal `today` and a pacing-eligible
+    target. Catches the aware/naive datetime mismatch (critic round 1
+    CRITICAL): dashboard.utils.pacing._days_in_period builds naive
+    q_start/q_end/year_start; subtracting an aware today raises TypeError
+    that the function's `except (ValueError, TypeError)` absorbs into
+    all-None fields. Without this test, the suite stayed GREEN even though
+    every production pace_value was silently None.
+
+    Runs the REAL compute_pacing — no monkeypatch. Tests both naive and
+    aware callers (defense-in-depth tzinfo stripping should handle both).
+    """
+    from datetime import datetime, timezone
+    from lib import metric_payloads
+
+    for tz_label, today in [
+        ("naive", datetime(2026, 5, 5, 12, 0)),
+        ("aware-utc", datetime(2026, 5, 5, 12, 0, tzinfo=timezone.utc)),
+    ]:
+        result = metric_payloads._compute_path_b_fields(
+            raw_value=100.0, target=200.0, period="quarter", today=today,
         )
+        assert result["pace_value"] is not None, (
+            f"{tz_label} today produced None pace_value — likely TypeError "
+            "in compute_pacing._days_in_period silently absorbed. Verify "
+            "tzinfo stripping is intact in build_all_payloads, "
+            "build_metric_payloads, and _compute_path_b_fields."
+        )
+        assert result["gap_value"] is not None, (
+            f"{tz_label} today produced None gap_value (companion check)."
+        )
+        assert result["status_3state"] is not None, (
+            f"{tz_label} today produced None status_3state (companion check)."
+        )
+
+
+def test_phase_c_plus_e_today_threads_compute_pacing_unit(monkeypatch):
+    """Phase C+E T3 (unit) — `_compute_path_b_fields` honors a caller-pinned
+    `today` and forwards it to compute_pacing. Locks in the inner-most leg
+    of the threading chain. Uses NAIVE today to match production
+    semantics (pinning sites strip tzinfo).
+    """
+    from datetime import datetime
+    from lib import metric_payloads
+    import dashboard.utils.pacing as real_pacing
+
+    captured: list = []
+
+    def fake_compute_pacing(actual, target, period, today=None, prior_year=None):
+        captured.append(today)
+        return {"delta": 0.0, "pct": 0.0, "label": "On Pace", "expected": float(target), "yoy_suppress": False}
+
+    monkeypatch.setattr(real_pacing, "compute_pacing", fake_compute_pacing)
+
+    pinned = datetime(2026, 5, 5, 12, 0)  # naive — matches production
+    metric_payloads._compute_path_b_fields(
+        raw_value=100.0, target=200.0, period="quarter", today=pinned,
+    )
+    assert captured == [pinned], f"compute_pacing did not receive pinned today: {captured}"
+
+
+def test_phase_c_plus_e_today_threads_orchestrator_to_build_metric_payloads(
+    monkeypatch, leadership_meeting, snapshot_row,
+):
+    """Phase C+E T3 (integration) — `build_all_payloads` pins `today` once and
+    threads it into every per-dept `build_metric_payloads` call. Catches a
+    regression where the orchestrator drops the kwarg and each dept silently
+    falls back to its own `datetime.now(UTC)`.
+
+    Spying at this layer (rather than at compute_pacing) is robust to which
+    metrics happen to be pacing-eligible in the leadership meeting fixture —
+    the orchestrator MUST call build_metric_payloads at least once per
+    meeting, regardless of whether any metric inside reaches compute_pacing.
+    """
+    from datetime import datetime, timezone
+    from lib import orchestrator
+
+    captured: list = []
+    real_build = orchestrator.build_metric_payloads
+
+    def spy_build_metric_payloads(*args, today=None, **kwargs):
+        captured.append(today)
+        return real_build(*args, today=today, **kwargs)
+
+    monkeypatch.setattr(orchestrator, "build_metric_payloads", spy_build_metric_payloads)
+
+    pinned_aware = datetime(2026, 5, 5, 12, 0, tzinfo=timezone.utc)
+    expected_naive = pinned_aware.replace(tzinfo=None)
+    orchestrator.build_all_payloads(
+        config={"meetings": [leadership_meeting]},
+        snapshot_row=snapshot_row,
+        snapshot_ts="2026-05-09T06:00:00Z",
+        today=pinned_aware,
+    )
+
+    assert captured, "build_all_payloads never delegated to build_metric_payloads"
+    # Orchestrator strips tzinfo before threading (defense against
+    # aware/naive TypeError in dashboard.utils.pacing._days_in_period).
+    # Asserting the NAIVE form catches both the threading AND the strip.
+    assert all(t == expected_naive for t in captured), (
+        f"build_all_payloads did not thread tzinfo-stripped `today` to "
+        f"every dept: got {captured}, expected {expected_naive}."
+    )
 
 
 def test_phase_b_plus_founders_branch_imports_adapter():
