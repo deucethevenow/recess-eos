@@ -49,6 +49,24 @@ ASSUMPTIONS:
 from typing import Any, Dict, List, Optional, Tuple
 
 from .failure_alert import emit_failure_alert
+from .metric_payloads import MetricPayload, build_metric_payloads
+
+
+def build_payloads_for_doc(
+    meeting: dict,
+    snapshot_row: dict,
+    snapshot_timestamp: str,
+) -> List[MetricPayload]:
+    """Phase B+ surface adapter — Leadership-doc consumer's view of canonical payloads.
+
+    Thin pass-through to the central producer. The existing sentinel-replacement
+    rendering (deleteContentRange + insertText between <<KPI_LEADERSHIP_START>>
+    and <<KPI_LEADERSHIP_END>>) is unchanged in Phase B+; this adapter exists so
+    the cross-surface parity test can verify Leadership-doc consumes the same
+    MetricPayload pipeline as Slack/Deck/Founders. DocRow text-cell synthesis
+    lands in Phase C+E.
+    """
+    return build_metric_payloads(meeting, snapshot_row, snapshot_timestamp)
 
 SENTINEL_START = "<<KPI_LEADERSHIP_START>>"
 SENTINEL_END = "<<KPI_LEADERSHIP_END>>"

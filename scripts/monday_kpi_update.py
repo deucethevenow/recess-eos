@@ -69,6 +69,8 @@ from lib.dept_slide_map import (  # noqa: E402
     resolve_dept_slide_map,
 )
 from lib.failure_alert import emit_failure_alert  # noqa: E402
+from lib.founders_preread import build_payloads_for_founders_preread  # noqa: E402
+from lib.metric_payloads import MetricPayload, _format_display  # noqa: E402
 from lib.preflight import PreflightError, run_preflight  # noqa: E402
 from lib.rendered_row import RenderedRow  # noqa: E402
 from lib.scorecard_renderer import (  # noqa: E402
@@ -111,6 +113,90 @@ def _safe_funnel_fetch() -> Optional[Any]:
             exc=e,
         )
         return None
+
+
+# --------------------------------------------------------------------------- #
+# Phase B+ — Founders pre-read adapter wiring                                 #
+# --------------------------------------------------------------------------- #
+
+
+_STATUS_3STATE_TO_ICON = {
+    "on_track": "\U0001F7E2",   # 🟢
+    "at_risk":  "\U0001F7E1",   # 🟡
+    "off_track": "\U0001F534",  # 🔴
+    None: "⚪",              # ⚪
+}
+
+
+def _payload_to_rendered_row(payload: MetricPayload) -> RenderedRow:
+    """Shim — convert a MetricPayload to a RenderedRow for backward compat with
+    deck/Slack/leadership-doc writers that still consume RenderedRow downstream.
+
+    Phase B+ scaffolding only. Phase C+E migrates those writers to consume
+    MetricPayload directly and this shim disappears. Until then, the founders
+    branch (and any other Phase B+ adapter consumers) routes through here so
+    the rest of the pipeline keeps working.
+    """
+    target_display = None
+    if payload.target is not None:
+        target_display = _format_display(payload.target, payload.format_spec, "show_dash")
+
+    return RenderedRow(
+        metric_name=payload.metric_name,
+        display_label=payload.config_key or payload.metric_name,
+        dept_id=payload.dept_id,
+        sensitivity=payload.sensitivity,
+        actual_raw=payload.raw_value,
+        target_raw=payload.target,
+        status_icon=_STATUS_3STATE_TO_ICON.get(payload.status_3state, "⚪"),
+        display=payload.display_value,
+        actual_display=payload.display_value,
+        target_display=target_display,
+        trend_display=None,
+        is_phase2_placeholder=(payload.availability_state == "needs_build"),
+        is_special_override=False,
+    )
+
+
+def _build_founders_rendered_rows(
+    company_metrics: Dict[str, Any],
+    snapshot_timestamp: Optional[str] = None,
+) -> list:
+    """Phase B+ — produce RenderedRow list for the founders dept via the
+    canonical MetricPayload pipeline. Loads the 'founders' meeting from
+    config/recess_os.yml, calls build_payloads_for_founders_preread, then
+    runs each payload through _payload_to_rendered_row.
+
+    Today this branch isn't exercised in production (DEPT_METRIC_ORDER excludes
+    'founders' — the founders pre-read is a Phase 3 placeholder in
+    recess_os_daily.sh). The wiring exists so Phase 3 has a single blessed
+    code path: any future founders pre-read MUST route through the adapter,
+    not introduce a parallel render_one_row-based pipeline. Test #7 in
+    test_monday_update_surface_parity.py enforces that structurally.
+    """
+    import yaml
+
+    config_path = Path(__file__).resolve().parent.parent / "config" / "recess_os.yml"
+    try:
+        cfg = yaml.safe_load(config_path.read_text())
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        emit_failure_alert(
+            surface="founders_preread_yaml_load",
+            detail=f"failed to load {config_path}; founders pre-read returns empty",
+            exc=e,
+        )
+        return []
+
+    founders_meeting = next(
+        (m for m in cfg.get("meetings", []) if m.get("id") == "founders"),
+        None,
+    )
+    if not founders_meeting:
+        return []
+
+    ts = snapshot_timestamp or company_metrics.get("snapshot_timestamp", "")
+    payloads = build_payloads_for_founders_preread(founders_meeting, company_metrics, ts)
+    return [_payload_to_rendered_row(p) for p in payloads]
 
 
 # --------------------------------------------------------------------------- #
@@ -313,7 +399,18 @@ def main(
         rocks_for_dept = rocks_by_dept.get(dept_id, {})
         if not entries and not rocks_for_dept.get("rocks") and not rocks_for_dept.get("projects"):
             continue
-        rows = [render_one_row(e, dept_id, company_metrics, today) for e in entries]
+        # Phase B+ — founders pre-read consumes the canonical MetricPayload
+        # pipeline (closes the dual-pipeline loophole flagged by Phase 0
+        # reviewers). Other depts continue on render_one_row until Phase C+E
+        # migrates them. Today this branch is forward-looking infrastructure:
+        # DEPT_METRIC_ORDER excludes 'founders', so the branch doesn't fire
+        # in current runs — the founders pre-read is a Phase 3 placeholder
+        # in recess_os_daily.sh. When Phase 3 lands, this is the only blessed
+        # code path; Test #7 enforces structurally.
+        if dept_id == "founders":
+            rows = _build_founders_rendered_rows(company_metrics)
+        else:
+            rows = [render_one_row(e, dept_id, company_metrics, today) for e in entries]
         rendered_per_dept[dept_id] = {
             "scorecard_rows": rows,
             "rocks_section": rocks_for_dept,

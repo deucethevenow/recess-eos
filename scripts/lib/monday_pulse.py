@@ -15,8 +15,28 @@ from typing import Optional
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from lib.metric_payloads import MetricPayload, SENSITIVITY_LEVELS
+from lib.metric_payloads import (
+    MetricPayload,
+    SENSITIVITY_LEVELS,
+    build_metric_payloads,
+)
 from lib.orchestrator import ConsumerResult
+
+
+def build_payloads_for_slack(
+    meeting: dict,
+    snapshot_row: dict,
+    snapshot_timestamp: str,
+) -> list[MetricPayload]:
+    """Phase B+ surface adapter — Slack consumer's view of the canonical payloads.
+
+    Thin pass-through to the central producer. All four surface adapters
+    (Slack/Deck/Doc/Founders pre-read) call this same producer with the same
+    args, so cross-surface parity is enforced by construction. Surface-specific
+    fan-out (Slack Block Kit JSON, Slides cells, Doc text runs) happens
+    downstream of this list — never in this adapter.
+    """
+    return build_metric_payloads(meeting, snapshot_row, snapshot_timestamp)
 
 
 class SlackPostError(Exception):

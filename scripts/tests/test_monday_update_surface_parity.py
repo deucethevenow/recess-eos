@@ -1,4 +1,4 @@
-"""Cross-surface parity test for the Monday-pulse pipeline (Phase 0.5).
+"""Cross-surface parity test for the Monday-pulse pipeline (Phase 0.5 + Phase B+).
 
 Per LEARNING from 2026-04-18 SSOT incident: writing this test FIRST forces
 Phase B+ to ship without surface drift. Both tests fail today (xfail-marked)
@@ -54,11 +54,14 @@ WHY the snapshot_row fixture uses registry snapshot_column names directly:
   keys MUST match the registry's actual snapshot_column field, verified
   via _dashboard_src/dashboard/data/metric_registry.py.
 """
+import re
+
 import pytest
 import yaml
 from pathlib import Path
 
 CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "recess_os.yml"
+MONDAY_KPI_UPDATE_PATH = Path(__file__).parent.parent / "monday_kpi_update.py"
 
 
 def _load_meeting(meeting_id: str) -> dict:
@@ -152,18 +155,6 @@ def snapshot_row():
     }
 
 
-@pytest.mark.xfail(
-    raises=(ImportError, AttributeError),
-    reason=(
-        "Phase B+ Test #7 unifies Slack/Deck/Leadership-doc adapters on "
-        "MetricPayload + Path B fields (pace_value, gap_value, status_3state). "
-        "Today: ImportError (build_payloads_for_* don't exist) and "
-        "AttributeError (Path B fields don't exist on MetricPayload). "
-        "Mark is removed when all three adapters land AND MetricPayload "
-        "gains the Path B fields. raises= scopes failure to the two intentional "
-        "modes — any other exception is a real bug, not the planned RED state."
-    ),
-)
 def test_slack_deck_doc_emit_identical_payloads(leadership_meeting, snapshot_row):
     """For every yaml metric on the leadership meeting, Slack+Deck+Leadership-doc
     paths must emit MetricPayload with the same raw_value, target,
@@ -217,16 +208,6 @@ def test_slack_deck_doc_emit_identical_payloads(leadership_meeting, snapshot_row
         )
 
 
-@pytest.mark.xfail(
-    raises=(ImportError, AttributeError),
-    reason=(
-        "Phase B+ adds build_payloads_for_founders_preread so the founders "
-        "pre-read can consume MetricPayload alongside Slack/Deck/Doc. Today: "
-        "ImportError — the symbol doesn't exist. Once it exists, AttributeError "
-        "until MetricPayload gains the Path B fields. Mark is removed in "
-        "Phase B+ Test #7 when adapter + Path B fields both land."
-    ),
-)
 def test_founders_preread_uses_metric_payload_pipeline(founders_meeting, snapshot_row):
     """Asserts that build_payloads_for_founders_preread EXISTS and emits
     MetricPayload-shaped objects with Path B fields populated.
@@ -272,3 +253,107 @@ def test_founders_preread_uses_metric_payload_pipeline(founders_meeting, snapsho
         assert isinstance(p.status_3state, (str, type(None))), (
             f"{metric_name}: status_3state wrong type (Path B not properly typed)"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase B+ Test #7 — INTEGRATION-LEVEL call-site assertion
+# ─────────────────────────────────────────────────────────────────────────────
+# Closes the loophole that Test 2 (test_founders_preread_uses_metric_payload_pipeline)
+# explicitly does NOT close. Test 2 verifies the adapter exists and produces
+# MetricPayload-shaped objects but does NOT verify the production call site
+# (monday_kpi_update.py) actually routes founders through the adapter.
+#
+# DISCOVERY (Phase B+ implementation, 2026-05-10): the Phase 0.5 docstring
+# premise — that monday_kpi_update.py:316 → render_one_row was the existing
+# founders pre-read render path — was incorrect. DEPT_METRIC_ORDER excludes
+# "founders"; line 316 has never processed founders. The founders pre-read
+# is currently a Phase 3 placeholder in scripts/recess_os_daily.sh:48.
+#
+# Phase B+ ships forward-looking infrastructure: monday_kpi_update.py grew an
+# explicit `if dept_id == "founders":` branch that routes through the new
+# adapter. The branch is dead code today (DEPT_METRIC_ORDER excludes founders)
+# but locks in the contract for Phase 3: when founders pre-read implementation
+# lands, it MUST go through the adapter. Test #7 enforces structurally so a
+# parallel render_one_row-based path can't sneak back in.
+
+
+def test_phase_b_plus_no_render_one_row_call_for_founders_dept():
+    """Phase B+ Test #7 — monday_kpi_update.py must not call render_one_row
+    in any branch where dept_id is "founders".
+
+    Structural source-level assertion. Catches:
+      1. `render_one_row(entry, "founders", ...)` — direct positional founders arg
+      2. `render_one_row(entry, 'founders', ...)` — single-quoted variant
+      3. `render_one_row(entry, dept_id="founders", ...)` — kwarg variant
+      4. Any `render_one_row(...)` call inside an `if dept_id == "founders":` block
+
+    Future-proofing: if Phase 3 founders pre-read is ever wired by anyone other
+    than the adapter, this test fails loud. The adapter
+    (lib.founders_preread.build_payloads_for_founders_preread) is the only
+    blessed founders code path.
+    """
+    src = MONDAY_KPI_UPDATE_PATH.read_text()
+
+    # Direct render_one_row(... "founders" ...) anywhere in the source — covers
+    # cases 1, 2, 3 above. The literal string "founders" must not appear within
+    # the same call expression as render_one_row.
+    direct_call_patterns = [
+        r'render_one_row\([^)]*"founders"',
+        r"render_one_row\([^)]*'founders'",
+        r'render_one_row\([^)]*dept_id\s*=\s*"founders"',
+        r"render_one_row\([^)]*dept_id\s*=\s*'founders'",
+    ]
+    for pattern in direct_call_patterns:
+        match = re.search(pattern, src, flags=re.DOTALL)
+        assert match is None, (
+            f"Phase B+ Test #7 FAILED: monday_kpi_update.py contains a "
+            f"render_one_row call with founders dept_id (matched pattern "
+            f"{pattern!r}). Use build_payloads_for_founders_preread() instead. "
+            f"Adapter location: scripts/lib/founders_preread.py."
+        )
+
+    # Block-level check: inside any `if dept_id == "founders":` branch (or
+    # equivalent single-quoted variant), the body must NOT call render_one_row.
+    # Match the if-block opening through the next non-indented line, an else:
+    # clause, OR end-of-string. The `\Z` alternation in the lookahead handles
+    # the case where an `if dept_id == "founders":` block is the LAST statement
+    # in its enclosing function — without it, re.findall returns nothing for
+    # that block and a regression slips through. Closes critic round 1 W7.
+    if_founders_blocks = re.findall(
+        r'if\s+dept_id\s*==\s*["\']founders["\']\s*:\s*\n(.*?)(?=\n[^ \t]|\n[ \t]+else:|\Z)',
+        src,
+        flags=re.DOTALL,
+    )
+    for block in if_founders_blocks:
+        assert "render_one_row" not in block, (
+            "Phase B+ Test #7 FAILED: an `if dept_id == \"founders\":` block "
+            "in monday_kpi_update.py calls render_one_row in its body. The "
+            "founders branch must route through build_payloads_for_founders_preread "
+            "instead. Block contents: " + block[:200]
+        )
+
+
+def test_phase_b_plus_founders_branch_imports_adapter():
+    """Phase B+ Test #7 (companion) — monday_kpi_update.py must import the
+    founders adapter symbol. Without the import, the founders branch can't
+    route through the adapter.
+
+    Two-part check:
+      1. The import line `from lib.founders_preread import build_payloads_for_founders_preread`
+         appears at module level (proves the symbol is bound before the loop runs).
+      2. The symbol is referenced somewhere in the file (proves it's actually used,
+         not just imported for show).
+    """
+    src = MONDAY_KPI_UPDATE_PATH.read_text()
+    assert "from lib.founders_preread import build_payloads_for_founders_preread" in src, (
+        "Phase B+ Test #7: monday_kpi_update.py must import "
+        "build_payloads_for_founders_preread from lib.founders_preread. "
+        "Without this import, the founders branch has no canonical adapter to call."
+    )
+    # Symbol referenced in code (not just in the import line). The import line
+    # itself contains the symbol once — require at least 2 occurrences.
+    assert src.count("build_payloads_for_founders_preread") >= 2, (
+        "Phase B+ Test #7: build_payloads_for_founders_preread is imported "
+        "but never called in monday_kpi_update.py. Wire it into the "
+        "founders branch."
+    )

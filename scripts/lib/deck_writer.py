@@ -33,6 +33,23 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from .failure_alert import emit_failure_alert
 from .idempotency import build_cell_write_requests
+from .metric_payloads import MetricPayload, build_metric_payloads
+
+
+def build_payloads_for_deck(
+    meeting: dict,
+    snapshot_row: dict,
+    snapshot_timestamp: str,
+) -> List[MetricPayload]:
+    """Phase B+ surface adapter — Deck consumer's view of the canonical payloads.
+
+    Thin pass-through to the central producer (see metric_payloads.build_metric_payloads).
+    The deck's existing 5-column rendering pipeline (apply_via_slides_api) is
+    untouched in Phase B+; this adapter exists so the cross-surface parity test
+    can verify Deck consumes the same MetricPayload pipeline as Slack/Doc/Founders.
+    Per-surface fan-out into DeckRow lives downstream and lands in Phase C+E.
+    """
+    return build_metric_payloads(meeting, snapshot_row, snapshot_timestamp)
 
 
 def _filter_visible_rows(rows: Iterable, max_sensitivity: str) -> List:

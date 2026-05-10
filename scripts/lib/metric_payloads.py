@@ -7,7 +7,7 @@ No consumer formats display values. This module does ALL of that, once, correctl
 """
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Optional, Dict
 
 from .metric_contract import resolve_metric_contract, MetricContract, ContractResolutionError
 from .percentage_transforms import apply_transform
@@ -52,6 +52,13 @@ class MetricPayload:
     availability_state: str  # "live" | "needs_build" | "stale" | "error" | "null" | "manual"
     dept_id: str
     notes: Optional[str]
+    # Path B fields (Phase B+) — pace/gap/3-state status. Defaults `= None` so
+    # the four stub-payload helpers (_error/_needs_build/_manual/_asana_goal)
+    # constructing positionally don't break, and so missing-data metrics pass
+    # through cleanly without fabricating signals.
+    pace_value: Optional[float] = None       # signed delta from expected (positive=ahead)
+    gap_value: Optional[float] = None        # max(0, target - raw_value), always >= 0
+    status_3state: Optional[str] = None      # "on_track" | "at_risk" | "off_track" | None
 
 
 def build_metric_payloads(
@@ -125,6 +132,18 @@ def build_metric_payloads(
         # Format display value
         display = _format_display(raw_value, contract.format_spec, contract.null_behavior)
 
+        # Path B (Phase B+): pace/gap/status_3state. Pace math lives ONCE here so
+        # all four surface adapters (Slack/Deck/Doc/Founders) get identical values
+        # by construction — adapters never recompute. Period from registry; falls
+        # back to snapshot_column suffix inference for entries missing a `period:`
+        # field (most metrics today, until the dashboard registry update lands).
+        period = contract.period or _infer_period(contract.snapshot_column)
+        path_b = _compute_path_b_fields(
+            raw_value=raw_value,
+            target=contract.target,
+            period=period,
+        )
+
         payloads.append(MetricPayload(
             metric_name=contract.metric_name,
             config_key=metric_config.get("name", ""),
@@ -142,9 +161,106 @@ def build_metric_payloads(
             availability_state=availability,
             dept_id=dept_id,
             notes=contract.notes,
+            pace_value=path_b["pace_value"],
+            gap_value=path_b["gap_value"],
+            status_3state=path_b["status_3state"],
         ))
 
     return payloads
+
+
+_VALID_PERIODS = {"month", "quarter", "year"}
+
+
+def _infer_period(snapshot_column: Optional[str]) -> Optional[str]:
+    """Best-effort period inference from a snapshot column name.
+
+    Used as fallback when the registry entry doesn't declare a `period` field.
+    Returns None for ambiguous columns (snapshot counts, ratios, weekly counters).
+    Conservative: when in doubt, return None — _compute_path_b_fields will then
+    short-circuit to None-fields rather than fabricate pace against the wrong
+    fraction-of-period.
+    """
+    if not snapshot_column:
+        return None
+    name = snapshot_column.lower()
+    if name.endswith("_ytd") or name.endswith("ytd"):
+        return "year"
+    if name.endswith("_qtd") or name.endswith("_q") or name.endswith("qtd"):
+        return "quarter"
+    if name.endswith("_mtd"):
+        return "month"
+    return None
+
+
+def _compute_path_b_fields(
+    raw_value: Optional[float],
+    target: Optional[float],
+    period: Optional[str] = "quarter",
+    today: Optional[datetime] = None,
+) -> Dict[str, Optional[float]]:
+    """Path B: pace + gap + 3-state status via dashboard.utils.pacing.compute_pacing.
+
+    Returns {pace_value, gap_value, status_3state}. Every field is None if any
+    guard fails — never fabricates signals from missing/bad data.
+
+    Semantics:
+      pace_value    = signed delta from expected (positive=ahead, negative=behind)
+      gap_value     = max(0, target - raw_value), always >= 0 (remaining-to-target)
+      status_3state = "on_track" if pct >= 0
+                      "at_risk"  if -0.30 <= pct < 0
+                      "off_track" if pct < -0.30
+                      None when no comparison is meaningful
+
+    Guards (ordered, fail-loud None on each):
+      1. None inputs (missing data)
+      2. NaN/inf inputs — `compute_pacing` calls `safe_float()` internally which
+         silently coerces NaN->0; would render "100% behind pace" for missing
+         data without this guard.
+      3. target=0 (no quota → no meaningful comparison; avoid divide-by-zero)
+      4. period=None (forecast metrics, snapshot counts → no time fraction)
+      5. ImportError on dashboard.utils.pacing — Cloud Run image without
+         dashboard mount returns None-fields rather than crashing.
+    """
+    if raw_value is None or target is None:
+        return {"pace_value": None, "gap_value": None, "status_3state": None}
+    if _is_bad_number(raw_value) or _is_bad_number(target):
+        return {"pace_value": None, "gap_value": None, "status_3state": None}
+    if target == 0:
+        return {"pace_value": None, "gap_value": None, "status_3state": None}
+    if period is None or period not in _VALID_PERIODS:
+        return {"pace_value": None, "gap_value": None, "status_3state": None}
+
+    try:
+        from dashboard.utils.pacing import compute_pacing
+    except ImportError:
+        return {"pace_value": None, "gap_value": None, "status_3state": None}
+
+    try:
+        pacing = compute_pacing(raw_value, target, period, today=today)
+    except (ValueError, TypeError):
+        return {"pace_value": None, "gap_value": None, "status_3state": None}
+
+    delta = pacing.get("delta")
+    pct = pacing.get("pct")
+
+    if _is_bad_number(delta):
+        return {"pace_value": None, "gap_value": None, "status_3state": None}
+
+    if pct is None or _is_bad_number(pct):
+        status = None
+    elif pct >= 0:
+        status = "on_track"
+    elif pct >= -0.30:
+        status = "at_risk"
+    else:
+        status = "off_track"
+
+    return {
+        "pace_value": float(delta),
+        "gap_value": max(0.0, float(target) - float(raw_value)),
+        "status_3state": status,
+    }
 
 
 def filter_by_sensitivity(payloads: list[MetricPayload], max_sensitivity: str) -> list[MetricPayload]:

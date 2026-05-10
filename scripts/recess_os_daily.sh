@@ -45,7 +45,7 @@ case "$DOW" in
       || .venv/bin/python recess_os.py monday-pulse
     .venv/bin/python recess_os.py update-all-hands-deck --check-cadence
     ;;
-  3) echo "Wednesday — would run send-preread (Phase 3)" ;;
+  3) echo "Wednesday — would run send-preread (Phase 3); MUST call lib.founders_preread.build_payloads_for_founders_preread (no parallel render path)" ;;
   5) # Friday
     .venv/bin/python recess_os.py push-kpi-goals
     ;;
