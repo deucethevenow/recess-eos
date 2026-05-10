@@ -124,8 +124,8 @@ _STATUS_3STATE_TO_ICON = {
     "on_track": "\U0001F7E2",   # 🟢
     "at_risk":  "\U0001F7E1",   # 🟡
     "off_track": "\U0001F534",  # 🔴
-    None: "⚪",              # ⚪
 }
+# None and unexpected values fall through to "⚪" via dict.get(..., "⚪") default.
 
 
 def _payload_to_rendered_row(payload: MetricPayload) -> RenderedRow:

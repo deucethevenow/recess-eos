@@ -7,7 +7,7 @@ No consumer formats display values. This module does ALL of that, once, correctl
 """
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
-from typing import Optional, Dict
+from typing import Optional
 
 from .metric_contract import resolve_metric_contract, MetricContract, ContractResolutionError
 from .percentage_transforms import apply_transform
@@ -198,7 +198,7 @@ def _compute_path_b_fields(
     target: Optional[float],
     period: Optional[str] = "quarter",
     today: Optional[datetime] = None,
-) -> Dict[str, Optional[float]]:
+) -> dict[str, Optional[float]]:
     """Path B: pace + gap + 3-state status via dashboard.utils.pacing.compute_pacing.
 
     Returns {pace_value, gap_value, status_3state}. Every field is None if any
