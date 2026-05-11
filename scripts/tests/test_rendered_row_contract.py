@@ -16,8 +16,6 @@ import pytest
 
 from lib.rendered_row import RenderedRow
 from lib.scorecard_renderer import (
-    DATA_UNAVAILABLE_PLACEHOLDER,
-    ENGINEERING_LIVE_METRICS,
     PHASE2_PLACEHOLDER,
     SPECIAL_METRIC_NAMES,
     render_one_row,
@@ -58,7 +56,7 @@ def test_rendered_row_has_all_contract_fields():
     assert row.is_special_override is False
 
 
-# ----- Cascade Step 0b: needs_build → Phase 2 placeholder ------------------- #
+# ----- Cascade Step 0a: needs_build → Phase 2 placeholder ------------------- #
 
 
 def test_needs_build_returns_phase2_placeholder_with_flag():
@@ -98,50 +96,7 @@ def test_phase2_placeholder_display_is_identical_for_all_writers():
     assert PHASE2_PLACEHOLDER in leadership_text
 
 
-# ----- Cascade Step 0a: ENGINEERING_LIVE_METRICS precedence ---------------- #
-
-
-def test_engineering_live_metric_precedes_phase2_placeholder():
-    """If the same key is BOTH in ENGINEERING_LIVE_METRICS AND has needs_build,
-    the live function wins. Step 0a precedes Step 0b."""
-    entry = {"key": "Live Engineering Metric", "scorecard_status": "needs_build"}
-
-    def live_fn(entry, dept_id, company_metrics):
-        return (42.0, "live!")
-
-    with patch.dict(ENGINEERING_LIVE_METRICS, {"Live Engineering Metric": live_fn}):
-        with patch(
-            "lib.scorecard_renderer.get_scorecard_dept_sensitivity",
-            return_value="public",
-        ), patch(
-            "lib.scorecard_renderer.get_scorecard_label",
-            side_effect=lambda e, d, n: n,
-        ):
-            row = render_one_row(entry, "engineering", {}, date(2026, 5, 5))
-    assert row.display == "live!"
-    assert row.actual_raw == 42.0
-    assert row.is_phase2_placeholder is False
-
-
-def test_engineering_live_metric_failure_falls_back_to_data_unavailable():
-    entry = {"key": "Flaky Live Metric"}
-
-    def boom(*a, **kw):
-        raise RuntimeError("BQ unreachable")
-
-    with patch.dict(ENGINEERING_LIVE_METRICS, {"Flaky Live Metric": boom}):
-        with patch(
-            "lib.scorecard_renderer.get_scorecard_dept_sensitivity",
-            return_value="public",
-        ), patch(
-            "lib.scorecard_renderer.get_scorecard_label",
-            side_effect=lambda e, d, n: n,
-        ):
-            row = render_one_row(entry, "engineering", {}, date(2026, 5, 5))
-    assert row.display == DATA_UNAVAILABLE_PLACEHOLDER
-
-
-# ----- Cascade Step 0c: asana_goal status (C2 fix) ------------------------- #
+# ----- Cascade Step 0b: asana_goal status (C2 fix) ------------------------- #
 
 
 def test_asana_goal_status_calls_render_asana_goal_not_live_metric():

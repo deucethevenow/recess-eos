@@ -1,9 +1,8 @@
 """render_one_row — the single rendering function all surface writers consume.
 
-Per v3.8 Patch 1 / Patch 8 cascade order:
-  Step 0a: ENGINEERING_LIVE_METRICS — live-function dispatch (MUST precede Step 0b).
-  Step 0b: needs_build → "🔨 (Phase 2 migration)" placeholder.
-  Step 0c: asana_goal status → cron's _render_asana_goal (Asana Goals API path).
+Per v3.8 Patch 1 cascade order:
+  Step 0a: needs_build → "🔨 (Phase 2 migration)" placeholder.
+  Step 0b: asana_goal status → cron's _render_asana_goal (Asana Goals API path).
   Step 1-4: existing v3.5 cascade — handled by cron's _render_live_metric
             (special overrides, sales-per-page, scope=both, single value).
 
@@ -23,7 +22,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 DASHBOARD_REPO = Path(
     os.environ.get(
@@ -47,14 +46,11 @@ from dashboard.data.metric_registry import (  # type: ignore
     get_scorecard_label,
 )
 
-from .failure_alert import emit_failure_alert
-from .metric_payloads import _LIVE_HANDLERS as _PAYLOAD_LIVE_HANDLERS
 from .rendered_row import RenderedRow
 from .static_scorecard_targets import STATIC_SCORECARD_TARGETS
 
 
 PHASE2_PLACEHOLDER = "\U0001F528 (Phase 2 migration)"
-DATA_UNAVAILABLE_PLACEHOLDER = "\U0001F528 (data unavailable)"
 SPECIAL_METRIC_NAMES = {"Demand NRR", "Pipeline Coverage", "Bill Payment Timeliness"}
 
 # Trailing "  ·  target X" pattern that some special-override metrics embed
@@ -79,54 +75,6 @@ def _split_inline_target(body: Optional[str]) -> Tuple[Optional[str], Optional[s
         actual = body[: match.start()].rstrip()
         return actual, target
     return body, None
-
-# Live-function dispatch table for engineering metrics. Step 0a in render_one_row
-# checks this dict BEFORE Step 0b's needs_build placeholder fires, which is how
-# eos overrides dashboard's "needs_build" status for metrics that have a live
-# BQ handler. The 3 W.1 hero metrics (Features Fully Scoped / PRDs / FSDs) are
-# registered as needs_build in dashboard's METRIC_REGISTRY but eos can compute
-# them live via metric_payloads._LIVE_HANDLERS — bridging them here resolves F-1.
-#
-# When dashboard flips W.1 entries from needs_build → live (Phase Final), Step 0a
-# still fires first and produces the same output; the bridge stays valid. The
-# bridge auto-grows as W.2/W.3/W.4 append more entries to _LIVE_HANDLERS.
-def _adapt_live_handler(
-    handler_fn: Callable[[], Optional[int]],
-) -> Callable[[Dict[str, Any], str, Dict[str, Any]], Tuple[Any, str]]:
-    """Wrap a metric_payloads._LIVE_HANDLERS entry to ENGINEERING_LIVE_METRICS
-    signature. The handlers are no-arg callables returning Optional[int]; Step 0a
-    expects (entry, dept_id, company_metrics) → (raw, display_str).
-
-    On None (BQ failure, schema drift, missing SQL file, zero rows): emit a
-    failure_alert so operators see the regression in #kpi-dashboard-notifications,
-    THEN raise ValueError so render_one_row's except-clause falls back to
-    DATA_UNAVAILABLE_PLACEHOLDER. Without the alert, silent degradation to the
-    placeholder would mask schema drift — same alerting contract as
-    metric_payloads._live_payload uses for the new pipeline.
-    """
-    def _adapted(entry: Dict[str, Any], dept_id: str, company_metrics: Dict[str, Any]):
-        result = handler_fn()
-        if result is None:
-            canonical = _resolve_canonical_name(entry)
-            emit_failure_alert(
-                surface=f"engineering_live_handler:{canonical}",
-                dept=dept_id,
-                detail=(
-                    f"live handler for {canonical!r} returned None — "
-                    f"render_one_row will fall back to DATA_UNAVAILABLE_PLACEHOLDER. "
-                    f"Likely causes: SQL file missing, BQ query error, zero rows, "
-                    f"or schema sub-key drift."
-                ),
-            )
-            raise ValueError(f"live handler {canonical!r} returned None")
-        return result, _format_metric_value(entry, result)
-    return _adapted
-
-
-ENGINEERING_LIVE_METRICS: Dict[str, Callable] = {
-    name: _adapt_live_handler(fn)
-    for name, fn in _PAYLOAD_LIVE_HANDLERS.items()
-}
 
 
 def _resolve_canonical_name(entry: Dict[str, Any]) -> str:
@@ -268,46 +216,7 @@ def render_one_row(
     sensitivity = get_scorecard_dept_sensitivity(entry, dept_id) or "public"
     display_label = get_scorecard_label(entry, dept_id, canonical_name)
 
-    # Step 0a: ENGINEERING_LIVE_METRICS check — MUST precede Step 0b per Patch 8.
-    if canonical_name in ENGINEERING_LIVE_METRICS:
-        live_fn = ENGINEERING_LIVE_METRICS[canonical_name]
-        try:
-            actual_raw, display = live_fn(entry, dept_id, company_metrics)
-            # Live functions return a single combined display string today.
-            # actual_display == display, no separate target until Phase 2.
-            return RenderedRow(
-                metric_name=canonical_name,
-                display_label=display_label,
-                dept_id=dept_id,
-                sensitivity=sensitivity,
-                actual_raw=actual_raw,
-                target_raw=None,
-                status_icon="⚪",
-                display=display,
-                actual_display=display,
-                target_display=None,
-                trend_display=None,
-                is_phase2_placeholder=False,
-                is_special_override=False,
-            )
-        except Exception:
-            return RenderedRow(
-                metric_name=canonical_name,
-                display_label=display_label,
-                dept_id=dept_id,
-                sensitivity=sensitivity,
-                actual_raw=None,
-                target_raw=None,
-                status_icon="⚪",
-                display=DATA_UNAVAILABLE_PLACEHOLDER,
-                actual_display=DATA_UNAVAILABLE_PLACEHOLDER,
-                target_display=None,
-                trend_display=None,
-                is_phase2_placeholder=False,
-                is_special_override=False,
-            )
-
-    # Step 0b: needs_build → "🔨 (Phase 2 migration)" placeholder.
+    # Step 0a: needs_build → "🔨 (Phase 2 migration)" placeholder.
     if entry.get("scorecard_status") == "needs_build":
         return RenderedRow(
             metric_name=canonical_name,
@@ -325,7 +234,7 @@ def render_one_row(
             is_special_override=False,
         )
 
-    # Step 0c: asana_goal status → cron's Asana Goals API renderer.
+    # Step 0b: asana_goal status → cron's Asana Goals API renderer.
     # Without this branch, asana_goal entries fall through to _render_live_metric
     # which returns "—  _(per-page data — Batch 3 will wire)_" because bq_key=None.
     if entry.get("scorecard_status") == "asana_goal":
