@@ -9,9 +9,7 @@ byte-identical EXCEPT for the 3 W.1 engineering metrics flipping from
 The capture is intentionally end-to-end through `main()` (NOT a direct call into
 `render_monday_pulse`) to address Phase H plan v2 round-2 Reviewer Issue #2:
 the golden must reflect what production actually produces, including the dept
-ordering, sensitivity filtering, header, rocks section composition, and any
-side-effects of `_safe_funnel_fetch` falling through to the streamlit-missing
-graceful-degrade path.
+ordering, sensitivity filtering, header, and rocks section composition.
 
 Run:
     set -a && . ~/Projects/daily-brief-agent/.env && set +a

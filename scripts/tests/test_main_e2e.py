@@ -54,7 +54,7 @@ def test_main_skip_deck_true_still_posts_slack(monkeypatch):
     monkeypatch.setattr(
         monday_kpi_update,
         "get_company_metrics",
-        lambda: {"_funnel_cache": None},
+        lambda: {},
     )
     monkeypatch.setattr(
         monday_kpi_update,
@@ -64,11 +64,6 @@ def test_main_skip_deck_true_still_posts_slack(monkeypatch):
             "rocks": [],
             "projects": [],
         },
-    )
-    monkeypatch.setattr(
-        monday_kpi_update,
-        "_safe_funnel_fetch",
-        lambda: None,
     )
     # One dept with one metric so render loop has something to do.
     monkeypatch.setattr(
@@ -126,17 +121,12 @@ def test_main_aborts_at_sensitivity_gate_on_n_response(monkeypatch):
     monkeypatch.setattr(
         monday_kpi_update,
         "get_company_metrics",
-        lambda: {"_funnel_cache": None},
+        lambda: {},
     )
     monkeypatch.setattr(
         monday_kpi_update,
         "get_rock_project_progress",
         lambda: {"available": True, "rocks": [], "projects": []},
-    )
-    monkeypatch.setattr(
-        monday_kpi_update,
-        "_safe_funnel_fetch",
-        lambda: None,
     )
     monkeypatch.setattr(
         monday_kpi_update,
@@ -167,17 +157,12 @@ def test_main_skip_deck_false_with_fakes_runs_end_to_end(monkeypatch):
     monkeypatch.setattr(
         monday_kpi_update,
         "get_company_metrics",
-        lambda: {"_funnel_cache": None},
+        lambda: {},
     )
     monkeypatch.setattr(
         monday_kpi_update,
         "get_rock_project_progress",
         lambda: {"available": True, "rocks": [], "projects": []},
-    )
-    monkeypatch.setattr(
-        monday_kpi_update,
-        "_safe_funnel_fetch",
-        lambda: None,
     )
     monkeypatch.setattr(
         monday_kpi_update,

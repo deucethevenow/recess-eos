@@ -88,34 +88,6 @@ DEFAULT_SLACK_CHANNEL = VERIFY_SLACK_CHANNEL  # Cut-over: switch to PROD_SLACK_C
 
 
 # --------------------------------------------------------------------------- #
-# Funnel pre-fetch — Patch 4e wrapper                                         #
-# --------------------------------------------------------------------------- #
-
-
-def _safe_funnel_fetch() -> Optional[Any]:
-    """Pre-fetch engineering discovery funnel; alert + return None on failure.
-
-    The 6 funnel-stage metrics resolve to "🔨 (data unavailable)" when the
-    cache is None — see scorecard_renderer Step 0a fallback. The 3 hero
-    engineering metrics are independent BQ calls and still resolve.
-    """
-    try:
-        from dashboard.data.engineering_client import get_discovery_funnel  # type: ignore
-
-        return get_discovery_funnel()
-    except Exception as e:  # noqa: BLE001
-        emit_failure_alert(
-            surface="engineering_funnel_prefetch",
-            detail=(
-                "get_discovery_funnel() failed; 6 funnel metrics will render as "
-                "'🔨 (data unavailable)'. 3 hero metrics still resolve independently."
-            ),
-            exc=e,
-        )
-        return None
-
-
-# --------------------------------------------------------------------------- #
 # Phase B+ — Founders pre-read adapter wiring                                 #
 # --------------------------------------------------------------------------- #
 
@@ -373,7 +345,6 @@ def main(
     today = _date.today()
 
     company_metrics = get_company_metrics()
-    company_metrics["_funnel_cache"] = _safe_funnel_fetch()
 
     rock_data = get_rock_project_progress() or {"available": False}
     rocks_by_dept = _bucket_rocks_by_dept(rock_data)
