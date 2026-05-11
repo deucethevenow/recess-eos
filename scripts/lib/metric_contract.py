@@ -52,9 +52,7 @@ FORBIDDEN_CONFIG_LOGIC_FIELDS = [
 ]
 
 VALID_SENSITIVITIES = {"public", "leadership", "founders_only"}
-# "live" routes through metric_payloads._LIVE_HANDLERS — for metrics with no
-# snapshot column yet. Distinct from "automated" which requires snapshot_column.
-VALID_STATUSES = {"automated", "needs_build", "manual", "asana_goal", "live"}
+VALID_STATUSES = {"automated", "needs_build", "manual", "asana_goal"}
 VALID_NULL_BEHAVIORS = {"show_dash", "show_zero", "hide", "show_needs_build"}
 VALID_TRANSFORMS = {"raw", "percent_higher_is_better", "percent_lower_is_better"}
 VALID_FORMATS = {
@@ -183,18 +181,11 @@ def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> Me
             transform = "raw"
 
     else:
-        # Non-automated metrics (needs_build, manual, asana_goal, live):
+        # Non-automated metrics (needs_build, manual, asana_goal):
         # If they HAVE a registry_key, it must still resolve (keeps the
         # "eventually automated" path aligned with the registry). If they
         # DON'T have a registry_key, the fields stay at safe defaults and
         # the metric CANNOT enter the automated payload pipeline.
-        # "live" specifically requires registry_key — _LIVE_HANDLERS is keyed by it.
-        if status == "live" and not registry_key:
-            raise ContractResolutionError(
-                f"Metric '{config['name']}' has status='live' but no registry_key. "
-                f"Live metrics MUST point to a metric_registry.py entry — that's "
-                f"the key used to look up the handler in _LIVE_HANDLERS."
-            )
         if registry_key:
             reg_entry = _lookup_registry_entry(registry_key, registry)
             _validate_registry_entry(registry_key, reg_entry)
@@ -208,7 +199,6 @@ def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> Me
         "needs_build": "needs_build",
         "manual": "manual",
         "asana_goal": "asana_goal",
-        "live": "live",  # Phase W.1 — live BQ handler dispatch
     }
     if status not in availability_map:
         # Should be impossible after _validate_config_shape, but fail loud if it happens
