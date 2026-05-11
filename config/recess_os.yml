@@ -575,11 +575,12 @@ meetings:
     members:
       - "deuce@recess.is"
 
-  # ── Engineering / Arbind (3 metrics, live-query path) ─────────────
-  # Phase W.1 (2026-05-10): wired 3 engineering metrics through live BQ queries
-  # via metric_payloads._LIVE_HANDLERS. status="live" routes through the
-  # registered handler keyed by registry_key. Snapshot migration deferred to
-  # teammate handoff ticket — see TODO(snapshot) comments in metric_payloads.py.
+  # ── Engineering / Arbind (3 metrics, snapshot-driven) ─────────────
+  # The 3 engineering hero metrics + 6 discovery funnel metrics resolve from
+  # kpi_daily_snapshot via the dashboard registry's snapshot_column mapping.
+  # status="automated" routes through the snapshot path. PR #19 (2026-05-10)
+  # shipped the columns; the prior W.1 live-query handlers were retired in
+  # the engineering-cleanup PR.
   - id: engineering
     name: "Engineering L10"
     facilitator_email: "arbind@recess.is"
@@ -594,19 +595,19 @@ meetings:
         registry_key: "Features Fully Scoped"
         target: null
         sensitivity: "public"     # public so Slack pulse + all-hands deck show it (max_sensitivity="public" on those surfaces)
-        status: "live"            # routes via _LIVE_HANDLERS in metric_payloads.py
+        status: "automated"
         null_behavior: "show_dash"
       - name: "PRDs Generated"
         registry_key: "PRDs Generated"
         target: null
         sensitivity: "public"
-        status: "live"
+        status: "automated"
         null_behavior: "show_dash"
       - name: "FSDs Generated"
         registry_key: "FSDs Generated"
         target: null
         sensitivity: "public"
-        status: "live"
+        status: "automated"
         null_behavior: "show_dash"
     members: []
 

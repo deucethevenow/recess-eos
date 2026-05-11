@@ -1,9 +1,8 @@
 """render_one_row — the single rendering function all surface writers consume.
 
-Per v3.8 Patch 1 / Patch 8 cascade order:
-  Step 0a: ENGINEERING_LIVE_METRICS — live-function dispatch (MUST precede Step 0b).
-  Step 0b: needs_build → "🔨 (Phase 2 migration)" placeholder.
-  Step 0c: asana_goal status → cron's _render_asana_goal (Asana Goals API path).
+Per v3.8 Patch 1 cascade order:
+  Step 0a: needs_build → "🔨 (Phase 2 migration)" placeholder.
+  Step 0b: asana_goal status → cron's _render_asana_goal (Asana Goals API path).
   Step 1-4: existing v3.5 cascade — handled by cron's _render_live_metric
             (special overrides, sales-per-page, scope=both, single value).
 
@@ -23,7 +22,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 DASHBOARD_REPO = Path(
     os.environ.get(
@@ -52,7 +51,6 @@ from .static_scorecard_targets import STATIC_SCORECARD_TARGETS
 
 
 PHASE2_PLACEHOLDER = "\U0001F528 (Phase 2 migration)"
-DATA_UNAVAILABLE_PLACEHOLDER = "\U0001F528 (data unavailable)"
 SPECIAL_METRIC_NAMES = {"Demand NRR", "Pipeline Coverage", "Bill Payment Timeliness"}
 
 # Trailing "  ·  target X" pattern that some special-override metrics embed
@@ -77,12 +75,6 @@ def _split_inline_target(body: Optional[str]) -> Tuple[Optional[str], Optional[s
         actual = body[: match.start()].rstrip()
         return actual, target
     return body, None
-
-# Live-function dispatch table for engineering metrics. Populated in Phase 2 by
-# Engineering live wiring (out of scope for Session 2). Empty dict here is
-# intentional — the cascade order test (Patch 8) verifies Step 0a precedes
-# Step 0b at SOURCE level, even when the table is empty.
-ENGINEERING_LIVE_METRICS: Dict[str, Callable] = {}
 
 
 def _resolve_canonical_name(entry: Dict[str, Any]) -> str:
@@ -224,46 +216,7 @@ def render_one_row(
     sensitivity = get_scorecard_dept_sensitivity(entry, dept_id) or "public"
     display_label = get_scorecard_label(entry, dept_id, canonical_name)
 
-    # Step 0a: ENGINEERING_LIVE_METRICS check — MUST precede Step 0b per Patch 8.
-    if canonical_name in ENGINEERING_LIVE_METRICS:
-        live_fn = ENGINEERING_LIVE_METRICS[canonical_name]
-        try:
-            actual_raw, display = live_fn(entry, dept_id, company_metrics)
-            # Live functions return a single combined display string today.
-            # actual_display == display, no separate target until Phase 2.
-            return RenderedRow(
-                metric_name=canonical_name,
-                display_label=display_label,
-                dept_id=dept_id,
-                sensitivity=sensitivity,
-                actual_raw=actual_raw,
-                target_raw=None,
-                status_icon="⚪",
-                display=display,
-                actual_display=display,
-                target_display=None,
-                trend_display=None,
-                is_phase2_placeholder=False,
-                is_special_override=False,
-            )
-        except Exception:
-            return RenderedRow(
-                metric_name=canonical_name,
-                display_label=display_label,
-                dept_id=dept_id,
-                sensitivity=sensitivity,
-                actual_raw=None,
-                target_raw=None,
-                status_icon="⚪",
-                display=DATA_UNAVAILABLE_PLACEHOLDER,
-                actual_display=DATA_UNAVAILABLE_PLACEHOLDER,
-                target_display=None,
-                trend_display=None,
-                is_phase2_placeholder=False,
-                is_special_override=False,
-            )
-
-    # Step 0b: needs_build → "🔨 (Phase 2 migration)" placeholder.
+    # Step 0a: needs_build → "🔨 (Phase 2 migration)" placeholder.
     if entry.get("scorecard_status") == "needs_build":
         return RenderedRow(
             metric_name=canonical_name,
@@ -281,7 +234,7 @@ def render_one_row(
             is_special_override=False,
         )
 
-    # Step 0c: asana_goal status → cron's Asana Goals API renderer.
+    # Step 0b: asana_goal status → cron's Asana Goals API renderer.
     # Without this branch, asana_goal entries fall through to _render_live_metric
     # which returns "—  _(per-page data — Batch 3 will wire)_" because bq_key=None.
     if entry.get("scorecard_status") == "asana_goal":

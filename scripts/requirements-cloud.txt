@@ -18,6 +18,10 @@ slack_sdk>=3.0.0
 google-cloud-firestore>=2.16.0
 httpx>=0.24.0
 
+# === Phase H.2 cross-repo pin ===
+# H-adapter cross-repo pin: dashboard `_render_metric_line` API stable as of
+# company-kpi-dashboard SHA 2f2e885296843d99d2aed259eb045b45917f88a4
+
 # === Notes on intentional omissions ===
 # - google-api-python-client / google-auth-oauthlib: NOT needed.
 #   `update-all-hands-deck` references MCP integration only (see all_hands_deck.py:155-159).

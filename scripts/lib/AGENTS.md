@@ -2,6 +2,28 @@
 
 Location-specific gotchas for code in `scripts/lib/`. Read before touching `metric_contract.py`, `metric_payloads.py`, `scorecard_renderer.py`, or `leadership_doc_writer.py`.
 
+## Quick module index
+
+| Module | Purpose | Phase shipped |
+|--------|---------|---------------|
+| `metric_payloads.py` | Builds frozen `MetricPayload` objects (registry_key/raw_value/display_value/Path B fields). The PRODUCER side of the new pipeline. | Phase B+ |
+| `scorecard_renderer.py` | LEGACY rendering pipeline (`render_one_row → RenderedRow`). Production-active until H.4a flips main(). To be deleted in H.4b. | Pre-H |
+| `rendered_row.py` | `RenderedRow` NamedTuple (single rendering contract for surface writers). | Pre-H |
+
+## MetricPayload field naming gotcha (matters for any code touching payloads)
+
+`MetricPayload` (line 56-80 of `metric_payloads.py`) has THREE related-but-distinct identifier fields. Don't confuse them:
+
+| Field | What it is | Use it for |
+|-------|------------|-----------|
+| `metric_name` | Human display name from the contract | UI labels, never as a lookup key |
+| `config_key` | The `name:` field from the yaml `scorecard_metrics:` entry | Yaml-side debug; never a registry key |
+| `registry_key` | THE key into dashboard's `METRIC_REGISTRY` | `METRIC_REGISTRY[payload.registry_key]` lookups |
+
+**There is NO `payload.metric_key`.** Plans/specs that reference `payload.metric_key` are typos — verify and use `payload.registry_key`. The Phase H plan v3 did this (caught during H.2 implementation); silent failure mode would have been `AttributeError`. Less silent failure mode: someone invents a `metric_key` field and the codebase gets a fourth identifier.
+
+**Error/needs_build/manual payload variants** set `registry_key=""` (empty string) — `METRIC_REGISTRY[""]` raises KeyError. Callers wanting to look up a registry entry from a payload should defensively check `if payload.registry_key:` or accept the KeyError as a load-bearing signal that the metric needs a real registry entry.
+
 For project-wide learnings, see `context/LEARNINGS.md`.
 For cross-project memory, see `~/.claude/projects/-Users-deucethevenowworkm1/memory/MEMORY.md`.
 
