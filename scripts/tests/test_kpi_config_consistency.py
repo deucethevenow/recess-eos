@@ -300,3 +300,72 @@ class TestPhase0Canonicalization:
         assert "Net Revenue Q (Forecast)" in names, (
             f"leadership scorecard missing 'Net Revenue Q (Forecast)' — got {names}"
         )
+
+
+class TestEngineering3PackSnapshotMigration:
+    """Critic-review C2 safety net for the post-snapshot cleanup.
+
+    After the engineering-snapshot migration (dashboard PR #19 + eos commits
+    `699582d`/`8acc538`/`1fb71f2`), the 9 engineering metrics flow through the
+    standard snapshot pipeline. There is no longer a code-level dispatch table
+    (`_LIVE_HANDLERS`/`ENGINEERING_LIVE_METRICS`) pinning the 3 hero metrics —
+    everything depends on dashboard registry keeping them as
+    `scorecard_status: "automated"` with non-null `snapshot_column`.
+
+    If a future dashboard change reverts either property (e.g., status back
+    to `"needs_build"`, or `snapshot_column` to None), all 9 engineering
+    metrics silently regress to PHASE2_PLACEHOLDER on Slack/deck/leadership-doc
+    and no other test catches it. This test catches the regression at CI.
+    """
+
+    W1_HERO_METRICS = ("Features Fully Scoped", "PRDs Generated", "FSDs Generated")
+    DISCOVERY_FUNNEL_METRICS = (
+        "Discovery Funnel: In Discovery",
+        "Discovery Funnel: Discovery Complete",
+        "Discovery Funnel: Ready for PRD",
+        "Discovery Funnel: PRD In Progress",
+        "Discovery Funnel: PRD Proposed",
+        "Discovery Funnel: PRD Accepted",
+    )
+
+    def test_w1_hero_metrics_are_automated_with_snapshot_column(self):
+        """The 3 hero metrics MUST be registered as snapshot-backed automated
+        metrics. If dashboard flips this back to needs_build, eos silently
+        regresses to '🔨 (Phase 2 migration)' for engineering."""
+        from data.metric_registry import METRIC_REGISTRY  # type: ignore
+
+        for metric in self.W1_HERO_METRICS:
+            assert metric in METRIC_REGISTRY, (
+                f"{metric!r} missing from dashboard METRIC_REGISTRY — eos cron "
+                f"will fail contract resolution. Re-check dashboard PR #19."
+            )
+            entry = METRIC_REGISTRY[metric]
+            assert entry.get("scorecard_status") == "automated", (
+                f"{metric!r} has scorecard_status={entry.get('scorecard_status')!r}, "
+                f"expected 'automated'. Snapshot-driven rendering requires this; "
+                f"reverting to 'needs_build' silently regresses to placeholder."
+            )
+            assert entry.get("snapshot_column"), (
+                f"{metric!r} has snapshot_column={entry.get('snapshot_column')!r}, "
+                f"expected a non-null column name. The snapshot pipeline reads "
+                f"`company_metrics[snapshot_column]`; None means no data flows."
+            )
+
+    def test_discovery_funnel_metrics_are_automated_with_snapshot_column(self):
+        """Same contract for the 6 Discovery Funnel metrics — they migrated to
+        snapshot in the same dashboard PR."""
+        from data.metric_registry import METRIC_REGISTRY  # type: ignore
+
+        for metric in self.DISCOVERY_FUNNEL_METRICS:
+            assert metric in METRIC_REGISTRY, (
+                f"{metric!r} missing from dashboard METRIC_REGISTRY."
+            )
+            entry = METRIC_REGISTRY[metric]
+            assert entry.get("scorecard_status") == "automated", (
+                f"{metric!r} has scorecard_status={entry.get('scorecard_status')!r}, "
+                f"expected 'automated'."
+            )
+            assert entry.get("snapshot_column"), (
+                f"{metric!r} has snapshot_column={entry.get('snapshot_column')!r}, "
+                f"expected a non-null column name."
+            )
