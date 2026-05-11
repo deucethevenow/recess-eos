@@ -318,3 +318,5 @@ class TestContractErrorPath:
         assert len(payloads) == 1
         assert payloads[0].availability_state == "error"
         assert "does NOT exist" in payloads[0].notes
+
+

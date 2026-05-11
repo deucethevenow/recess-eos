@@ -15,8 +15,28 @@ from typing import Optional
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from lib.metric_payloads import MetricPayload, SENSITIVITY_LEVELS
+from lib.metric_payloads import (
+    MetricPayload,
+    SENSITIVITY_LEVELS,
+    build_metric_payloads,
+)
 from lib.orchestrator import ConsumerResult
+
+
+def build_payloads_for_slack(
+    meeting: dict,
+    snapshot_row: dict,
+    snapshot_timestamp: str,
+) -> list[MetricPayload]:
+    """Phase B+ surface adapter — Slack consumer's view of the canonical payloads.
+
+    Thin pass-through to the central producer. All four surface adapters
+    (Slack/Deck/Doc/Founders pre-read) call this same producer with the same
+    args, so cross-surface parity is enforced by construction. Surface-specific
+    fan-out (Slack Block Kit JSON, Slides cells, Doc text runs) happens
+    downstream of this list — never in this adapter.
+    """
+    return build_metric_payloads(meeting, snapshot_row, snapshot_timestamp)
 
 
 class SlackPostError(Exception):
@@ -104,9 +124,8 @@ def render_monday_pulse(
 
             # Format: "Metric Name: *value* (target: X)" or just "Metric Name: *value*"
             line = p.metric_name + ": *" + display + "*"
-            if p.target is not None and p.availability_state not in ("needs_build", "null"):
-                target_display = _format_target(p.target, p.format_spec)
-                line = line + " (target: " + target_display + ")"
+            if p.target_display and p.availability_state not in ("needs_build", "null"):
+                line = line + " (target: " + p.target_display + ")"
 
             metric_lines.append(line)
             results.append(ConsumerResult(
@@ -197,24 +216,3 @@ def post_monday_pulse(
         ) from e
 
 
-def _format_target(target: float, format_spec: str) -> str:
-    """Format a target value for inline display in Slack."""
-    if format_spec == "percent":
-        if abs(target) <= 1:
-            return str(round(target * 100, 1)) + "%"
-        return str(round(target, 1)) + "%"
-    elif format_spec in ("multiplier", "pipeline_gap"):
-        return str(round(target, 1)) + "x"
-    elif format_spec == "currency":
-        if abs(target) >= 1_000_000:
-            return "$" + str(round(target / 1_000_000, 1)) + "M"
-        elif abs(target) >= 1_000:
-            return "$" + str(round(target / 1_000)) + "K"
-        return "$" + str(round(target))
-    elif format_spec == "days":
-        return str(round(target)) + " days"
-    elif format_spec in ("count", "number"):
-        return "{:,.0f}".format(target)
-    elif format_spec == "number_millions":
-        return str(round(target / 1_000_000, 1)) + "M"
-    return str(target)

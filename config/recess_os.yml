@@ -118,6 +118,20 @@ meetings:
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
+      - name: "Net Revenue Q (Actual)"
+        registry_key: null
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Q-internal NR pair. Wired in Phase W.2 via dashboard forecast_engine.forecast_for_quarter()."
+      - name: "Net Revenue Q (Forecast)"
+        registry_key: null
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Q-internal NR pair. Wired in Phase W.2 via dashboard forecast_engine.forecast_for_quarter()."
     members: []
 
   # ── Founders (4 metrics, all founders_only) ────────────────────────
@@ -149,13 +163,13 @@ meetings:
         registry_key: "Bank Cash (Available)"
         target: null
         sensitivity: "founders_only"
-        status: "automated"
+        status: "manual"
         null_behavior: "show_dash"
       - name: "Conservative Runway"
         registry_key: "Conservative Runway"
         target: null
         sensitivity: "founders_only"
-        status: "automated"
+        status: "manual"
         null_behavior: "show_dash"
     members:
       - "deuce@recess.is"
@@ -208,7 +222,7 @@ meetings:
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Renewal Bookings Pacing"
+      - name: "Renewal Pipeline"
         registry_key: "Renewal Pipeline"
         target: null
         sensitivity: "public"
@@ -221,6 +235,20 @@ meetings:
         status: "needs_build"
         null_behavior: "show_needs_build"
         notes: "Uses Pipeline by Deal Type on dashboard. No registry key yet."
+      - name: "Net Revenue Q (Actual)"
+        registry_key: null
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Q-internal NR pair. Wired in Phase W.2 via dashboard forecast_engine.forecast_for_quarter()."
+      - name: "Net Revenue Q (Forecast)"
+        registry_key: null
+        target: null
+        sensitivity: "leadership"
+        status: "needs_build"
+        null_behavior: "show_needs_build"
+        notes: "Q-internal NR pair. Wired in Phase W.2 via dashboard forecast_engine.forecast_for_quarter()."
     members: []
 
   # ── Demand AM / Char (7 metrics: 5 registry + 2 needs_build) ──────
@@ -547,9 +575,12 @@ meetings:
     members:
       - "deuce@recess.is"
 
-  # ── Engineering / Arbind (0 metrics — TBD) ────────────────────────
-  # No metrics defined yet. Arbind will define his own later.
-  # Meeting context exists so infrastructure is ready when metrics are added.
+  # ── Engineering / Arbind (3 metrics, snapshot-driven) ─────────────
+  # The 3 engineering hero metrics + 6 discovery funnel metrics resolve from
+  # kpi_daily_snapshot via the dashboard registry's snapshot_column mapping.
+  # status="automated" routes through the snapshot path. PR #19 (2026-05-10)
+  # shipped the columns; the prior W.1 live-query handlers were retired in
+  # the engineering-cleanup PR.
   - id: engineering
     name: "Engineering L10"
     facilitator_email: "arbind@recess.is"
@@ -559,7 +590,25 @@ meetings:
     slack_channel: null
     sensitive: false
     pre_read_format: "asana_card"
-    scorecard_metrics: []
+    scorecard_metrics:
+      - name: "Features Fully Scoped"
+        registry_key: "Features Fully Scoped"
+        target: null
+        sensitivity: "public"     # public so Slack pulse + all-hands deck show it (max_sensitivity="public" on those surfaces)
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "PRDs Generated"
+        registry_key: "PRDs Generated"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
+      - name: "FSDs Generated"
+        registry_key: "FSDs Generated"
+        target: null
+        sensitivity: "public"
+        status: "automated"
+        null_behavior: "show_dash"
     members: []
 
   # ── Accounting / Andres (5 metrics, all registry, deck-only) ──────

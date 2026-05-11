@@ -1,9 +1,24 @@
 """Shared pytest fixtures for recess_os tests."""
+import os
 import sys
 from pathlib import Path
 
 # Add scripts/ to path so tests can import recess_os modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# v3.8 Patch 1 + Session 3 NIT-2: Add company-kpi-dashboard repo paths so tests
+# can import the rendering pipeline reused by /monday-kpi-update from the
+# existing cron. Path is overridable via KPI_DASHBOARD_REPO env var so Cloud Run
+# (different filesystem layout) and CI (different checkout location) can find it.
+DASHBOARD_REPO = Path(
+    os.environ.get(
+        "KPI_DASHBOARD_REPO",
+        "/Users/deucethevenowworkm1/Projects/company-kpi-dashboard",
+    )
+)
+sys.path.insert(0, str(DASHBOARD_REPO))
+sys.path.insert(0, str(DASHBOARD_REPO / "dashboard"))
+sys.path.insert(0, str(DASHBOARD_REPO / "scripts"))
 
 
 import pytest

@@ -181,7 +181,7 @@ class TestRecessOsGoalsResolveCleanly:
                     )
 
         assert errors == [], "\n".join(errors)
-        assert resolved >= 50, f"Expected ~59 scorecard metrics, got {resolved}"
+        assert resolved >= 50, f"Expected ~63 scorecard metrics, got {resolved}"
 
     def test_goals_section_has_no_forbidden_logic_fields(self):
         """Recess os goals entries cannot contain transform/threshold logic."""
@@ -197,3 +197,175 @@ class TestRecessOsGoalsResolveCleanly:
                         f"field '{forbidden}'"
                     )
         assert violations == [], "\n".join(violations)
+
+
+class TestPhase0Canonicalization:
+    """Phase 0 — yaml founders fixes + Renewal canonical rename + Q NR adds.
+
+    Verifies the data corrections for founders sensitivity (Bank Cash and
+    Conservative Runway are manual-entry, not automated), the Renewal canonical
+    display name, and the new Net Revenue Q (Actual/Forecast) entries on Sales
+    and Leadership scorecards. New entries follow the L&E Bookings Pacing
+    pattern (registry_key=null, status=needs_build) until Phase W.2 wires the
+    live handlers.
+    """
+
+    @staticmethod
+    def _meetings_by_id(data: dict) -> dict:
+        return {
+            m.get("id"): m
+            for m in data.get("meetings", [])
+            if isinstance(m, dict)
+        }
+
+    def test_founders_bank_cash_status_is_manual(self):
+        data = _load_yaml(RECESS_OS_YML)
+        founders = self._meetings_by_id(data).get("founders") or {}
+        metrics = {
+            m["name"]: m
+            for m in founders.get("scorecard_metrics", [])
+            if isinstance(m, dict) and m.get("name")
+        }
+        bc = metrics.get("Bank Cash (Available)")
+        assert bc is not None, "Bank Cash (Available) must exist in founders meeting"
+        assert bc.get("status") == "manual", (
+            f"Bank Cash (Available) status is {bc.get('status')!r}; expected 'manual' "
+            f"(no automated source — exec dashboard owns the value)"
+        )
+
+    def test_founders_conservative_runway_status_is_manual(self):
+        data = _load_yaml(RECESS_OS_YML)
+        founders = self._meetings_by_id(data).get("founders") or {}
+        metrics = {
+            m["name"]: m
+            for m in founders.get("scorecard_metrics", [])
+            if isinstance(m, dict) and m.get("name")
+        }
+        cr = metrics.get("Conservative Runway")
+        assert cr is not None, "Conservative Runway must exist in founders meeting"
+        assert cr.get("status") == "manual", (
+            f"Conservative Runway status is {cr.get('status')!r}; expected 'manual'"
+        )
+
+    def test_sales_renewal_pipeline_label_is_canonical(self):
+        """The legacy display label 'Renewal Bookings Pacing' is misleading —
+        the registry_key is 'Renewal Pipeline' (weighted open pipeline).
+        Display name must match registry."""
+        data = _load_yaml(RECESS_OS_YML)
+        sales = self._meetings_by_id(data).get("sales") or {}
+        names = [
+            m.get("name")
+            for m in sales.get("scorecard_metrics", [])
+            if isinstance(m, dict)
+        ]
+        assert "Renewal Pipeline" in names, (
+            f"sales scorecard missing 'Renewal Pipeline' — got {names}"
+        )
+        assert "Renewal Bookings Pacing" not in names, (
+            "sales scorecard still has legacy label 'Renewal Bookings Pacing'"
+        )
+
+    def test_sales_meeting_has_q_nr_actual_and_forecast(self):
+        """Sales scorecard surfaces the Q-internal NR pair (Actual + Forecast).
+
+        Replaces the awkward 'Net Revenue YTD vs Q quota' framing with a
+        coherent intra-quarter pair derived from the dashboard forecast engine.
+        """
+        data = _load_yaml(RECESS_OS_YML)
+        sales = self._meetings_by_id(data).get("sales") or {}
+        names = [
+            m.get("name")
+            for m in sales.get("scorecard_metrics", [])
+            if isinstance(m, dict)
+        ]
+        assert "Net Revenue Q (Actual)" in names, (
+            f"sales scorecard missing 'Net Revenue Q (Actual)' — got {names}"
+        )
+        assert "Net Revenue Q (Forecast)" in names, (
+            f"sales scorecard missing 'Net Revenue Q (Forecast)' — got {names}"
+        )
+
+    def test_leadership_meeting_has_q_nr_actual_and_forecast(self):
+        """Leadership pre-read surfaces the same Q-internal NR pair as Sales."""
+        data = _load_yaml(RECESS_OS_YML)
+        leadership = self._meetings_by_id(data).get("leadership") or {}
+        names = [
+            m.get("name")
+            for m in leadership.get("scorecard_metrics", [])
+            if isinstance(m, dict)
+        ]
+        assert "Net Revenue Q (Actual)" in names, (
+            f"leadership scorecard missing 'Net Revenue Q (Actual)' — got {names}"
+        )
+        assert "Net Revenue Q (Forecast)" in names, (
+            f"leadership scorecard missing 'Net Revenue Q (Forecast)' — got {names}"
+        )
+
+
+class TestEngineering3PackSnapshotMigration:
+    """Critic-review C2 safety net for the post-snapshot cleanup.
+
+    After the engineering-snapshot migration (dashboard PR #19 + eos commits
+    `699582d`/`8acc538`/`1fb71f2`), the 9 engineering metrics flow through the
+    standard snapshot pipeline. There is no longer a code-level dispatch table
+    (`_LIVE_HANDLERS`/`ENGINEERING_LIVE_METRICS`) pinning the 3 hero metrics —
+    everything depends on dashboard registry keeping them as
+    `scorecard_status: "automated"` with non-null `snapshot_column`.
+
+    If a future dashboard change reverts either property (e.g., status back
+    to `"needs_build"`, or `snapshot_column` to None), all 9 engineering
+    metrics silently regress to PHASE2_PLACEHOLDER on Slack/deck/leadership-doc
+    and no other test catches it. This test catches the regression at CI.
+    """
+
+    W1_HERO_METRICS = ("Features Fully Scoped", "PRDs Generated", "FSDs Generated")
+    DISCOVERY_FUNNEL_METRICS = (
+        "Discovery Funnel: In Discovery",
+        "Discovery Funnel: Discovery Complete",
+        "Discovery Funnel: Ready for PRD",
+        "Discovery Funnel: PRD In Progress",
+        "Discovery Funnel: PRD Proposed",
+        "Discovery Funnel: PRD Accepted",
+    )
+
+    def test_w1_hero_metrics_are_automated_with_snapshot_column(self):
+        """The 3 hero metrics MUST be registered as snapshot-backed automated
+        metrics. If dashboard flips this back to needs_build, eos silently
+        regresses to '🔨 (Phase 2 migration)' for engineering."""
+        from data.metric_registry import METRIC_REGISTRY  # type: ignore
+
+        for metric in self.W1_HERO_METRICS:
+            assert metric in METRIC_REGISTRY, (
+                f"{metric!r} missing from dashboard METRIC_REGISTRY — eos cron "
+                f"will fail contract resolution. Re-check dashboard PR #19."
+            )
+            entry = METRIC_REGISTRY[metric]
+            assert entry.get("scorecard_status") == "automated", (
+                f"{metric!r} has scorecard_status={entry.get('scorecard_status')!r}, "
+                f"expected 'automated'. Snapshot-driven rendering requires this; "
+                f"reverting to 'needs_build' silently regresses to placeholder."
+            )
+            assert entry.get("snapshot_column"), (
+                f"{metric!r} has snapshot_column={entry.get('snapshot_column')!r}, "
+                f"expected a non-null column name. The snapshot pipeline reads "
+                f"`company_metrics[snapshot_column]`; None means no data flows."
+            )
+
+    def test_discovery_funnel_metrics_are_automated_with_snapshot_column(self):
+        """Same contract for the 6 Discovery Funnel metrics — they migrated to
+        snapshot in the same dashboard PR."""
+        from data.metric_registry import METRIC_REGISTRY  # type: ignore
+
+        for metric in self.DISCOVERY_FUNNEL_METRICS:
+            assert metric in METRIC_REGISTRY, (
+                f"{metric!r} missing from dashboard METRIC_REGISTRY."
+            )
+            entry = METRIC_REGISTRY[metric]
+            assert entry.get("scorecard_status") == "automated", (
+                f"{metric!r} has scorecard_status={entry.get('scorecard_status')!r}, "
+                f"expected 'automated'."
+            )
+            assert entry.get("snapshot_column"), (
+                f"{metric!r} has snapshot_column={entry.get('snapshot_column')!r}, "
+                f"expected a non-null column name."
+            )

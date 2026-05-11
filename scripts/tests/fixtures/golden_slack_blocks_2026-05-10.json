@@ -1,0 +1,106 @@
+[
+  {
+    "type": "header",
+    "text": {
+      "type": "plain_text",
+      "text": "Monday KPI update"
+    }
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*leadership*\n\ud83d\udcca _Metrics_\n\u2022 *Take Rate %*: 45%\n\u2022 *NRR*: Q: $41K (4%)  /  YTD: $477K (12%)  \u00b7  target 50%\n\u2022 *Pipeline Coverage*: Gap $2.67M  \u00b7  Coverage 1.19x  \u00b7  target $5.86M (2.5x)\n\u2022 *Bookings vs Goal*: Q: $817K / $2.82M (29%)  \u00b7  YTD: $3.18M / $10.77M (30%)\n\u2022 *Net Revenue vs Goal*: Q: $41K / $1.38M (3%)  \u00b7  YTD: $1.03M / $5.28M (20%)\n\u2022 *Weighted Pipeline $*: $2.41M"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*sales*\n\ud83d\udcca _Metrics_\n\u2022 *NRR*: Q: $41K (4%)  /  YTD: $477K (12%)  \u00b7  target 50%\n\u2022 *Pipeline Coverage*: Gap $2.67M  \u00b7  Coverage 1.19x  \u00b7  target $5.86M (2.5x)\n\u2022 *Days to First Offer*: 9 days  \u00b7  target 30 days\n\u2022 *Bookings vs Goal*: Q: $817K / $2.82M (29%)  \u00b7  YTD: $3.18M / $10.77M (30%)\n\u2022 *Net Revenue vs Goal*: Q: $41K / $1.38M (3%)  \u00b7  YTD: $1.03M / $5.28M (20%)\n\u2022 *New Business Pipeline (Weighted)*: $1.49M\n\u2022 *Renewal Pipeline (Weighted)*: $278K\n\u2022 *Land & Expand Pipeline (Weighted)*: $647K\n\u2022 *Weighted Pipeline $*: $2.41M\n\u2022 *L&E Bookings*: Q: $219K / $996K (22%)  \u00b7  YTD: $760K / $3.99M (19%)\n\u2022 *Renewal Bookings*: Q: $562K / $730K (77%)  \u00b7  YTD: $1.08M / $2.92M (37%)\n\u2022 *New Business Bookings*: Q: $36K / $633K (6%)  \u00b7  YTD: $1.34M / $2.53M (53%)"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*demand_am*\n\ud83e\udea8 _Rocks_\n\ud83d\udd34 *Rock 009: Onboard New ProServ Vendors \u2014 Reduce Service Costs* \u2014 6%  _(Claire A - 54 tasks)_\n\ud83d\udccc _Projects_\n\ud83d\udfe1 *Ali -  Onboarding Project* \u2014 65%  _(Ali Gage - 26 tasks)_\n\ud83d\udd34 *Lindy.AI Automated Calls + Email Followups* \u2014 6%  _(Claire A - 17 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Days to Fulfill*: 4 days  \u00b7  target 30 days\n\u2022 *Unresolved PO Net Revenue*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Contract Spend %*: 47%\n\u2022 *NPS Score*: 78.9  \u00b7  target 75.0\n\u2022 *Offer Acceptance %*: 66%  \u00b7  target 70%\n\u2022 *Offer Fulfillment Speed (<30 days)*: 33 days  \u00b7  target 30 days"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*supply*\n\ud83e\udea8 _Rocks_\n\ud83d\udfe1 *Rock 006 \u2014 15 Cool Event Acquisition* \u2014 34%  _(Ian Hong - 59 tasks)_\n\ud83d\udccc _Projects_\n\ud83d\udd34 *Q2 ABM Plan Tool + Supply Target Moment Goals* \u2014 26%  _(Ian Hong - 19 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Sellable Inventory*: 197.4M\n\u2022 *Weekly Outreach Attempts + Contacts Added*: 0 / 600 (0%)  \u00b7  week May 4\n\u2022 *Net-New Supply Added (monthly)*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Supply Types at Goal*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *Organizers Losing Core Action >6 Months*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *Organizers Losing Core Action >9 Months*: \ud83d\udd28 (Phase 2 migration)"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*bizdev*\n\ud83d\udcca _Metrics_\n\u2022 *Retailer Deals Closed Won*: 1  \u00b7  target 2\n\u2022 *Retailer Closed Won $ Attribution*: $0\n\u2022 *Retailer Deals in Pipeline*: \ud83d\udd28 (Phase 2 migration)"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*marketing*\n\ud83e\udea8 _Rocks_\n\ud83d\udfe1 *Cardboard POS Vendor Selection + Confirmation* \u2014 54%  _(Charlene Short - 54 tasks)_\n\ud83d\udfe1 *Rock 003 Launch A2 Paid Media Campaign* \u2014 37%  _(Charlene Short - 67 tasks)_\n\ud83d\udccc _Projects_\n\ud83d\udfe1 *Walmart GTM Plan* \u2014 38%  _(Courtney Cook - 71 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *MQL \u2192 SQL Conversion*: 62%\n\u2022 *Demand Mktg Closed Won QTD (FT+LT)*: $81K\n\u2022 *Demand Mktg Pipeline QTD (FT+LT)*: $3.22M\n\u2022 *Supply Mktg Closed Won QTD (FT+LT)*: $498K\n\u2022 *Supply Mktg Pipeline QTD (FT+LT)*: $1.54M\n\u2022 *Retailer Pipeline $ (Closed Won)*: \ud83d\udd28 (Phase 2 migration)"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*ai_automations*\n\ud83d\udcca _Metrics_\n\u2022 *L/XL Projects Completed (QTD)*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *L/XL Projects in Progress*: \ud83d\udd28 (Phase 2 migration)"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*operations*\n\ud83e\udea8 _Rocks_\n\ud83d\udfe1 *Rock 004: Set Dept AI Levels & Roadmap * \u2014 49%  _(Deuce Thevenow - 63 tasks)_\n\ud83d\udfe1 *Rock 007: Launch Recess OS \u2014 AI-First EOS Operating System* \u2014 44%  _(Deuce Thevenow - 116 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Take Rate %*: 45%\n\u2022 *Dept AI Plans Completed*: \ud83c\udfaf 40%\n\u2022 *Recess OS Milestones*: \ud83c\udfaf 29%"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*engineering*\n\ud83e\udea8 _Rocks_\n\ud83d\udfe1 *Rock 008: AI Harness Live \u2014 <5 Fixes per User Flow PR* \u2014 43%  _(Arbind Thakur - 65 tasks)_\n\ud83d\udccc _Projects_\n\ud83d\udfe1 *Anderson \u2014 26Q2 Rocks* \u2014 33%  _(Arbind Thakur - 6 tasks)_\n\ud83d\udd34 *Feature - remittance-adjustments-I* \u2014 0%  _(Arbind Thakur - 12 tasks)_\n\ud83d\udd34 *Feature-Platform AI Portfolio* \u2014 0%  _(Arbind Thakur)_\n\ud83d\udfe1 *Lucas \u2014 26Q2 Rocks* \u2014 33%  _(Arbind Thakur - 9 tasks)_\n\ud83d\udd34 *Mateus \u2014 26Q2 Rocks* \u2014 12%  _(Arbind Thakur - 8 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Features Fully Scoped*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *PRDs Generated*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *FSDs Generated*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *Discovery Funnel: In Discovery*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *Discovery Funnel: Discovery Complete*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *Discovery Funnel: Ready for PRD*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *Discovery Funnel: PRD In Progress*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *Discovery Funnel: PRD Proposed*: \ud83d\udd28 (Phase 2 migration)\n\u2022 *Discovery Funnel: PRD Accepted*: \ud83d\udd28 (Phase 2 migration)"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*accounting*\n\ud83d\udccc _Projects_\n\ud83d\udd34 *2025 Financial Audit* \u2014 4%  _(Andres Nu\u00f1ez - 26 tasks)_\n\ud83d\udfe1 *Andres -  Onboarding Project* \u2014 51%  _(Andres Nu\u00f1ez - 37 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Invoice Collection %*: \u2014  _(per-page data \u2014 Batch 3 will wire)_  \u00b7  target 95%\n\u2022 *Avg Days to Collection*: \u2014  _(per-page data \u2014 Batch 3 will wire)_  \u00b7  target 30 days\n\u2022 *Overdue Invoices (count)*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Overdue Amount ($)*: \u2014  _(per-page data \u2014 Batch 3 will wire)_  \u00b7  target $0\n\u2022 *Invoice % Paid Within 7 days*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Overdue Bill Count*: \u2014  _(per-page data \u2014 Batch 3 will wire)_  \u00b7  target 0\n\u2022 *Bill Payment Timeliness*: 9.5%\n\u2022 *Overdue Bill $*: \u2014"
+    }
+  }
+]

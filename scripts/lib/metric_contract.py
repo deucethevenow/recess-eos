@@ -75,6 +75,11 @@ class MetricContract:
     availability_state: str  # derived: "live", "needs_build", "manual"
     asana_goal_id: Optional[str] = None
     notes: Optional[str] = None
+    # Phase B+ — pacing period for pace/gap math. Pulled from registry's
+    # `period:` field if present; None falls back to snapshot_column suffix
+    # inference inside metric_payloads._infer_period(). None means no pacing
+    # signal computed (snapshot counts, weekly counters, rolling ratios).
+    period: Optional[str] = None  # "month" | "quarter" | "year" | None
 
 
 def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> MetricContract:
@@ -115,6 +120,7 @@ def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> Me
     snapshot_column: Optional[str] = None
     format_spec: str = "number"
     transform: str = "raw"
+    period: Optional[str] = None  # Phase B+: pacing period from registry
 
     registry_key = config.get("registry_key")
 
@@ -128,6 +134,7 @@ def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> Me
 
         reg_entry = _lookup_registry_entry(registry_key, registry)
         _validate_registry_entry(registry_key, reg_entry)
+        period = reg_entry.get("period")  # Phase B+ — None until registry update
 
         # Pull definitions FROM THE REGISTRY — no defaults. _validate_registry_entry
         # has already confirmed all REQUIRED_REGISTRY_FIELDS are present and
@@ -213,6 +220,7 @@ def resolve_metric_contract(config: dict, registry: Optional[dict] = None) -> Me
         availability_state=availability_map[status],
         asana_goal_id=config.get("asana_goal_id"),
         notes=config.get("notes"),
+        period=period,
     )
 
 

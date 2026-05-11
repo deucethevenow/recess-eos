@@ -193,7 +193,30 @@ class TestPayloadImmutability:
 
 
 class TestNoConsumerBypassesOrchestrator:
-    """AST scan: consumers must NOT import build_metric_payloads directly."""
+    """AST scan: enforce no parallel-pipeline pattern.
+
+    Phase A baseline: consumer modules don't import `build_metric_payloads`
+    at all — they receive payloads from the orchestrator.
+
+    Phase B+ refinement: surface adapter modules (monday_pulse, deck_writer,
+    leadership_doc_writer, founders_preread) DO import `build_metric_payloads`
+    because they're thin wrappers around it, exposed as per-surface
+    `build_payloads_for_<surface>` entry points. The no-parallel-pipeline
+    rule is preserved because adapters delegate identically — no separate
+    pace/gap/transform logic. The test now enforces:
+      (a) any module that imports `build_metric_payloads` AND lives in
+          scripts/lib/ MUST also export a `build_payloads_for_<surface>`
+          symbol (proves it's a blessed adapter, not a renegade producer)
+      (b) all_hands_deck.py remains a pure consumer (no direct import) —
+          its surface adapter is deck_writer.py, not all_hands_deck.py
+    """
+
+    PHASE_B_PLUS_ADAPTER_MODULES = {
+        "monday_pulse.py": "build_payloads_for_slack",
+        "deck_writer.py": "build_payloads_for_deck",
+        "leadership_doc_writer.py": "build_payloads_for_doc",
+        "founders_preread.py": "build_payloads_for_founders_preread",
+    }
 
     def _get_imports(self, module_path: str) -> set[str]:
         """Parse a Python file and return all imported names."""
@@ -210,22 +233,43 @@ class TestNoConsumerBypassesOrchestrator:
                     imported.add(alias.name)
         return imported
 
-    def test_monday_pulse_does_not_import_build_metric_payloads(self):
-        module_path = os.path.join(
-            os.path.dirname(__file__), "..", "lib", "monday_pulse.py"
-        )
-        imports = self._get_imports(module_path)
-        assert "build_metric_payloads" not in imports, (
-            "monday_pulse.py imports build_metric_payloads directly! "
-            "Consumers must receive payloads from the orchestrator."
-        )
+    def test_phase_b_plus_adapters_export_their_named_symbol(self):
+        """Each Phase B+ adapter module imports build_metric_payloads AND
+        exports the matching `build_payloads_for_<surface>` symbol. This
+        catches: adapter renamed but module still imports the producer
+        without exposing the surface symbol (renegade producer pattern)."""
+        for module_name, adapter_symbol in self.PHASE_B_PLUS_ADAPTER_MODULES.items():
+            module_path = os.path.join(
+                os.path.dirname(__file__), "..", "lib", module_name
+            )
+            imports = self._get_imports(module_path)
+            assert "build_metric_payloads" in imports, (
+                f"{module_name}: Phase B+ adapter module must import "
+                f"build_metric_payloads (got imports: {sorted(imports)[:8]}...)"
+            )
+            with open(module_path) as f:
+                src = f.read()
+            assert f"def {adapter_symbol}(" in src, (
+                f"{module_name}: must export Phase B+ adapter symbol "
+                f"`{adapter_symbol}` (signature `def {adapter_symbol}(...)`). "
+                f"If you removed the adapter, also remove "
+                f"build_metric_payloads import to avoid the renegade-producer "
+                f"pattern."
+            )
 
     def test_all_hands_deck_does_not_import_build_metric_payloads(self):
+        """all_hands_deck.py is a pure consumer — its surface adapter lives
+        in deck_writer.py (the Slides-API writer), not here. If
+        all_hands_deck ever needs the producer, it should be re-classified
+        as a Phase B+ adapter module above."""
         module_path = os.path.join(
             os.path.dirname(__file__), "..", "lib", "all_hands_deck.py"
         )
         imports = self._get_imports(module_path)
         assert "build_metric_payloads" not in imports, (
             "all_hands_deck.py imports build_metric_payloads directly! "
-            "Consumers must receive payloads from the orchestrator."
+            "It's a pure consumer (the deck_writer.py module is the "
+            "Phase B+ adapter for the deck surface). If the producer "
+            "import is intentional, re-classify all_hands_deck.py as a "
+            "Phase B+ adapter module in PHASE_B_PLUS_ADAPTER_MODULES above."
         )

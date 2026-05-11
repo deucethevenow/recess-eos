@@ -1,0 +1,36 @@
+# recess-cron container — unified deps for all 3 Cloud Run Jobs.
+#
+# Built by Batch 6 (Cloud Run Jobs migration). Kept narrower than scripts/requirements.txt
+# because the cron jobs don't need test/dev tooling (pytest, etc) — those run in CI/local.
+#
+# Verify after edits: see scripts/batch6-preflight.sh for usage.
+
+# === EOS jobs (sync-to-bq, push-kpi-goals, monday-pulse legacy fallback, update-all-hands-deck) ===
+click>=8.0.0
+requests>=2.28.0
+google-cloud-bigquery[pandas]>=3.10.0
+google-auth>=2.0.0
+asana>=5.0.0
+pyyaml>=6.0
+slack_sdk>=3.0.0
+
+# === Dashboard pulse (post_monday_pulse.py — primary Monday path post-Batch-3) ===
+google-cloud-firestore>=2.16.0
+httpx>=0.24.0
+
+# === Phase H.2 cross-repo pin ===
+# H-adapter cross-repo pin: dashboard `_render_metric_line` API stable as of
+# company-kpi-dashboard SHA 2f2e885296843d99d2aed259eb045b45917f88a4
+
+# === Notes on intentional omissions ===
+# - google-api-python-client / google-auth-oauthlib: NOT needed.
+#   `update-all-hands-deck` references MCP integration only (see all_hands_deck.py:155-159).
+#   apply_deck_updates(dry_run=False) raises NotImplementedError — has never written to
+#   the Slides deck from local cron either. If Slides API is wired later (replacing MCP),
+#   add google-api-python-client + google-auth-oauthlib here at that time.
+#
+# - python-dotenv: NOT needed. Local cron sources .env via bash; Cloud Run uses
+#   Secret Manager mounted as env vars (see Tasks 6-8 --set-secrets flags).
+#
+# - pandas: pulled in transitively via google-cloud-bigquery[pandas] extras
+#   (bigquery_client.py uses .to_dataframe() — needs pandas to be importable).
