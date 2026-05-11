@@ -1,16 +1,14 @@
 # scripts/lib/ — Agents & Authors Guide
 
-Location-specific gotchas for code in `scripts/lib/`. Read before touching `metric_contract.py`, `metric_payloads.py`, `metric_rendering.py`, `scorecard_renderer.py`, or `leadership_doc_writer.py`.
+Location-specific gotchas for code in `scripts/lib/`. Read before touching `metric_contract.py`, `metric_payloads.py`, `scorecard_renderer.py`, or `leadership_doc_writer.py`.
 
 ## Quick module index
 
 | Module | Purpose | Phase shipped |
 |--------|---------|---------------|
-| `metric_payloads.py` | Builds frozen `MetricPayload` objects (registry_key/raw_value/display_value/Path B fields). The PRODUCER side of the new pipeline. | Phase B+, W.1 added live handlers |
-| `metric_rendering.py` | H-adapter producer. Builds `RenderedRow` shape from MetricPayloads by delegating to dashboard's `_render_metric_line`, with a narrow LOCAL override for the W.1 needs_build short-circuit trap. | Phase H.2 (`d18a9f0`) |
-| `dashboard_paths.py` | Single source of truth for `DASHBOARD_REPO` + sys.path setup. Use this instead of inlining the 3-line `sys.path.insert` boilerplate (was duplicated 6 times pre-H.2). | Phase H.2 |
+| `metric_payloads.py` | Builds frozen `MetricPayload` objects (registry_key/raw_value/display_value/Path B fields). The PRODUCER side of the new pipeline. | Phase B+ |
 | `scorecard_renderer.py` | LEGACY rendering pipeline (`render_one_row → RenderedRow`). Production-active until H.4a flips main(). To be deleted in H.4b. | Pre-H |
-| `rendered_row.py` | `RenderedRow` NamedTuple (single rendering contract for surface writers). H.4b deletion plan needs revisiting — `metric_rendering.py` imports `RenderedRow` from here. | Pre-H |
+| `rendered_row.py` | `RenderedRow` NamedTuple (single rendering contract for surface writers). | Pre-H |
 
 ## MetricPayload field naming gotcha (matters for any code touching payloads)
 
