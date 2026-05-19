@@ -12,11 +12,13 @@ Cron parity divergences (deliberate):
     cut-over: cron and slash command will produce different placeholder text
     until cron is retired (Session 3 / Patch 11).
 
-Target resolution (Patch 7 wiring):
-  Targets resolve via cron's _fmt_target FIRST (registry per-dept override). When
-  that returns None, fall back to STATIC_SCORECARD_TARGETS (the slash-command-
-  owned 18-key map for metrics whose targets are hardcoded in dashboard render
-  code instead of the registry).
+Target resolution (3-step cascade, Firestore-first per 2026-05-19 architecture):
+  1. Cron's _fmt_target → entry["scorecard_target"][dept_id]  (per-dept override)
+  2. Cron's _fmt_target → entry["target_key"] → company_metrics[target_key]
+     (Firestore scalar merged into COMPANY_METRICS by data_layer)
+  3. STATIC_SCORECARD_TARGETS  (legacy fallback — slash-command-owned 18-key
+     map for metrics whose targets were hardcoded in dashboard render code;
+     migrating to Firestore in Phase 1.5).
 """
 import os
 import re
@@ -35,6 +37,12 @@ for _p in (DASHBOARD_REPO, DASHBOARD_REPO / "dashboard", DASHBOARD_REPO / "scrip
     if _ps not in sys.path:
         sys.path.insert(0, _ps)
 
+# Deploy coupling: in Cloud Run, post_monday_pulse.py is staged from
+# _dashboard_src/ (gitignored, manually rsync'd before each Dockerfile.cron
+# build). Changes to _fmt_target signature here MUST be matched by a fresh
+# `_dashboard_src/` stage before deploying, or the container ImportError-equivalent
+# is a runtime TypeError on the next pulse. Locally, the path injection above
+# points at the live dashboard repo so dev/test sees the latest signature.
 from post_monday_pulse import (  # type: ignore
     _fmt_target,
     _format_metric_value,
@@ -84,16 +92,26 @@ def _resolve_canonical_name(entry: Dict[str, Any]) -> str:
     return entry.get("key") or entry.get("name") or ""
 
 
-def _resolve_target_string(entry: Dict[str, Any], dept_id: str) -> Optional[str]:
-    """4-step target cascade (Patch 7 wiring):
+def _resolve_target_string(
+    entry: Dict[str, Any],
+    dept_id: str,
+    company_metrics: Optional[Dict[str, Any]] = None,
+) -> Optional[str]:
+    """Resolve a target string for one metric/dept. 3-step cascade — steps
+    1 & 2 are delegated to _fmt_target → get_scorecard_target (dashboard repo);
+    step 3 (STATIC fallback) is the only branch visible here.
 
-    1. Cron's _fmt_target → registry per-dept scorecard_target dict
-    2. STATIC_SCORECARD_TARGETS → slash-command-owned static map for metrics
-       whose target is hardcoded in dashboard page render code
+    1. (via _fmt_target) entry["scorecard_target"][dept_id]   — per-dept override
+    2. (via _fmt_target) company_metrics[entry["target_key"]] — caller-hydrated
+                                                                (Firestore via
+                                                                data_layer)
+    3. STATIC_SCORECARD_TARGETS[canonical_name]               — legacy fallback;
+                                                                Phase 1.5 target
 
+    company_metrics is optional; step 2 is skipped when None.
     Returns the formatted target string, or None when no target is defined.
     """
-    target_str = _fmt_target(entry, dept_id)
+    target_str = _fmt_target(entry, dept_id, company_metrics)
     if target_str is not None:
         return target_str
 
@@ -239,7 +257,7 @@ def render_one_row(
     # which returns "—  _(per-page data — Batch 3 will wire)_" because bq_key=None.
     if entry.get("scorecard_status") == "asana_goal":
         body = _render_asana_goal(entry)
-        target_str = _resolve_target_string(entry, dept_id)
+        target_str = _resolve_target_string(entry, dept_id, company_metrics)
         target_suffix = f"  ·  target {target_str}" if target_str else ""
         return RenderedRow(
             metric_name=canonical_name,
@@ -263,7 +281,7 @@ def render_one_row(
     skip_default_target = isinstance(body, str) and "\x00SKIP_TARGET" in body
     if skip_default_target:
         body = body.replace("\x00SKIP_TARGET", "")
-    target_str = None if skip_default_target else _resolve_target_string(entry, dept_id)
+    target_str = None if skip_default_target else _resolve_target_string(entry, dept_id, company_metrics)
     target_suffix = f"  ·  target {target_str}" if target_str else ""
     display = f"{body}{target_suffix}"
 
