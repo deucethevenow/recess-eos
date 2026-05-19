@@ -455,6 +455,25 @@ def main(
                 exc=e,
             )
 
+    if not skip_deck:
+        try:
+            from lib.deck_writer import (  # noqa: E402
+                refresh_last_refreshed_subtitles_deckwide,
+            )
+            # Deck-wide pass: refresh "Last refreshed:" subtitles on every
+            # slide that has one — including slides apply_via_slides_api
+            # skipped (depts with no rocks payload, duplicate templates).
+            refresh_last_refreshed_subtitles_deckwide(
+                slides_service=slides_service,
+                presentation_id=deck_id,
+            )
+        except Exception as e:  # noqa: BLE001
+            emit_failure_alert(
+                surface="deck",
+                detail="refresh_last_refreshed_subtitles_deckwide failed.",
+                exc=e,
+            )
+
     if not skip_slack:
         try:
             from lib.slack_writer import post_pulse  # noqa: E402
