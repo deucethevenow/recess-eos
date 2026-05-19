@@ -447,3 +447,207 @@ def test_row_count_fetcher_returns_none_for_slide_without_table():
 
     fetcher = build_table_row_count_fetcher(service)
     assert fetcher("DECK_A", 0) is None
+
+
+# ----- "Last refreshed:" subtitle update ----------------------------------- #
+
+
+def test_format_last_refreshed_renders_et_string():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    ts = datetime(2026, 5, 19, 9, 47, tzinfo=ZoneInfo("America/New_York"))
+    s = deck_writer._format_last_refreshed(ts)
+    assert s == (
+        "Last refreshed: 2026-05-19 09:47 ET"
+        "  ·  Auto-updated by /monday-kpi-update"
+    )
+
+
+def test_format_last_refreshed_converts_utc_to_et():
+    from datetime import datetime, timezone
+
+    # 2026-05-19 13:47 UTC == 09:47 ET (EDT, May → UTC-4)
+    ts = datetime(2026, 5, 19, 13, 47, tzinfo=timezone.utc)
+    s = deck_writer._format_last_refreshed(ts)
+    assert "2026-05-19 09:47 ET" in s
+
+
+def test_find_last_refreshed_element_finds_subtitle():
+    slide = {
+        "pageElements": [
+            {
+                "objectId": "title_shape",
+                "shape": {
+                    "text": {
+                        "textElements": [
+                            {"textRun": {"content": "Engineering · Auto-Updated Scorecard"}}
+                        ]
+                    }
+                },
+            },
+            {
+                "objectId": "subtitle_shape",
+                "shape": {
+                    "text": {
+                        "textElements": [
+                            {
+                                "textRun": {
+                                    "content": "Last refreshed: 2026-05-01 13:06 ET  ·  Source: BigQuery + leadership pre-read"
+                                }
+                            }
+                        ]
+                    }
+                },
+            },
+        ]
+    }
+    el = deck_writer._find_last_refreshed_element(slide)
+    assert el is not None
+    assert el["objectId"] == "subtitle_shape"
+
+
+def test_find_last_refreshed_element_returns_none_when_absent():
+    slide = {
+        "pageElements": [
+            {
+                "objectId": "title_shape",
+                "shape": {
+                    "text": {
+                        "textElements": [
+                            {"textRun": {"content": "Sales · Auto-Updated Scorecard"}}
+                        ]
+                    }
+                },
+            }
+        ]
+    }
+    assert deck_writer._find_last_refreshed_element(slide) is None
+
+
+def test_apply_via_slides_api_does_not_touch_subtitle():
+    """Subtitle refresh is owned by refresh_last_refreshed_subtitles_deckwide,
+    not by apply_via_slides_api. The data writer keeps a single concern —
+    table cells — so slides without a dept payload still get their subtitle
+    refreshed by the deck-wide pass."""
+    rendered = {
+        "leadership": {
+            "scorecard_rows": [_row("Take Rate", display="47%")],
+            "slide_idx": 0,
+        }
+    }
+    subtitle_shape = {
+        "objectId": "subtitle_shape",
+        "shape": {
+            "text": {
+                "textElements": [
+                    {
+                        "textRun": {
+                            "content": "Last refreshed: 2026-05-01 13:06 ET  ·  Source: BigQuery + leadership pre-read"
+                        }
+                    }
+                ]
+            }
+        },
+    }
+    table_elem = {
+        "objectId": "tbl_0",
+        "table": {"tableRows": [{}, {}], "columns": 5},
+    }
+    pres = {
+        "slides": [
+            {
+                "objectId": "slide_lead",
+                "pageElements": [subtitle_shape, table_elem],
+            }
+        ]
+    }
+    service = _make_slides_service(pres)
+
+    apply_via_slides_api(
+        rendered_per_dept=rendered,
+        max_sensitivity="public",
+        slides_service=service,
+        presentation_id="DECK_X",
+        presentation=pres,
+    )
+
+    body = service.presentations.return_value.batchUpdate.call_args.kwargs["body"]
+    requests = body["requests"]
+    subtitle_requests = [
+        r for r in requests
+        if ("insertText" in r and r["insertText"].get("objectId") == "subtitle_shape")
+        or ("deleteText" in r and r["deleteText"].get("objectId") == "subtitle_shape")
+    ]
+    assert subtitle_requests == []
+
+
+# ----- refresh_last_refreshed_subtitles_deckwide ----------------------------- #
+
+
+def _subtitle_shape(obj_id, old_text="Last refreshed: 2026-05-01 13:06 ET  ·  Source: BigQuery + leadership pre-read"):
+    return {
+        "objectId": obj_id,
+        "shape": {"text": {"textElements": [{"textRun": {"content": old_text}}]}},
+    }
+
+
+def test_refresh_subtitles_updates_every_matching_slide():
+    pres = {
+        "slides": [
+            {"pageElements": [_subtitle_shape("sub_eng"), {"table": {}}]},
+            {"pageElements": [{"shape": {"text": {"textElements": []}}}]},  # no subtitle
+            {"pageElements": [_subtitle_shape("sub_sales"), {"table": {}}]},
+        ]
+    }
+    service = _make_slides_service(pres)
+    n = deck_writer.refresh_last_refreshed_subtitles_deckwide(
+        slides_service=service, presentation_id="DECK_X", presentation=pres
+    )
+    assert n == 2
+
+    body = service.presentations.return_value.batchUpdate.call_args.kwargs["body"]
+    requests = body["requests"]
+    updated_ids = {
+        r["insertText"]["objectId"] for r in requests if "insertText" in r
+    }
+    assert updated_ids == {"sub_eng", "sub_sales"}
+    # Today's date string in the inserted text — confirms the refresh path
+    # produces the canonical format from _format_last_refreshed().
+    inserted_texts = [
+        r["insertText"]["text"] for r in requests if "insertText" in r
+    ]
+    for txt in inserted_texts:
+        assert txt.startswith("Last refreshed:")
+        assert txt.endswith("·  Auto-updated by /monday-kpi-update")
+        assert "2026-05-01" not in txt
+
+
+def test_refresh_subtitles_no_op_when_deck_has_no_subtitles():
+    pres = {
+        "slides": [
+            {"pageElements": [{"shape": {"text": {"textElements": []}}}]},
+            {"pageElements": [{"table": {}}]},
+        ]
+    }
+    service = _make_slides_service(pres)
+    n = deck_writer.refresh_last_refreshed_subtitles_deckwide(
+        slides_service=service, presentation_id="DECK_X", presentation=pres
+    )
+    assert n == 0
+    # No batchUpdate fired — empty request list is short-circuited.
+    service.presentations.return_value.batchUpdate.assert_not_called()
+
+
+def test_refresh_subtitles_emits_single_batch_update():
+    """All N subtitle updates land in ONE batchUpdate call, not N calls."""
+    pres = {
+        "slides": [
+            {"pageElements": [_subtitle_shape(f"sub_{i}")]} for i in range(5)
+        ]
+    }
+    service = _make_slides_service(pres)
+    deck_writer.refresh_last_refreshed_subtitles_deckwide(
+        slides_service=service, presentation_id="DECK_X", presentation=pres
+    )
+    assert service.presentations.return_value.batchUpdate.call_count == 1
