@@ -556,22 +556,6 @@ meetings:
         sensitivity: "public"
         status: "automated"
         null_behavior: "show_dash"
-      - name: "Dept AI Plans Completed"
-        registry_key: null
-        asana_goal_id: "1213958752860959"
-        target: null
-        sensitivity: "public"
-        status: "asana_goal"
-        null_behavior: "show_dash"
-        notes: "Asana Goal progress %."
-      - name: "Recess OS Milestones"
-        registry_key: null
-        asana_goal_id: "1213964742972565"
-        target: null
-        sensitivity: "public"
-        status: "asana_goal"
-        null_behavior: "show_dash"
-        notes: "Asana Goal progress %."
     members:
       - "deuce@recess.is"
 
