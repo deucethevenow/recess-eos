@@ -32,6 +32,7 @@ def run_preflight(
     rendered_per_dept: Dict[str, Dict[str, Any]],
     deck_id: str,
     fetch_table_row_count: Optional[Callable[[str, int], Optional[int]]] = None,
+    pad_table_rows: Optional[Callable[[str, int, int], bool]] = None,
     skip_deck: bool = False,
     rendered_rocks_per_dept: Optional[Dict[str, Dict[str, Any]]] = None,
     skip_rocks_deck: bool = False,
@@ -108,11 +109,20 @@ def run_preflight(
                         f"{dept_id}: slide {slide_idx} has NO table — manual prep required."
                     )
                 elif actual < required:
-                    failures.append(
-                        f"{dept_id}: slide {slide_idx} has {actual} rows, "
-                        f"needs {required} (1 header + {row_count} metrics + 2 buffer). "
-                        "Pad table manually or rerun with skip_deck=True."
-                    )
+                    n_to_add = required - actual
+                    if pad_table_rows is not None and pad_table_rows(
+                        deck_id, slide_idx, n_to_add
+                    ):
+                        print(
+                            f"Pre-flight auto-padded {dept_id} slide {slide_idx}: "
+                            f"+{n_to_add} rows (had {actual}, needed {required})"
+                        )
+                    else:
+                        failures.append(
+                            f"{dept_id}: slide {slide_idx} has {actual} rows, "
+                            f"needs {required} (1 header + {row_count} metrics + 2 buffer). "
+                            "Pad table manually or rerun with skip_deck=True."
+                        )
 
     # 2c. Rocks/Projects slides — Session 4. Same shape as 2a/2b but against
     #     DEPT_ROCKS_TITLE_MAP. If skip_rocks_deck is True OR rocks rendering
@@ -147,12 +157,21 @@ def run_preflight(
                         "manual prep required."
                     )
                 elif actual < required:
-                    failures.append(
-                        f"{dept_id}: rocks slide {slide_idx} has {actual} rows, "
-                        f"needs {required} (1 header + {row_count} rocks/projects "
-                        "+ 2 buffer). Pad table manually or rerun with "
-                        "skip_rocks_deck=True."
-                    )
+                    n_to_add = required - actual
+                    if pad_table_rows is not None and pad_table_rows(
+                        deck_id, slide_idx, n_to_add
+                    ):
+                        print(
+                            f"Pre-flight auto-padded {dept_id} rocks slide {slide_idx}: "
+                            f"+{n_to_add} rows (had {actual}, needed {required})"
+                        )
+                    else:
+                        failures.append(
+                            f"{dept_id}: rocks slide {slide_idx} has {actual} rows, "
+                            f"needs {required} (1 header + {row_count} rocks/projects "
+                            "+ 2 buffer). Pad table manually or rerun with "
+                            "skip_rocks_deck=True."
+                        )
 
     # 3. Either fail loud, or log the audit trail. I3 fix: do NOT print "OK"
     # before raising — operators scanning logs would miss the trace below.

@@ -201,3 +201,123 @@ def test_preflight_passes_when_all_conditions_met(monkeypatch):
         deck_id="DECK",
         fetch_table_row_count=lambda d, s: 10,
     )
+
+
+# ----- pad_table_rows: auto-pad scorecard slides ---------------------------- #
+
+
+def test_preflight_auto_pads_when_padder_returns_true(monkeypatch):
+    """When fetch_table_row_count says actual < required AND pad_table_rows
+    returns True, preflight treats the dept as resolved — no PreflightError."""
+    _disable_alert(monkeypatch)
+    rendered = {
+        "sales": {
+            "scorecard_rows": [_row(f"M{i}") for i in range(12)],
+            "slide_idx": 28,
+        }
+    }
+    # 12 metrics → required = 15. Provide 9. Padder will be asked for +6.
+    pad_calls = []
+
+    def padder(deck_id, slide_idx, n_to_add):
+        pad_calls.append((deck_id, slide_idx, n_to_add))
+        return True
+
+    run_preflight(
+        today=date(2026, 5, 5),
+        company_metrics={},
+        rock_data={"available": True},
+        rendered_per_dept=rendered,
+        deck_id="DECK",
+        fetch_table_row_count=lambda d, s: 9,
+        pad_table_rows=padder,
+    )
+    assert pad_calls == [("DECK", 28, 6)]
+
+
+def test_preflight_falls_through_when_padder_returns_false(monkeypatch):
+    """Padder declining (e.g., slide has no table) must NOT silently swallow
+    the failure — preflight should still raise so the operator sees the gap."""
+    _disable_alert(monkeypatch)
+    rendered = {
+        "sales": {
+            "scorecard_rows": [_row(f"M{i}") for i in range(12)],
+            "slide_idx": 28,
+        }
+    }
+    with pytest.raises(PreflightError) as exc:
+        run_preflight(
+            today=date(2026, 5, 5),
+            company_metrics={},
+            rock_data={"available": True},
+            rendered_per_dept=rendered,
+            deck_id="DECK",
+            fetch_table_row_count=lambda d, s: 9,
+            pad_table_rows=lambda d, s, n: False,
+        )
+    assert "9" in str(exc.value)
+    assert "15" in str(exc.value)
+
+
+def test_preflight_without_padder_keeps_existing_failure_path(monkeypatch):
+    """pad_table_rows=None preserves the pre-feature behavior: under-row count
+    raises PreflightError. This guards against accidental auto-bypass."""
+    _disable_alert(monkeypatch)
+    rendered = {
+        "sales": {
+            "scorecard_rows": [_row(f"M{i}") for i in range(12)],
+            "slide_idx": 28,
+        }
+    }
+    with pytest.raises(PreflightError):
+        run_preflight(
+            today=date(2026, 5, 5),
+            company_metrics={},
+            rock_data={"available": True},
+            rendered_per_dept=rendered,
+            deck_id="DECK",
+            fetch_table_row_count=lambda d, s: 9,
+            pad_table_rows=None,
+        )
+
+
+def test_preflight_auto_pads_rocks_slides_too(monkeypatch):
+    """The same auto-pad logic applies to rocks slides — they share the
+    1+N+2 buffer rule and the same operator-relief intent."""
+    _disable_alert(monkeypatch)
+    # Need at least one scorecard dept so we exercise the run loop; sales
+    # scorecard sized to pass on its own.
+    scorecard = {
+        "sales": {
+            "scorecard_rows": [_row(f"M{i}") for i in range(2)],
+            "slide_idx": 28,
+        }
+    }
+    rocks = {
+        "operations": {
+            "scorecard_rows": [_row(f"R{i}") for i in range(4)],
+            "slide_idx": 58,
+        }
+    }
+    pad_calls = []
+
+    def padder(deck_id, slide_idx, n_to_add):
+        pad_calls.append((deck_id, slide_idx, n_to_add))
+        return True
+
+    # Scorecard needs 1+2+2 = 5 rows; rocks needs 1+4+2 = 7. Fetcher returns
+    # 99 (way more than scorecard needs) for slide 28, 4 (deficit) for slide 58.
+    def fetcher(deck_id, slide_idx):
+        return 99 if slide_idx == 28 else 4
+
+    run_preflight(
+        today=date(2026, 5, 5),
+        company_metrics={},
+        rock_data={"available": True},
+        rendered_per_dept=scorecard,
+        rendered_rocks_per_dept=rocks,
+        deck_id="DECK",
+        fetch_table_row_count=fetcher,
+        pad_table_rows=padder,
+    )
+    assert pad_calls == [("DECK", 58, 3)]

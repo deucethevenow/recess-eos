@@ -651,3 +651,71 @@ def test_refresh_subtitles_emits_single_batch_update():
         slides_service=service, presentation_id="DECK_X", presentation=pres
     )
     assert service.presentations.return_value.batchUpdate.call_count == 1
+
+
+# ----- build_table_row_padder ----------------------------------------------- #
+
+
+def _slide_with_table_having_n_rows(table_id, n_rows):
+    return {
+        "objectId": f"slide_{table_id}",
+        "pageElements": [
+            {
+                "objectId": table_id,
+                "table": {"tableRows": [{} for _ in range(n_rows)], "columns": 5},
+            }
+        ],
+    }
+
+
+def test_table_row_padder_inserts_rows_below_last_row():
+    pres = {"slides": [_slide_with_table_having_n_rows("tbl_a", 3)]}
+    service = _make_slides_service(pres)
+    padder = deck_writer.build_table_row_padder(service)
+
+    result = padder("DECK_X", 0, 2)
+
+    assert result is True
+    body = service.presentations.return_value.batchUpdate.call_args.kwargs["body"]
+    reqs = body["requests"]
+    assert len(reqs) == 1
+    insert = reqs[0]["insertTableRows"]
+    assert insert["tableObjectId"] == "tbl_a"
+    assert insert["cellLocation"] == {"rowIndex": 2, "columnIndex": 0}  # last existing row
+    assert insert["insertBelow"] is True
+    assert insert["number"] == 2
+
+
+def test_table_row_padder_returns_false_for_out_of_range_slide():
+    pres = {"slides": [_slide_with_table_having_n_rows("tbl_a", 3)]}
+    service = _make_slides_service(pres)
+    padder = deck_writer.build_table_row_padder(service)
+
+    result = padder("DECK_X", 99, 1)
+
+    assert result is False
+    service.presentations.return_value.batchUpdate.assert_not_called()
+
+
+def test_table_row_padder_returns_false_when_slide_has_no_table():
+    pres = {"slides": [{"objectId": "no_tbl_slide", "pageElements": [{"shape": {}}]}]}
+    service = _make_slides_service(pres)
+    padder = deck_writer.build_table_row_padder(service)
+
+    result = padder("DECK_X", 0, 1)
+
+    assert result is False
+    service.presentations.return_value.batchUpdate.assert_not_called()
+
+
+def test_table_row_padder_noop_when_n_to_add_is_zero():
+    pres = {"slides": [_slide_with_table_having_n_rows("tbl_a", 3)]}
+    service = _make_slides_service(pres)
+    padder = deck_writer.build_table_row_padder(service)
+
+    result = padder("DECK_X", 0, 0)
+
+    assert result is True
+    # Should NOT call any Slides API method — n_to_add=0 is a definitional no-op.
+    service.presentations.return_value.get.assert_not_called()
+    service.presentations.return_value.batchUpdate.assert_not_called()
