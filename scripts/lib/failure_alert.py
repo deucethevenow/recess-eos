@@ -23,7 +23,15 @@ _DEUCE_USER_ID_ENV = "SLACK_USER_ID_DEUCE"
 _LEO_USER_ID_ENV = "SLACK_USER_ID_LEO"
 
 
-def _build_mentions() -> str:
+# Surfaces that should NOT @here the whole channel on failure. These are
+# template/operator issues (e.g., deck row counts, slide titles) — they need
+# the owner's attention but don't warrant paging everyone in the room. Data
+# write failures (deck, slack, leadership-doc) keep the @here ping because
+# they indicate live-output corruption that demands eyes immediately.
+_QUIET_SURFACES = frozenset({"preflight"})
+
+
+def _build_mentions(allow_at_here_fallback: bool = True) -> str:
     deuce = os.environ.get(_DEUCE_USER_ID_ENV)
     leo = os.environ.get(_LEO_USER_ID_ENV)
     parts = []
@@ -31,7 +39,9 @@ def _build_mentions() -> str:
         parts.append(f"<@{deuce}>")
     if leo:
         parts.append(f"<@{leo}>")
-    return " ".join(parts) if parts else "<!here>"
+    if parts:
+        return " ".join(parts)
+    return "<!here>" if allow_at_here_fallback else ""
 
 
 def emit_failure_alert(
@@ -47,8 +57,17 @@ def emit_failure_alert(
     Never raises — if the alert post itself fails, prints to stderr instead so
     the original failure path can continue (per Patch 4 "do NOT recurse on
     failure here" rule).
+
+    Mention behavior is gated by `_QUIET_SURFACES`: preflight failures skip
+    the `<!here>` fallback so a row-count mismatch doesn't page the channel.
     """
-    parts = [f"{_build_mentions()} *monday-kpi-update FAILURE*"]
+    mentions = _build_mentions(allow_at_here_fallback=surface not in _QUIET_SURFACES)
+    header = (
+        f"{mentions} *monday-kpi-update FAILURE*"
+        if mentions
+        else "*monday-kpi-update FAILURE*"
+    )
+    parts = [header]
     parts.append(f"• surface: `{surface}`")
     if dept:
         parts.append(f"• dept: `{dept}`")

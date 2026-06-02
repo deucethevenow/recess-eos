@@ -352,3 +352,59 @@ def build_table_row_count_fetcher(
         return None
 
     return fetcher
+
+
+def build_table_row_padder(
+    slides_service: Any,
+) -> Callable[[str, int, int], bool]:
+    """Returns `pad_table_rows(deck_id, slide_idx, n_to_add) -> bool`.
+
+    Inserts `n_to_add` empty rows below the last existing row of the first
+    table on `slide_idx`. Returns True on success, False if the slide is out
+    of range OR has no table OR has no rows. n_to_add<=0 is a no-op success.
+
+    Used by preflight as a self-healing alternative to aborting on row-count
+    deficits — when a dept adds a metric to the registry without updating the
+    deck template, preflight pads the table itself and continues instead of
+    paging the operator.
+    """
+
+    def padder(deck_id: str, slide_index: int, n_to_add: int) -> bool:
+        if n_to_add <= 0:
+            return True
+        pres = (
+            slides_service.presentations().get(presentationId=deck_id).execute()
+        )
+        slides = pres.get("slides", []) or []
+        if slide_index >= len(slides):
+            return False
+        slide = slides[slide_index]
+        table_el = _resolve_table_object(slide)
+        if table_el is None:
+            return False
+        table_id = table_el.get("objectId")
+        rows = (table_el.get("table") or {}).get("tableRows") or []
+        if not table_id or not rows:
+            return False
+        last_row_idx = len(rows) - 1
+        slides_service.presentations().batchUpdate(
+            presentationId=deck_id,
+            body={
+                "requests": [
+                    {
+                        "insertTableRows": {
+                            "tableObjectId": table_id,
+                            "cellLocation": {
+                                "rowIndex": last_row_idx,
+                                "columnIndex": 0,
+                            },
+                            "insertBelow": True,
+                            "number": n_to_add,
+                        }
+                    }
+                ]
+            },
+        ).execute()
+        return True
+
+    return padder

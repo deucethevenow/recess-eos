@@ -221,11 +221,16 @@ def main(argv: Optional[list] = None) -> int:
 
     fetch_presentation = None
     fetch_table_row_count = None
+    pad_table_rows = None
     if slides_service is not None:
-        from lib.deck_writer import build_table_row_count_fetcher  # noqa: E402
+        from lib.deck_writer import (  # noqa: E402
+            build_table_row_count_fetcher,
+            build_table_row_padder,
+        )
 
         fetch_presentation = _build_fetch_presentation(slides_service)
         fetch_table_row_count = build_table_row_count_fetcher(slides_service)
+        pad_table_rows = build_table_row_padder(slides_service)
 
     # Lazy import so sys.path is set first
     import monday_kpi_update  # noqa: E402
@@ -239,6 +244,7 @@ def main(argv: Optional[list] = None) -> int:
         "leadership_doc_id": args.leadership_doc_id,
         "fetch_presentation": fetch_presentation,
         "fetch_table_row_count": fetch_table_row_count,
+        "pad_table_rows": pad_table_rows,
         "slides_service": slides_service,
         "docs_service": docs_service,
     }
