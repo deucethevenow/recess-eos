@@ -133,7 +133,9 @@ def test_target_cascade_falls_back_to_static_scorecard_targets(monkeypatch):
     cascade falls back to STATIC_SCORECARD_TARGETS. Without this wiring (I1
     review finding), the dict is dead code."""
     entry = {"key": "Days to First Offer", "format": "days"}
-    monkeypatch.setattr("lib.scorecard_renderer._fmt_target", lambda e, d: None)
+    monkeypatch.setattr(
+        "lib.scorecard_renderer._fmt_target", lambda e, d, cm=None: None
+    )
     monkeypatch.setattr(
         "lib.scorecard_renderer._render_live_metric",
         lambda e, d, cm, n: "12 days",

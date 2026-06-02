@@ -8,8 +8,17 @@ render code rather than via the registry's `target_key`. The slash command's
 4-step target cascade falls through to this map when neither registry-side path
 returns a value.
 
-Phase 1.5 cleanup: migrate non-None entries to the registry's `scorecard_target`
-field so this dict can be deleted. Tracked separately.
+Phase 1.5 cleanup (per 2026-05-19 architecture decision): migrate non-None
+entries to Firestore (not registry's `scorecard_target` dict as originally
+planned). See context/phase-1.5-tickets/2026-05-05-static-scorecard-targets-
+migration.md for the current target.
+
+TRAP for Phase 1.5 implementers: get_scorecard_target's `v != 0` guard
+(metric_registry.py) treats a Firestore-hydrated 0 as "missing", because
+data_layer's absent-key default is 0. Zero-target metrics in this dict
+(Bills Overdue, Invoices Overdue, Overdue Amount) MUST migrate to the
+registry's `scorecard_target` dict, NOT Firestore, OR data_layer must first
+switch to None defaults for missing target keys.
 
 v3.8 corrections vs v3.7:
   - count is 18 (audit said 25, audit was wrong; counted by hand: 18 entries here).

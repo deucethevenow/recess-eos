@@ -455,6 +455,25 @@ def main(
                 exc=e,
             )
 
+    if not skip_deck:
+        try:
+            from lib.deck_writer import (  # noqa: E402
+                refresh_last_refreshed_subtitles_deckwide,
+            )
+            # Deck-wide pass: refresh "Last refreshed:" subtitles on every
+            # slide that has one — including slides apply_via_slides_api
+            # skipped (depts with no rocks payload, duplicate templates).
+            refresh_last_refreshed_subtitles_deckwide(
+                slides_service=slides_service,
+                presentation_id=deck_id,
+            )
+        except Exception as e:  # noqa: BLE001
+            emit_failure_alert(
+                surface="deck",
+                detail="refresh_last_refreshed_subtitles_deckwide failed.",
+                exc=e,
+            )
+
     if not skip_slack:
         try:
             from lib.slack_writer import post_pulse  # noqa: E402
@@ -476,18 +495,23 @@ def main(
 
     if include_leadership_doc:
         try:
-            from lib.leadership_doc_writer import apply_to_leadership_doc  # noqa: E402
-            apply_to_leadership_doc(
+            from lib.leadership_doc_writer import apply_to_leadership_doc_tables  # noqa: E402
+            result = apply_to_leadership_doc_tables(
                 rendered_per_dept=rendered_per_dept,
-                rocks_by_dept=rocks_by_dept,
                 doc_id=leadership_doc_id,
                 docs_service=docs_service,
-                max_sensitivity="leadership",
+                fallback_dept_id="leadership",
+            )
+            print(
+                f"Leadership doc: {result['cells_updated']} cells updated "
+                f"across {result['tables_found']} table(s) "
+                f"({result['rows_matched']} rows matched, "
+                f"{result['rows_unmatched']} unmatched)"
             )
         except Exception as e:  # noqa: BLE001
             emit_failure_alert(
                 surface="leadership_doc",
-                detail="apply_to_leadership_doc failed.",
+                detail="apply_to_leadership_doc_tables failed.",
                 exc=e,
             )
 

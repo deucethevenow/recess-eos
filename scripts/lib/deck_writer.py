@@ -29,11 +29,64 @@ quarter-progress math against target_raw + actual_raw which the cron's
 render path doesn't expose today. Status stays neutral (⚪) until the
 target/actual numeric comparison is wired.
 """
+from datetime import datetime
 from typing import Any, Callable, Dict, Iterable, List, Optional
+from zoneinfo import ZoneInfo
 
 from .failure_alert import emit_failure_alert
 from .idempotency import build_cell_write_requests
 from .metric_payloads import MetricPayload, build_metric_payloads
+
+
+_LAST_REFRESHED_PREFIX = "Last refreshed:"
+_LAST_REFRESHED_TEMPLATE = (
+    "Last refreshed: {ts} ET  ·  Auto-updated by /monday-kpi-update"
+)
+_ET_ZONE = ZoneInfo("America/New_York")
+
+
+def _format_last_refreshed(now: Optional[datetime] = None) -> str:
+    """Render the deck subtitle string for the current ET wall-clock time.
+
+    Cron containers may run in either UTC or America/New_York; resolve
+    explicitly to ET so the rendered string doesn't drift with host TZ.
+    """
+    if now is None:
+        now = datetime.now(_ET_ZONE)
+    elif now.tzinfo is None:
+        now = now.replace(tzinfo=_ET_ZONE)
+    else:
+        now = now.astimezone(_ET_ZONE)
+    return _LAST_REFRESHED_TEMPLATE.format(ts=now.strftime("%Y-%m-%d %H:%M"))
+
+
+def _find_last_refreshed_element(slide: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Locate the slide's "Last refreshed:" subtitle text box, if present.
+
+    Matches by text content because shape objectIds vary per slide. Returns
+    the pageElement dict (containing objectId) or None when the slide has
+    no such subtitle — many scorecard slides don't.
+    """
+    for el in slide.get("pageElements", []) or []:
+        text_obj = (el.get("shape") or {}).get("text") or {}
+        for te in text_obj.get("textElements", []) or []:
+            content = (te.get("textRun") or {}).get("content") or ""
+            if content.lstrip().startswith(_LAST_REFRESHED_PREFIX):
+                return el
+    return None
+
+
+def _build_last_refreshed_requests(
+    element: Dict[str, Any], new_text: str
+) -> List[Dict[str, Any]]:
+    """Pair deleteText + insertText to overwrite the shape's full text."""
+    obj_id = element.get("objectId")
+    if not obj_id:
+        return []
+    return [
+        {"deleteText": {"objectId": obj_id, "textRange": {"type": "ALL"}}},
+        {"insertText": {"objectId": obj_id, "insertionIndex": 0, "text": new_text}},
+    ]
 
 
 def build_payloads_for_deck(
@@ -230,6 +283,43 @@ def apply_via_slides_api(
                 dept=dept_id,
                 slide_idx=slide_idx,
             )
+
+
+def refresh_last_refreshed_subtitles_deckwide(
+    slides_service: Any,
+    presentation_id: str,
+    presentation: Optional[Dict[str, Any]] = None,
+) -> int:
+    """Walk every slide once, refreshing any "Last refreshed:" subtitle present.
+
+    apply_via_slides_api only visits slides that map to a dept payload in
+    rendered_per_dept. Slides without a payload — duplicate templates,
+    placeholder R&P slides for depts that have no rocks data, future
+    dept slides — get skipped entirely. This pass keeps their timestamps
+    in sync with the most recent pulse.
+
+    All updates land in a single batchUpdate. Returns the count of
+    subtitles refreshed (for log lines and telemetry).
+    """
+    if presentation is None:
+        presentation = (
+            slides_service.presentations().get(presentationId=presentation_id).execute()
+        )
+
+    text = _format_last_refreshed()
+    requests: List[Dict[str, Any]] = []
+    n_updated = 0
+    for slide in presentation.get("slides", []) or []:
+        el = _find_last_refreshed_element(slide)
+        if el is not None:
+            requests.extend(_build_last_refreshed_requests(el, text))
+            n_updated += 1
+
+    if requests:
+        slides_service.presentations().batchUpdate(
+            presentationId=presentation_id, body={"requests": requests}
+        ).execute()
+    return n_updated
 
 
 def build_table_row_count_fetcher(
