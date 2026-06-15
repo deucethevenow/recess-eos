@@ -448,6 +448,105 @@
   .tag.on { background: var(--green-bg); color: var(--green); }
   .tag.off { background: var(--red-bg); color: var(--red); }
 
+  /* ── Skill cards ── */
+  .skill-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.1rem;
+  }
+
+  .skill-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.55rem;
+  }
+
+  .skill-cmd {
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--blue);
+    background: var(--blue-bg);
+    border: 1px solid var(--blue-border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+  }
+
+  .skill-stage {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 0.18rem 0.5rem;
+    border-radius: 4px;
+    background: var(--surface-alt);
+    color: var(--text-dim);
+  }
+
+  .skill-what {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  .skill-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .skill-field .label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-light);
+    margin-bottom: 0.2rem;
+  }
+
+  .skill-field .val {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  .say-this {
+    background: #1a1d27;
+    border-radius: 8px;
+    padding: 0.8rem 0.95rem;
+    margin-top: 0.2rem;
+  }
+
+  .say-this .say-label {
+    display: block;
+    color: var(--green);
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 0.4rem;
+  }
+
+  .say-this code {
+    color: #e6e8ef;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    display: block;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 640px) {
+    .skill-grid { grid-template-columns: 1fr; }
+  }
+
   /* ── Footer ── */
   .footer {
     text-align: center;
@@ -489,6 +588,7 @@
   <a href="#scoring">Scoring</a>
   <a href="#rhythm">The Rhythm</a>
   <a href="#rules">Key Rules</a>
+  <a href="#skills">The Skills</a>
 </nav>
 
 <div class="container">
@@ -887,10 +987,167 @@
     </div>
   </section>
 
+  <!-- ═══ SKILLS ═══ -->
+  <section id="skills">
+    <h2><span class="num" style="background: var(--purple-bg); color: var(--purple);">8</span> The Skills That Run This</h2>
+    <p class="section-sub">Recess OS gives you Claude Code skills for each stage of the Rock lifecycle — same Rocks, same rhythm, far less manual work.</p>
+
+    <p>These run inside <strong>Claude Code</strong> (the "Recess Brain" plugin). Three skills cover the four stages of a Rock's life. <code>/ceos-rocks</code> bookends the cycle — it both <strong>defines</strong> Rocks at the start and <strong>scores</strong> them at the end. In between, <code>/ceos-rock-plans</code> turns a Rock into an Asana project and <code>/rock-status</code> keeps it honest week to week.</p>
+
+    <div class="callout tip">
+      <span class="callout-icon">&#128295;</span>
+      <div>
+        <strong>One-time setup:</strong> install or refresh the Recess Brain plugin (<a href="https://www.notion.so/teamrecess/Training-Session-1-Install-Refresh-Recess-Brain-Claude-Plugin-32f78d863acd80d6bfd3cc4fef655cb7">Training Session 1 SOP</a>). After that the skills work from any folder &mdash; just open Claude Code and type the command.
+      </div>
+    </div>
+
+    <!-- Lifecycle flow -->
+    <div class="flow">
+      <div class="flow-node" style="background: var(--orange-bg); border: 1px solid var(--orange-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#127956;</div>
+        <div class="flow-label">1. Brainstorm &amp; Formalize</div>
+        <div class="flow-desc">/ceos-rocks</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node" style="background: var(--blue-bg); border: 1px solid var(--blue-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#128736;&#65039;</div>
+        <div class="flow-label">2. Build the Plan</div>
+        <div class="flow-desc">/ceos-rock-plans</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node" style="background: var(--cyan-bg); border: 1px solid #a5f3fc; border-radius: var(--radius);">
+        <div class="flow-icon">&#128202;</div>
+        <div class="flow-label">3. Track Weekly</div>
+        <div class="flow-desc">/rock-status</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node" style="background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#9989;</div>
+        <div class="flow-label">4. Score</div>
+        <div class="flow-desc">/ceos-rocks</div>
+      </div>
+    </div>
+
+    <!-- Skill 1 -->
+    <div class="skill-card">
+      <div class="skill-head">
+        <span class="skill-cmd">/ceos-rocks</span>
+        <span class="skill-stage">Stage 1 + 4 &middot; Define &amp; Score</span>
+      </div>
+      <div class="skill-what">Defines <em>what</em> a Rock is &mdash; owner, measurable outcome, milestones, tracking plan &mdash; and scores it at quarter-end. One skill, three modes: <strong>Set</strong>, <strong>Track</strong>, <strong>Score</strong>.</div>
+      <div class="skill-grid">
+        <div class="skill-field">
+          <div class="label">When to use</div>
+          <div class="val">Quarterly planning &mdash; first to <strong>brainstorm</strong> proposals for the leadership doc, then again to <strong>formalize</strong> approved Rocks into files. And at quarter-end to <strong>score</strong> each Rock done or dropped.</div>
+        </div>
+        <div class="skill-field">
+          <div class="label">What you get</div>
+          <div class="val">A structured Rock (title, KPI, "done looks like", milestones, how it's tracked) saved to the shared repo &mdash; then a binary quarter scorecard (target: 80%+ complete).</div>
+        </div>
+      </div>
+      <div class="say-this">
+        <span class="say-label">&#128172; Say this in Claude Code</span>
+        <code>Help me brainstorm my Q3 2026 department Rocks. I'm [name], [department]. Walk me through structuring each one with title, KPI, why now, mechanism, done-looks-like, milestones, and how it'll be tracked.</code>
+      </div>
+    </div>
+
+    <!-- Skill 2 -->
+    <div class="skill-card">
+      <div class="skill-head">
+        <span class="skill-cmd">/ceos-rock-plans</span>
+        <span class="skill-stage">Stage 2 &middot; Build &amp; Push to Asana</span>
+      </div>
+      <div class="skill-what">Turns a Rock's milestones into a real execution plan &mdash; phased tasks, one owner each, dependencies, and weekly check-ins &mdash; then <strong>builds the Asana project</strong> for you.</div>
+      <div class="skill-grid">
+        <div class="skill-field">
+          <div class="label">When to use</div>
+          <div class="val">Right after a Rock is formalized and approved, before execution starts. Also to build a <strong>recovery plan</strong> when a Rock goes off-track. Needs a Rock file first &mdash; run <code>/ceos-rocks</code> before this.</div>
+        </div>
+        <div class="skill-field">
+          <div class="label">What you get</div>
+          <div class="val">A fully wired Asana project: sections per phase, milestones, assigned tasks with a definition-of-done, dependencies, and weekly status tasks. <strong>This Asana project is what feeds the dashboard.</strong></div>
+        </div>
+      </div>
+      <div class="say-this">
+        <span class="say-label">&#128172; Say this in Claude Code</span>
+        <code>Build a project plan for my Q3 Rock [rock name] and push it to Asana.</code>
+      </div>
+    </div>
+
+    <!-- Skill 3 -->
+    <div class="skill-card">
+      <div class="skill-head">
+        <span class="skill-cmd">/rock-status</span>
+        <span class="skill-stage">Stage 3 &middot; Track Weekly</span>
+      </div>
+      <div class="skill-what">Reads your live Asana tasks and Rock files and writes the weekly status report &mdash; each Rock called <strong>On Track</strong>, <strong>At Risk</strong>, or <strong>Off Track</strong>, with what moved and what's blocked.</div>
+      <div class="skill-grid">
+        <div class="skill-field">
+          <div class="label">When to use</div>
+          <div class="val">Weekly, before your L10 Rock Review. Any time you want a current read on how a Rock is pacing without digging through Asana by hand.</div>
+        </div>
+        <div class="skill-field">
+          <div class="label">What you get</div>
+          <div class="val">A per-Rock status with milestone progress, slipped tasks flagged, and a recommended focus for the week &mdash; the exact one-word update each owner gives in L10.</div>
+        </div>
+      </div>
+      <div class="say-this">
+        <span class="say-label">&#128172; Say this in Claude Code</span>
+        <code>Give me a rock status report for Q3.</code>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">&#9888;&#65039;</span>
+      <div>
+        <strong>Rock files live in the shared team repo &mdash; push them, or nobody sees them.</strong> After <code>/ceos-rocks</code> or <code>/ceos-rock-plans</code> creates files, commit and push (just say <em>"commit and push my Rock files"</em>). The Asana project is visible immediately; the underlying Rock definitions only reach teammates once you push.
+      </div>
+    </div>
+
+    <!-- ── Dashboard sync ── -->
+    <h3>How Rocks Sync to the KPI Dashboard <span style="font-size:0.62rem; font-weight:700; color: var(--purple); background: var(--purple-bg); padding:0.15rem 0.5rem; border-radius:4px; text-transform:uppercase; letter-spacing:0.06em; vertical-align:middle;">How it works today</span></h3>
+    <p>You never push anything to the dashboard yourself. Once <code>/ceos-rock-plans</code> has created your Rock's Asana project, the rest is automatic:</p>
+
+    <div class="flow">
+      <div class="flow-node" style="background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#9989;</div>
+        <div class="flow-label">Update Asana tasks</div>
+        <div class="flow-desc">Check off tasks in your Rock's project as work gets done</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node" style="background: var(--purple-bg); border: 1px solid var(--purple-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#128260;</div>
+        <div class="flow-label">Nightly sync</div>
+        <div class="flow-desc">Asana &rarr; BigQuery snapshot, refreshed every morning</div>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-node" style="background: var(--blue-bg); border: 1px solid var(--blue-border); border-radius: var(--radius);">
+        <div class="flow-icon">&#128202;</div>
+        <div class="flow-label">Dashboard progress bar</div>
+        <div class="flow-desc">"Quarterly Rocks &amp; Projects" on the Overview page</div>
+      </div>
+    </div>
+
+    <div class="callout key">
+      <span class="callout-icon">&#128161;</span>
+      <div>
+        <strong>What the dashboard shows today:</strong> the <strong>% of your Rock's tasks that are complete</strong> &mdash; a progress bar that refreshes each morning. Any Asana project whose name starts with <code>Rock&hellip;</code> is picked up automatically.<br>
+        <strong>What it does <em>not</em> show (yet):</strong> the on-track / off-track <em>health</em> call. That judgment still comes from you &mdash; in Asana, in <code>/rock-status</code>, and in the weekly L10. Keep your tasks current and the progress bar takes care of itself.
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">&#128073;</span>
+      <div>
+        See it live on the <a href="https://kpi-dashboard-687073027146.us-central1.run.app">KPI Dashboard</a> &rarr; <strong>Overview</strong> &rarr; <strong>Quarterly Rocks &amp; Projects</strong>.
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <div class="footer">
-  Recess &bull; Built on the Entrepreneurial Operating System (EOS) &bull; Updated March 2026
+  Recess &bull; Built on the Entrepreneurial Operating System (EOS) &bull; Updated June 2026
 </div>
 
 <script>
