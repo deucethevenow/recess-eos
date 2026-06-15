@@ -547,6 +547,23 @@
     .skill-grid { grid-template-columns: 1fr; }
   }
 
+  /* ── Lifecycle cycle ── */
+  .cycle-wrap { display: flex; justify-content: center; margin: 1.75rem 0 0.75rem; }
+  .cycle-svg { width: 100%; max-width: 540px; height: auto; }
+  .cycle-legend {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 0.5rem 1.4rem; margin: 0 0 1.5rem;
+  }
+  .cyc-chip { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; color: var(--text-dim); }
+  .cyc-chip::before { content: ""; width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .cyc-chip code { font-family: 'SF Mono','Menlo',monospace; font-size: 0.78rem; font-weight: 600; }
+  .cyc-blue::before { background: var(--blue); }
+  .cyc-blue code { color: var(--blue); }
+  .cyc-orange::before { background: var(--orange); }
+  .cyc-orange code { color: #c2710c; }
+  .cyc-green::before { background: var(--green); }
+  .cyc-green code { color: var(--green); }
+
   /* ── Footer ── */
   .footer {
     text-align: center;
@@ -992,7 +1009,7 @@
     <h2><span class="num" style="background: var(--purple-bg); color: var(--purple);">8</span> The Skills That Run This</h2>
     <p class="section-sub">Recess OS gives you Claude Code skills for each stage of the Rock lifecycle — same Rocks, same rhythm, far less manual work.</p>
 
-    <p>These run inside <strong>Claude Code</strong> (the "Recess Brain" plugin). Three skills cover the four stages of a Rock's life. <code>/ceos-rocks</code> bookends the cycle — it both <strong>defines</strong> Rocks at the start and <strong>scores</strong> them at the end. In between, <code>/ceos-rock-plans</code> turns a Rock into an Asana project and <code>/rock-status</code> keeps it honest week to week.</p>
+    <p>These run inside <strong>Claude Code</strong> (the "Recess Brain" plugin). Three skills run the <strong>five stages</strong> of the quarterly Rock cycle, and <code>/ceos-rocks</code> does three of them &mdash; it <strong>brainstorms</strong>, <strong>finalizes</strong>, and <strong>scores</strong>. In between, <code>/ceos-rock-plans</code> builds the Asana project and <code>/rock-status</code> reports weekly health. At quarter-end the Rocks score out and the cycle repeats.</p>
 
     <div class="callout tip">
       <span class="callout-icon">&#128295;</span>
@@ -1001,38 +1018,98 @@
       </div>
     </div>
 
-    <!-- Lifecycle flow -->
-    <div class="flow">
-      <div class="flow-node" style="background: var(--orange-bg); border: 1px solid var(--orange-border); border-radius: var(--radius);">
-        <div class="flow-icon">&#127956;</div>
-        <div class="flow-label">1. Brainstorm &amp; Formalize</div>
-        <div class="flow-desc">/ceos-rocks</div>
-      </div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-node" style="background: var(--blue-bg); border: 1px solid var(--blue-border); border-radius: var(--radius);">
-        <div class="flow-icon">&#128736;&#65039;</div>
-        <div class="flow-label">2. Build the Plan</div>
-        <div class="flow-desc">/ceos-rock-plans</div>
-      </div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-node" style="background: var(--cyan-bg); border: 1px solid #a5f3fc; border-radius: var(--radius);">
-        <div class="flow-icon">&#128202;</div>
-        <div class="flow-label">3. Track Weekly</div>
-        <div class="flow-desc">/rock-status</div>
-      </div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-node" style="background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--radius);">
-        <div class="flow-icon">&#9989;</div>
-        <div class="flow-label">4. Score</div>
-        <div class="flow-desc">/ceos-rocks</div>
-      </div>
+    <!-- Lifecycle cycle (circular) -->
+    <div class="cycle-wrap">
+      <svg viewBox="0 0 760 660" class="cycle-svg" role="img" aria-label="The quarterly Rock cycle, clockwise: 1 Brainstorm, 2 Finalize, 3 Build Execution Plan, 4 Report Rock Status, 5 Close and Score Rocks, then it repeats every 90 days.">
+        <style>
+          .cyc-state { font: 600 13px 'Inter', -apple-system, sans-serif; fill: #1a1d27; }
+          .cyc-cmd { font: 600 10.5px 'SF Mono','Menlo',monospace; }
+          .cyc-num { font: 700 13px 'Inter', sans-serif; fill: #fff; }
+          .cyc-h1 { font: 700 10px 'Inter', sans-serif; fill: #6b7084; letter-spacing: 1.5px; }
+          .cyc-h2 { font: 800 19px 'Inter', sans-serif; fill: #1a1d27; }
+          .cyc-h3 { font: 500 10.5px 'Inter', sans-serif; fill: #6b7084; }
+          .cyc-arc { fill: none; stroke: #aab0c0; stroke-width: 2.5; stroke-linecap: round; }
+          .cyc-arw { fill: #aab0c0; }
+        </style>
+
+        <!-- guide ring -->
+        <circle cx="380" cy="340" r="220" fill="none" stroke="#eceef3" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round"/>
+
+        <!-- clockwise flow arrows -->
+        <path class="cyc-arc" d="M465.9 137.5 A220 220 0 0 1 546 195.7"/>
+        <path class="cyc-arw" d="M0 0 L-13 -6.5 L-13 6.5 Z" transform="translate(546 195.7) rotate(49)"/>
+        <path class="cyc-arc" d="M599.2 359.2 A220 220 0 0 1 568.6 453.3"/>
+        <path class="cyc-arw" d="M0 0 L-13 -6.5 L-13 6.5 Z" transform="translate(568.6 453.3) rotate(121)"/>
+        <path class="cyc-arc" d="M429.5 554.4 A220 220 0 0 1 330.5 554.4"/>
+        <path class="cyc-arw" d="M0 0 L-13 -6.5 L-13 6.5 Z" transform="translate(330.5 554.4) rotate(193)"/>
+        <path class="cyc-arc" d="M191.4 453.3 A220 220 0 0 1 160.8 359.2"/>
+        <path class="cyc-arw" d="M0 0 L-13 -6.5 L-13 6.5 Z" transform="translate(160.8 359.2) rotate(265)"/>
+        <path class="cyc-arc" d="M214 195.7 A220 220 0 0 1 294.1 137.5"/>
+        <path class="cyc-arw" d="M0 0 L-13 -6.5 L-13 6.5 Z" transform="translate(294.1 137.5) rotate(337)"/>
+
+        <!-- hub -->
+        <circle cx="380" cy="340" r="93" fill="#fbfbfd" stroke="#e2e4ea" stroke-width="1.5"/>
+        <text class="cyc-h1" x="380" y="322" text-anchor="middle">THE QUARTERLY</text>
+        <text class="cyc-h2" x="380" y="345" text-anchor="middle">Rock Cycle</text>
+        <text class="cyc-h3" x="380" y="365" text-anchor="middle">&#8635; repeats every 90 days</text>
+
+        <!-- 1 Brainstorm (ceos-rocks) -->
+        <g>
+          <circle cx="380" cy="120" r="66" fill="#eef1fd" stroke="#4361ee" stroke-width="2.5"/>
+          <circle cx="380" cy="80" r="13" fill="#4361ee"/>
+          <text class="cyc-num" x="380" y="84.5" text-anchor="middle">1</text>
+          <text class="cyc-state" x="380" y="124" text-anchor="middle">Brainstorm</text>
+          <text class="cyc-cmd" x="380" y="150" text-anchor="middle" fill="#4361ee">/ceos-rocks</text>
+        </g>
+
+        <!-- 2 Finalize (ceos-rocks) -->
+        <g>
+          <circle cx="589" cy="272" r="66" fill="#eef1fd" stroke="#4361ee" stroke-width="2.5"/>
+          <circle cx="589" cy="232" r="13" fill="#4361ee"/>
+          <text class="cyc-num" x="589" y="236.5" text-anchor="middle">2</text>
+          <text class="cyc-state" x="589" y="276" text-anchor="middle">Finalize</text>
+          <text class="cyc-cmd" x="589" y="302" text-anchor="middle" fill="#4361ee">/ceos-rocks</text>
+        </g>
+
+        <!-- 3 Build Execution Plan (ceos-rock-plans) -->
+        <g>
+          <circle cx="509" cy="518" r="66" fill="#fef0d3" stroke="#f59e0b" stroke-width="2.5"/>
+          <circle cx="509" cy="476" r="13" fill="#f59e0b"/>
+          <text class="cyc-num" x="509" y="480.5" text-anchor="middle">3</text>
+          <text class="cyc-state" x="509" y="510" text-anchor="middle"><tspan x="509">Build Execution</tspan><tspan x="509" dy="16">Plan</tspan></text>
+          <text class="cyc-cmd" x="509" y="552" text-anchor="middle" fill="#c2710c">/ceos-rock-plans</text>
+        </g>
+
+        <!-- 4 Report Rock Status (rock-status) -->
+        <g>
+          <circle cx="251" cy="518" r="66" fill="#e7faf1" stroke="#10b981" stroke-width="2.5"/>
+          <circle cx="251" cy="476" r="13" fill="#10b981"/>
+          <text class="cyc-num" x="251" y="480.5" text-anchor="middle">4</text>
+          <text class="cyc-state" x="251" y="510" text-anchor="middle"><tspan x="251">Report Rock</tspan><tspan x="251" dy="16">Status</tspan></text>
+          <text class="cyc-cmd" x="251" y="552" text-anchor="middle" fill="#059669">/rock-status</text>
+        </g>
+
+        <!-- 5 Close & Score (ceos-rocks) -->
+        <g>
+          <circle cx="171" cy="272" r="66" fill="#eef1fd" stroke="#4361ee" stroke-width="2.5"/>
+          <circle cx="171" cy="232" r="13" fill="#4361ee"/>
+          <text class="cyc-num" x="171" y="236.5" text-anchor="middle">5</text>
+          <text class="cyc-state" x="171" y="276" text-anchor="middle">Close &amp; Score</text>
+          <text class="cyc-cmd" x="171" y="302" text-anchor="middle" fill="#4361ee">/ceos-rocks</text>
+        </g>
+      </svg>
+    </div>
+    <div class="cycle-legend">
+      <span class="cyc-chip cyc-blue"><code>/ceos-rocks</code> &mdash; brainstorm &middot; finalize &middot; score</span>
+      <span class="cyc-chip cyc-orange"><code>/ceos-rock-plans</code> &mdash; build the plan</span>
+      <span class="cyc-chip cyc-green"><code>/rock-status</code> &mdash; report status</span>
     </div>
 
     <!-- Skill 1 -->
     <div class="skill-card">
       <div class="skill-head">
         <span class="skill-cmd">/ceos-rocks</span>
-        <span class="skill-stage">Stage 1 + 4 &middot; Define &amp; Score</span>
+        <span class="skill-stage">Stages 1 &middot; 2 &middot; 5 &mdash; Brainstorm, Finalize &amp; Score</span>
       </div>
       <div class="skill-what">Defines <em>what</em> a Rock is &mdash; owner, measurable outcome, milestones, tracking plan &mdash; and scores it at quarter-end. One skill, three modes: <strong>Set</strong>, <strong>Track</strong>, <strong>Score</strong>.</div>
       <div class="skill-grid">
@@ -1055,7 +1132,7 @@
     <div class="skill-card">
       <div class="skill-head">
         <span class="skill-cmd">/ceos-rock-plans</span>
-        <span class="skill-stage">Stage 2 &middot; Build &amp; Push to Asana</span>
+        <span class="skill-stage">Stage 3 &middot; Build Execution Plan</span>
       </div>
       <div class="skill-what">Turns a Rock's milestones into a real execution plan &mdash; phased tasks, one owner each, dependencies, and weekly check-ins &mdash; then <strong>builds the Asana project</strong> for you.</div>
       <div class="skill-grid">
@@ -1078,7 +1155,7 @@
     <div class="skill-card">
       <div class="skill-head">
         <span class="skill-cmd">/rock-status</span>
-        <span class="skill-stage">Stage 3 &middot; Track Weekly</span>
+        <span class="skill-stage">Stage 4 &middot; Report Rock Status</span>
       </div>
       <div class="skill-what">Reads your live Asana tasks and Rock files and writes the weekly status report &mdash; each Rock called <strong>On Track</strong>, <strong>At Risk</strong>, or <strong>Off Track</strong>, with what moved and what's blocked.</div>
       <div class="skill-grid">
