@@ -1177,7 +1177,14 @@
     <div class="callout warn">
       <span class="callout-icon">&#9888;&#65039;</span>
       <div>
-        <strong>Rock files live in the shared team repo &mdash; push them, or nobody sees them.</strong> After <code>/ceos-rocks</code> or <code>/ceos-rock-plans</code> creates files, commit and push (just say <em>"commit and push my Rock files"</em>). The Asana project is visible immediately; the underlying Rock definitions only reach teammates once you push.
+        <strong>Push your Rocks &mdash; or the team can't see them.</strong> A finalized Rock or plan is written to <em>your local copy</em> of the Recess Brain repo first. The repo is the team's source of truth for Rock definitions, so an unpushed Rock just sits on your laptop while leadership reviews an empty folder. <strong>You no longer have to remember, though:</strong> when <code>/ceos-rocks</code> and <code>/ceos-rock-plans</code> finish, they now ask <em>"Commit and push now?"</em> &mdash; just say <strong>yes</strong> and the files go straight to the shared repo. (The Asana project is live for the team the moment it's built; only the underlying Rock/plan <em>files</em> need the push.)
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">&#128193;</span>
+      <div>
+        <strong>Where the final Rocks live &mdash; and how to read them.</strong> Every Rock is a markdown file in the shared <strong>Recess Brain</strong> repo under <code>data/eos/rocks/&lt;quarter&gt;/</code> (execution plans sit alongside in <code>/plans/</code>). To pull the latest from everyone, refresh Recess Brain &mdash; or just run <code>/ceos-rocks</code>, which syncs first and can show a live status table of every Rock, owner, and milestone. Day-to-day execution lives in the <strong>Asana</strong> project each plan builds, and progress rolls up to the <strong>KPI Dashboard</strong>.
       </div>
     </div>
 
