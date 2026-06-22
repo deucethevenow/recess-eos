@@ -564,6 +564,30 @@
   .cyc-green::before { background: var(--green); }
   .cyc-green code { color: var(--green); }
 
+  /* ── Portfolio sync map ── */
+  .sync-map { max-width: 640px; margin: 1.5rem auto 0.4rem; }
+  .sync-step { text-align: center; }
+  .sync-chip-skill { display: inline-block; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--radius); padding: 0.55rem 1rem; font-size: 0.85rem; }
+  .sync-down { display: flex; flex-direction: column; align-items: center; padding: 0.3rem 0; }
+  .sync-down::before { content: "\2193"; color: var(--text-light); font-size: 1.15rem; line-height: 1; font-weight: 700; }
+  .sync-down span { font-size: 0.73rem; color: var(--text-dim); margin-top: 0.15rem; text-align: center; max-width: 470px; line-height: 1.45; }
+  .sync-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem 1rem; box-shadow: var(--shadow-sm); background: var(--surface); }
+  .sync-box.portfolio { border-color: var(--purple-border); background: var(--purple-bg); }
+  .sync-box.dash { border-color: var(--blue-border); background: var(--blue-bg); }
+  .sync-box-head { font-size: 0.82rem; font-weight: 600; }
+  .sync-box.portfolio .sync-box-head, .sync-box.dash .sync-box-head { margin-bottom: 0.55rem; }
+  .sync-box .muted { font-weight: 400; color: var(--text-dim); }
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chip { font-size: 0.71rem; padding: 0.17rem 0.5rem; border-radius: 5px; background: #fff; border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+  .chip.rock { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  .chip.more { background: transparent; border-style: dashed; }
+  .bar-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; font-size: 0.78rem; }
+  .bar-label { width: 68px; font-weight: 600; color: var(--text); flex-shrink: 0; font-family: 'SF Mono','Menlo',monospace; font-size: 0.72rem; }
+  .bar-track { flex: 1; height: 11px; background: #d7def4; border-radius: 6px; overflow: hidden; }
+  .bar-fill { display: block; height: 100%; background: var(--blue); border-radius: 6px; }
+  .bar-pct { width: 36px; text-align: right; font-weight: 700; color: var(--blue); flex-shrink: 0; font-size: 0.76rem; }
+  .sync-caption { text-align: center; font-size: 0.7rem; color: var(--text-light); margin-top: 0.5rem; }
+
   /* ── Footer ── */
   .footer {
     text-align: center;
@@ -1190,26 +1214,48 @@
 
     <!-- ── Dashboard sync ── -->
     <h3>How Rocks Sync to the KPI Dashboard <span style="font-size:0.62rem; font-weight:700; color: var(--purple); background: var(--purple-bg); padding:0.15rem 0.5rem; border-radius:4px; text-transform:uppercase; letter-spacing:0.06em; vertical-align:middle;">How it works today</span></h3>
-    <p>You never push anything to the dashboard yourself. Once <code>/ceos-rock-plans</code> has created your Rock's Asana project, the rest is automatic:</p>
+    <p>You never push anything to the dashboard yourself. Your Rock project lands in the quarter's Asana <strong>portfolio</strong>, and from there it's fully automatic. Here's the real path &mdash; with this quarter's live numbers:</p>
 
-    <div class="flow">
-      <div class="flow-node" style="background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--radius);">
-        <div class="flow-icon">&#9989;</div>
-        <div class="flow-label">Update Asana tasks</div>
-        <div class="flow-desc">Check off tasks in your Rock's project as work gets done</div>
+    <div class="sync-map">
+
+      <div class="sync-step">
+        <div class="sync-chip-skill"><code>/ceos-rock-plans</code> builds your Rock as an Asana <strong>project</strong> (tasks, milestones, owners)</div>
       </div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-node" style="background: var(--purple-bg); border: 1px solid var(--purple-border); border-radius: var(--radius);">
-        <div class="flow-icon">&#128260;</div>
-        <div class="flow-label">Nightly sync</div>
-        <div class="flow-desc">Asana &rarr; BigQuery snapshot, refreshed every morning</div>
+
+      <div class="sync-down"><span>the project is added to the quarter's portfolio</span></div>
+
+      <div class="sync-box portfolio">
+        <div class="sync-box-head">&#128193; Asana Portfolio &mdash; <strong>"Q2 2026 Rocks + Projects"</strong> <span class="muted">&middot; 25 projects</span></div>
+        <div class="chip-grid">
+          <span class="chip rock">Rock 003</span>
+          <span class="chip rock">Rock 004</span>
+          <span class="chip rock">Rock 006</span>
+          <span class="chip rock">Rock 007</span>
+          <span class="chip rock">Rock 008</span>
+          <span class="chip rock">Rock 009</span>
+          <span class="chip">KPI Dashboard</span>
+          <span class="chip">Walmart GTM Plan</span>
+          <span class="chip">Clay Sales Systems</span>
+          <span class="chip more">+16 more</span>
+        </div>
       </div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-node" style="background: var(--blue-bg); border: 1px solid var(--blue-border); border-radius: var(--radius);">
-        <div class="flow-icon">&#128202;</div>
-        <div class="flow-label">Dashboard progress bar</div>
-        <div class="flow-desc">"Quarterly Rocks &amp; Projects" on the Overview page</div>
+
+      <div class="sync-down"><span><code>recess_os.py sync-to-bq</code> snapshots the <em>whole portfolio</em> &mdash; once a day</span></div>
+
+      <div class="sync-box">
+        <div class="sync-box-head">&#128451;&#65039; BigQuery &mdash; <code>App_Recess_OS.eos_projects</code> <span class="muted">&middot; 25 rows &middot; name, owner, completion_percent, task_count, status</span></div>
       </div>
+
+      <div class="sync-down"><span>the dashboard reads the table and keeps only projects whose name starts with <code>Rock&hellip;</code> &mdash; <strong>6 of the 25</strong></span></div>
+
+      <div class="sync-box dash">
+        <div class="sync-box-head">&#128202; KPI Dashboard &rarr; Overview &rarr; <strong>"Quarterly Rocks &amp; Projects"</strong></div>
+        <div class="bar-row"><span class="bar-label">Rock 006</span><span class="bar-track"><span class="bar-fill" style="width:98%"></span></span><span class="bar-pct">98%</span></div>
+        <div class="bar-row"><span class="bar-label">Rock 003</span><span class="bar-track"><span class="bar-fill" style="width:76%"></span></span><span class="bar-pct">76%</span></div>
+        <div class="bar-row"><span class="bar-label">Rock 007</span><span class="bar-track"><span class="bar-fill" style="width:47%"></span></span><span class="bar-pct">47%</span></div>
+      </div>
+
+      <div class="sync-caption">Live snapshot &mdash; June 2026 &middot; the % is each Rock's share of completed Asana tasks, refreshed daily</div>
     </div>
 
     <div class="callout key">
