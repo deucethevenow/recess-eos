@@ -1258,6 +1258,24 @@
       <div class="sync-caption">Live snapshot &mdash; June 2026 &middot; refreshed hourly. The sync auto-rolls to each new quarter's portfolio &mdash; Q3 takes over July&nbsp;1.</div>
     </div>
 
+    <div class="callout tip">
+      <span class="callout-icon">&#128203;</span>
+      <div>
+        <strong>Add your Rock project to your quarter's portfolio</strong> &mdash; dropping it in is all it takes to land on the dashboard (the sync auto-rolls to the active quarter, so you never wait on a cutover):<br>
+        &#8594; <a href="https://app.asana.com/0/portfolio/1213903007546087/list">Q2 2026 Rocks + Projects</a> <span style="color:var(--text-light);">(current)</span>
+        &nbsp;&middot;&nbsp; <a href="https://app.asana.com/0/portfolio/1215937018379860/list">Q3 2026</a>
+        &nbsp;&middot;&nbsp; <a href="https://app.asana.com/0/portfolio/1215937069032088/list">Q4 2026</a>
+      </div>
+    </div>
+
+    <div class="callout key">
+      <span class="callout-icon">&#129302;</span>
+      <div>
+        <strong>Why no one has to "switch the dashboard" each quarter.</strong> Every quarter gets its own portfolio (Q3 2026, Q4 2026, &hellip;). Behind the scenes, a small automation checks each day which quarter it is, finds that quarter's <code>Q{N} {YYYY} Rocks + Projects</code> portfolio, and points the dashboard sync at it. So on the first morning of a new quarter, "Quarterly Rocks &amp; Projects" flips to the new quarter on its own &mdash; nothing to toggle, and the prior quarter stays visible right up until the turn.<br>
+        <strong>The one human step:</strong> each quarter's portfolio must exist and be named <em>exactly</em> <code>Q{N} {YYYY} Rocks + Projects</code> (Q3 and Q4 2026 are already set up). If a new quarter's portfolio isn't there yet, the dashboard simply keeps showing the previous quarter &mdash; it never goes blank.
+      </div>
+    </div>
+
     <div class="callout key">
       <span class="callout-icon">&#128161;</span>
       <div>
