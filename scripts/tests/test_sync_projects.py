@@ -58,7 +58,9 @@ def test_handles_missing_custom_fields():
     }
     row = asana_project_to_bq_row(asana_project)
     assert row["asana_project_id"] == "999"
-    assert row["project_type"] is None
+    # P3 contract change: project_type is ALWAYS stamped (name has no whole-word
+    # "rock" -> "project"). NULL types are extinct from here on.
+    assert row["project_type"] == "project"
     assert row["linked_rock_goal_id"] is None
     assert row["owner_email"] is None
     parsed = json.loads(row["custom_fields_json"])
@@ -72,6 +74,9 @@ def test_sync_projects_uses_load_snapshot_not_insert_rows():
         {"gid": "1", "name": "A", "owner": None, "custom_fields": []},
         {"gid": "2", "name": "B", "owner": None, "custom_fields": []},
     ]
+    # P3: the sync fetches the portfolio name for the quarter fallback stamp —
+    # a bare MagicMock return would crash the regex; give it the real shape.
+    asana.get_portfolio_name.return_value = "Q3 2026 Rocks + Projects"
     bq = MagicMock()
     bq.load_snapshot.return_value = 2
 

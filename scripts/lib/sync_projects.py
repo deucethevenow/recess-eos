@@ -16,8 +16,37 @@ field is renamed, fields_by_gid still works; fields_by_name silently breaks.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from typing import Any, Optional
+
+# P3 fallback stamps (Metric Routing plan Phase 3): the Q3 2026 portfolio's
+# "Project Type"/"Quarter" Asana custom fields are EMPTY, which left NULLs in
+# BQ and broke rock classification downstream (dashboard name-sniff expected
+# the Q2 "Rock N:" prefix; Q3 names are "Q3 Rock: ..." / "(Marketing Rock —
+# Q3 2026)"). When the fields are empty we stamp derived values at sync time
+# so downstream consumers can TRUST project_type/quarter. Regexes assigned to
+# module vars (no backslashes inside f-string braces — py3.9 house rule).
+_PORTFOLIO_QUARTER_RE = re.compile(r"^Q([1-4]) (\d{4}) Rocks \+ Projects$")
+_ROCK_WORD_RE = re.compile(r"\brock\b", re.IGNORECASE)
+
+
+def derive_quarter_from_portfolio_name(portfolio_name: Optional[str]) -> Optional[str]:
+    """'Q3 2026 Rocks + Projects' -> '2026-Q3'; None when the name doesn't match."""
+    if not portfolio_name:
+        return None
+    m = _PORTFOLIO_QUARTER_RE.match(portfolio_name.strip())
+    if not m:
+        return None
+    return f"{m.group(2)}-Q{m.group(1)}"
+
+
+def derive_project_type_from_name(name: Optional[str]) -> str:
+    """Whole-word 'rock' (case-insensitive) anywhere in the name -> 'rock',
+    else 'project'. Whole-word so 'RockStar'/'Rockets' never match."""
+    if name and _ROCK_WORD_RE.search(name):
+        return "rock"
+    return "project"
 
 
 def _custom_field_raw_value(cf: dict) -> Any:
@@ -65,21 +94,37 @@ def _custom_field_value_by_name(custom_fields: list, field_name: str) -> Optiona
     return None
 
 
-def asana_project_to_bq_row(project: dict) -> dict:
-    """Convert one Asana project dict to a BQ row for eos_projects."""
+def asana_project_to_bq_row(project: dict, quarter_fallback: Optional[str] = None) -> dict:
+    """Convert one Asana project dict to a BQ row for eos_projects.
+
+    P3 FALLBACK stamps (only when the Asana custom field is empty):
+      project_type <- whole-word 'rock' in the project name, else 'project'
+                      (ALWAYS non-null from here on — consumers trust it)
+      quarter      <- `quarter_fallback` (parsed from the portfolio name),
+                      honest-NULL when no fallback is derivable
+    Populated Asana fields always win, untouched.
+    """
     owner = project.get("owner") or {}
     custom_fields = project.get("custom_fields") or []
+    name = project.get("name")
+
+    project_type = _custom_field_value_by_name(custom_fields, "Project Type")
+    if not project_type:
+        project_type = derive_project_type_from_name(name)
+    quarter = _custom_field_value_by_name(custom_fields, "Quarter")
+    if not quarter:
+        quarter = quarter_fallback
 
     return {
         "asana_project_id": project.get("gid"),
-        "name": project.get("name"),
+        "name": name,
         "owner_email": owner.get("email"),
         "owner_name": owner.get("name"),
-        "project_type": _custom_field_value_by_name(custom_fields, "Project Type"),
+        "project_type": project_type,
         "linked_rock_goal_id": _custom_field_value_by_name(custom_fields, "Linked Rock Goal"),
         "linked_rock_id": None,  # derived in Phase 2
         "status": _custom_field_value_by_name(custom_fields, "Status") or "active",
-        "quarter": _custom_field_value_by_name(custom_fields, "Quarter"),
+        "quarter": quarter,
         "task_count": project.get("_task_count", 0),
         "completion_percent": project.get("_completion_percent", 0.0),
         "last_activity_at": project.get("modified_at"),
@@ -98,6 +143,14 @@ def sync_projects_to_bq(asana_client, bq_client, portfolio_gid: str) -> int:
         Number of rows loaded (may be 0 if portfolio is empty -- still TRUNCATEs).
     """
     projects = asana_client.list_projects_in_portfolio(portfolio_gid)
+
+    # P3: derive the quarter fallback ONCE from the portfolio name ("Q3 2026
+    # Rocks + Projects" -> "2026-Q3"). Because load_snapshot is WRITE_TRUNCATE,
+    # the stamps reach ALL rows on every sync — no backfill step needed.
+    portfolio_name = None
+    if hasattr(asana_client, "get_portfolio_name"):
+        portfolio_name = asana_client.get_portfolio_name(portfolio_gid)
+    quarter_fallback = derive_quarter_from_portfolio_name(portfolio_name)
 
     # Enrich each project with task + milestone completion data
     for p in projects:
@@ -126,6 +179,6 @@ def sync_projects_to_bq(asana_client, bq_client, portfolio_gid: str) -> int:
                 p["_task_count"] = 0
                 p["_completion_percent"] = 0.0
 
-    rows = [asana_project_to_bq_row(p) for p in projects]
+    rows = [asana_project_to_bq_row(p, quarter_fallback=quarter_fallback) for p in projects]
     n = bq_client.load_snapshot("eos_projects", rows)
     return n

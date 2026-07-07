@@ -40,6 +40,20 @@ class RecessAsanaClient:
             self.portfolios_api.get_items_for_portfolio(portfolio_gid, opts)
         )
 
+    def get_portfolio_name(self, portfolio_gid: str) -> str | None:
+        """Portfolio display name (e.g. 'Q3 2026 Rocks + Projects'), or None.
+
+        Feeds the P3 quarter fallback stamp — a failed lookup must never break
+        the sync, so errors degrade to None (quarter stays honest-NULL).
+        """
+        try:
+            portfolio = self.portfolios_api.get_portfolio(
+                portfolio_gid, {"opt_fields": "name"}
+            )
+            return (portfolio or {}).get("name")
+        except Exception:
+            return None
+
     def get_project_tasks(self, project_gid: str) -> list[dict[str, Any]]:
         """Return all tasks in a project with assignee + completion."""
         opts = {
