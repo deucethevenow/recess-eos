@@ -35,8 +35,8 @@ DEPT_TITLE_MAP: Dict[str, str] = {
 # title is found; pre-flight fails loud for any dept in DEPT_TITLE_MAP whose
 # slide is missing (manual prep error). Depts NOT in DEPT_TITLE_MAP — like
 # Leadership — are silently skipped by the deck writer; their data still flows
-# into Slack and leadership-doc surfaces (those use DEPT_METRIC_ORDER, not
-# this map).
+# into Slack and leadership-doc surfaces (those follow the Metric Routing
+# store's per-dept rows, not this map).
 
 
 DEPT_ROCKS_TITLE_MAP: Dict[str, str] = {

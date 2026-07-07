@@ -15,9 +15,11 @@ from monday_kpi_update import (
 )
 
 # Session 3 IMPORTANT-1 fix: pin the cross-repo `_sensitivity_allowed` semantics
-# so a future dashboard refactor cannot silently change the rank order. All 3
-# Session 3 writers depend on `founders_only` being filtered at every
-# `max_sensitivity` level — this pin is the canary if that ever drifts.
+# so a future dashboard refactor cannot silently change the rank order. Since
+# P2.3 the writers filter via the Metric Routing resolver (is_visible with
+# SENSITIVITY_RANK ceilings) — this pin remains as the rank-order canary and
+# will break loudly at Phase 5 when _sensitivity_allowed collapses onto
+# SENSITIVITY_RANK, forcing a conscious re-pin.
 from post_monday_pulse import _sensitivity_allowed  # type: ignore
 
 
@@ -37,6 +39,22 @@ def _row(name, sensitivity, display_label=None):
         is_phase2_placeholder=False,
         is_special_override=False,
     )
+
+
+def _rr(rows):
+    """P2.3: permissive routing (every toggle ON) + registry mirroring each
+    row's sensitivity as its metric-level CEILING. The canary intent is
+    unchanged and now stricter: even with every routing toggle lying ON, the
+    ceiling must keep sensitive rows off public surfaces."""
+    routing = {"metrics": {}, "rocks": {}}
+    registry = {}
+    for r in rows:
+        routing["metrics"].setdefault(r.dept_id, []).append(
+            {"metric": r.metric_name, "slack": True, "deck": True,
+             "doc": True, "l10": True})
+        registry[r.metric_name] = (
+            {"sensitivity": r.sensitivity} if r.sensitivity != "public" else {})
+    return routing, registry
 
 
 def test_sensitivity_allowed_filters_founders_only_at_every_max_level():
@@ -64,9 +82,8 @@ def test_founders_only_row_filtered_from_public_slack_section():
         _row("Public Metric", "public"),
         _row("Sensitive Personnel Eval", "founders_only"),
     ]
-    blocks = build_dept_section_for_slack(
-        "leadership", rows, {}, max_sensitivity="public"
-    )
+    routing, registry = _rr(rows)
+    blocks = build_dept_section_for_slack("leadership", rows, {}, routing, registry)
     text = blocks[0]["text"]["text"]
     assert "Public Metric" in text
     assert "Sensitive Personnel Eval" not in text
@@ -77,29 +94,39 @@ def test_leadership_row_filtered_from_public_section():
         _row("Public Metric", "public"),
         _row("Leadership Only", "leadership"),
     ]
-    blocks = build_dept_section_for_slack(
-        "leadership", rows, {}, max_sensitivity="public"
-    )
+    routing, registry = _rr(rows)
+    blocks = build_dept_section_for_slack("leadership", rows, {}, routing, registry)
     text = blocks[0]["text"]["text"]
     assert "Public Metric" in text
     assert "Leadership Only" not in text
 
 
-def test_leadership_row_visible_at_leadership_max_sensitivity():
+def test_leadership_row_visible_on_the_leadership_doc_surface():
+    # P2.3: the leadership TIER maps to the doc surface (its ceiling IS
+    # leadership) — same canary intent as the old max_sensitivity="leadership"
+    # check: the tier reaches its intended surface and nothing lower.
+    from lib.leadership_doc_writer import _build_section_text
+
     rows = [_row("Leadership Only", "leadership")]
-    blocks = build_dept_section_for_slack(
-        "leadership", rows, {}, max_sensitivity="leadership"
+    routing, registry = _rr(rows)
+    text = _build_section_text(
+        {"leadership": {"scorecard_rows": rows}},
+        {"leadership": {"rocks": [], "projects": []}},
+        routing, registry,
     )
-    text = blocks[0]["text"]["text"]
     assert "Leadership Only" in text
 
 
-def test_founders_only_row_filtered_even_at_leadership_max_sensitivity():
+def test_founders_only_row_filtered_even_from_the_leadership_doc():
+    from lib.leadership_doc_writer import _build_section_text
+
     rows = [_row("Founders Only", "founders_only")]
-    blocks = build_dept_section_for_slack(
-        "leadership", rows, {}, max_sensitivity="leadership"
+    routing, registry = _rr(rows)
+    text = _build_section_text(
+        {"leadership": {"scorecard_rows": rows}},
+        {"leadership": {"rocks": [], "projects": []}},
+        routing, registry,
     )
-    text = blocks[0]["text"]["text"]
     assert "Founders Only" not in text
 
 

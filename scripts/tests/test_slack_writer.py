@@ -34,6 +34,22 @@ def _row(name, sensitivity="public", display="$1"):
     )
 
 
+def _rr(rendered_per_dept):
+    """P2.3 shim: permissive routing + registry mirroring legacy sensitivities
+    as metric ceilings — reproduces the old max_sensitivity="public" filtering
+    (slack surface ceiling == public) through the Metric Routing resolver."""
+    routing = {"metrics": {}, "rocks": {}}
+    registry = {}
+    for payload in rendered_per_dept.values():
+        for r in payload.get("scorecard_rows", []):
+            routing["metrics"].setdefault(r.dept_id, []).append(
+                {"metric": r.metric_name, "slack": True, "deck": True,
+                 "doc": True, "l10": True})
+            registry[r.metric_name] = (
+                {"sensitivity": r.sensitivity} if r.sensitivity != "public" else {})
+    return {"routing": routing, "registry": registry}
+
+
 def _make_firestore_with_marker(marker_present):
     fake_db = MagicMock()
     doc = MagicMock()
@@ -61,6 +77,7 @@ def test_post_pulse_skips_when_marker_already_set(capsys):
     result = post_pulse(
         rendered_per_dept=rendered,
         rocks_by_dept=rocks,
+        **_rr(rendered),
         channel_id="C_TEST",
         run_date=date(2026, 5, 5),
         post_fn=fake_post,
@@ -106,6 +123,7 @@ def test_post_pulse_posts_and_marks_when_no_marker(monkeypatch):
     result = post_pulse(
         rendered_per_dept=rendered,
         rocks_by_dept=rocks,
+        **_rr(rendered),
         channel_id="C_TEST",
         run_date=date(2026, 5, 5),
         post_fn=fake_post,
@@ -139,6 +157,7 @@ def test_post_pulse_does_not_mark_on_post_failure(monkeypatch):
         post_pulse(
             rendered_per_dept=rendered,
             rocks_by_dept=rocks,
+            **_rr(rendered),
             channel_id="C_TEST",
             run_date=date(2026, 5, 5),
             post_fn=boom,
@@ -184,6 +203,7 @@ def test_post_pulse_filters_founders_only_from_blocks(monkeypatch):
     post_pulse(
         rendered_per_dept=rendered,
         rocks_by_dept=rocks,
+        **_rr(rendered),
         channel_id="C_TEST",
         run_date=date(2026, 5, 5),
         post_fn=fake_post,
@@ -232,6 +252,7 @@ def test_post_pulse_uses_explicit_channel_not_env(monkeypatch):
     post_pulse(
         rendered_per_dept=rendered,
         rocks_by_dept=rocks,
+        **_rr(rendered),
         channel_id="C_VERIFY",
         run_date=date(2026, 5, 5),
         post_fn=fake_post,

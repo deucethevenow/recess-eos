@@ -359,9 +359,19 @@ def _load_registry() -> dict:
         return _REGISTRY_CACHE
 
     import importlib.util
+    import os
     from pathlib import Path
 
-    registry_path = Path("~/Projects/company-kpi-dashboard/dashboard/data/metric_registry.py").expanduser()
+    # KPI_DASHBOARD_REPO overrides the default Mac-only path (Cloud Run bakes the
+    # dashboard repo elsewhere; worktrees live elsewhere). Same env-var pattern as
+    # scripts/tests/conftest.py:11-21 — prescribed by scripts/lib/AGENTS.md §1.
+    dashboard_repo = Path(
+        os.environ.get(
+            "KPI_DASHBOARD_REPO",
+            str(Path("~/Projects/company-kpi-dashboard").expanduser()),
+        )
+    )
+    registry_path = dashboard_repo / "dashboard" / "data" / "metric_registry.py"
     if not registry_path.exists():
         raise ContractResolutionError(
             f"metric_registry.py not found at {registry_path}. "

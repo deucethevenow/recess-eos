@@ -32,9 +32,13 @@ _SLACK_TOKEN_ENV = "SLACK_BOT_TOKEN"
 def _build_slack_blocks(
     rendered_per_dept: Dict[str, Dict[str, Any]],
     rocks_by_dept: Dict[str, Dict[str, list]],
-    max_sensitivity: str,
+    routing: Dict[str, Any],
+    registry: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
     """Compose Block Kit blocks from rendered rows + per-dept rocks/projects.
+
+    P2.3: row visibility = the Metric Routing resolver on the "slack" surface;
+    rocks arrive pre-filtered (slack-surface bucket from monday_kpi_update).
 
     Local import of `build_dept_section_for_slack` avoids a circular import
     at module-load (monday_kpi_update imports slack_writer; slack_writer
@@ -55,7 +59,8 @@ def _build_slack_blocks(
                 dept_id,
                 payload.get("scorecard_rows", []),
                 rocks_section,
-                max_sensitivity,
+                routing,
+                registry,
             )
         )
         blocks.append({"type": "divider"})
@@ -108,7 +113,8 @@ def post_pulse(
     rocks_by_dept: Dict[str, Dict[str, list]],
     channel_id: str,
     run_date: _date,
-    max_sensitivity: str = "public",
+    routing: Dict[str, Any],
+    registry: Dict[str, Any],
     post_fn: Optional[Callable] = None,
     firestore_client: Any = None,
 ) -> Optional[str]:
@@ -129,7 +135,7 @@ def post_pulse(
         )
         return None
 
-    blocks = _build_slack_blocks(rendered_per_dept, rocks_by_dept, max_sensitivity)
+    blocks = _build_slack_blocks(rendered_per_dept, rocks_by_dept, routing, registry)
     ts = _post_chat_post_message(channel_id, blocks, post_fn=post_fn)
     mark_slack_posted(run_date, ts=ts, channel=channel_id, client=firestore_client)
     return ts

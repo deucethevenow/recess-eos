@@ -4,7 +4,8 @@ Per v3.8 Patch 3 (closes B6 leadership doc append):
   - Replaces the content between two sentinels:
       <<KPI_LEADERSHIP_START>>{content}<<KPI_LEADERSHIP_END>>
   - Fail loud if either sentinel is missing — never insertText append.
-  - Default `max_sensitivity = "leadership"` (dept leads only).
+  - Row visibility (P2.3): the Metric Routing resolver on the "doc" surface
+    (ceiling leadership — dept leads only).
   - Supports tabbed Google Docs: when sentinels live on a specific tab
     (e.g., "May 13th" tab in a recurring meeting agenda), the writer
     threads `tabId` through `deleteContentRange` and `insertText` so
@@ -181,16 +182,19 @@ def _find_sentinel_indexes(
 def _build_section_text(
     rendered_per_dept: Dict[str, Dict[str, Any]],
     rocks_by_dept: Dict[str, Dict[str, list]],
-    max_sensitivity: str,
+    routing: Dict[str, Any],
+    registry: Dict[str, Any],
 ) -> str:
     """Compose the leadership-doc section body from rendered rows + rocks.
 
+    P2.3: row visibility = the Metric Routing resolver on the "doc" surface
+    (doc's ceiling is leadership — same tier this writer always targeted).
+    Rocks arrive pre-filtered (doc-surface bucket from monday_kpi_update).
+
     Local imports avoid pulling the dashboard repo at module-load.
     """
-    from post_monday_pulse import (  # type: ignore
-        _format_rock_line,
-        _sensitivity_allowed,
-    )
+    from data.metric_routing import is_visible  # type: ignore
+    from post_monday_pulse import _format_rock_line  # type: ignore
 
     lines: List[str] = []
     for dept_id, payload in rendered_per_dept.items():
@@ -200,7 +204,7 @@ def _build_section_text(
         rows = [
             r
             for r in payload.get("scorecard_rows", [])
-            if _sensitivity_allowed(r.sensitivity, max_sensitivity)
+            if is_visible(routing, r.dept_id, r.metric_name, "doc", registry)
         ]
         for r in rows:
             lines.append(f"• {r.display_label}: {r.display}")
@@ -236,7 +240,8 @@ def apply_to_leadership_doc(
     rocks_by_dept: Dict[str, Dict[str, list]],
     doc_id: str,
     docs_service: Any,
-    max_sensitivity: str = "leadership",
+    routing: Dict[str, Any],
+    registry: Dict[str, Any],
 ) -> int:
     """Replace the sentinel-delimited section with the rendered pulse.
 
@@ -269,7 +274,7 @@ def apply_to_leadership_doc(
 
     start_after, end_before, tab_id = indexes
     body_text = "\n" + _build_section_text(
-        rendered_per_dept, rocks_by_dept, max_sensitivity
+        rendered_per_dept, rocks_by_dept, routing, registry
     ) + "\n"
 
     requests: List[Dict[str, Any]] = []

@@ -1,0 +1,587 @@
+[
+  {
+    "body": {
+      "requests": [
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Q3 Rock: 12 2027 Planning Meetings \u2014 Andy"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (27 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Danny Sears"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Q3 Rock: 12 2027 Planning Meetings \u2014 Danny"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (27 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Danny Sears"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Q3 Rock: 12 2027 Planning Meetings \u2014 Katie"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (27 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Danny Sears"
+          }
+        }
+      ]
+    },
+    "presentationId": "FAKE_DECK_ID"
+  },
+  {
+    "body": {
+      "requests": [
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Account Management \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Q3 Rock: AM Ops Automation - Shipping Sheet, Master Advance, Vendor Reminders"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Account Management \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Account Management \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (30 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Account Management \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Account Management \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Claire A"
+          }
+        }
+      ]
+    },
+    "presentationId": "FAKE_DECK_ID"
+  },
+  {
+    "body": {
+      "requests": [
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Supply \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Achieve Q3 Key Supply Target Moment Goals"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Supply \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Supply \u00b7 Auto-Updated Rocks & Projects",
+            "text": "12% (26 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Supply \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Supply \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Ian Hong"
+          }
+        }
+      ]
+    },
+    "presentationId": "FAKE_DECK_ID"
+  },
+  {
+    "body": {
+      "requests": [
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Customer Advisory Board (Marketing Rock \u2014 Q3 2026)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (49 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Courtney Cook"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Q3 Rock: Test Influencer Content Capture at 10 Events \u2014 Build the Playbook"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (54 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Marketing \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Charlene Short"
+          }
+        }
+      ]
+    },
+    "presentationId": "FAKE_DECK_ID"
+  },
+  {
+    "body": {
+      "requests": [
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Fast-Track Harness : Asana Task \u2014> Preview (Engineering 2026-Q3)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (39 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 1
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Arbind Thakur"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Feature-Branch Previews \u2014 QA & UAT (Engineering 2026-Q3)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (24 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 2
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Arbind Thakur"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Set Up API Hosting Service \u2014 Off Heroku (Engineering 2026-Q3)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 1,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "100%"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "0% (22 tasks)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "\ud83d\udd34 Off-track"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 4,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Engineering \u00b7 Auto-Updated Rocks & Projects",
+            "text": "Owner: Arbind Thakur"
+          }
+        }
+      ]
+    },
+    "presentationId": "FAKE_DECK_ID"
+  }
+]

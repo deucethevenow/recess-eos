@@ -1,0 +1,111 @@
+{
+  "blocks": [
+    {
+      "text": {
+        "text": "Monday Pulse \u2014 Weekly KPIs",
+        "type": "plain_text"
+      },
+      "type": "header"
+    },
+    {
+      "text": {
+        "text": "*Leadership*\n\ud83d\udccc _Projects_\n\ud83d\udd34 *Code Quality Checks on Pull Requests (Engineering 2026-Q3)* \u2014 0%  _(Anderson Camargo - 28 tasks)_\n\ud83d\udd34 *DataDog Dashboards, Alerts + Noise Cleanup (Engineering 2026-Q3)* \u2014 0%  _(Anderson Camargo - 30 tasks)_\n\ud83d\udd34 *Migrate Vue to Vite 8 + CI Testing (Engineering 2026-Q3)* \u2014 0%  _(Anderson Camargo - 33 tasks)_\n\ud83d\udd34 *Preview Deploys on New Cloud Provider (Engineering 2026-Q3)* \u2014 0%  _(Anderson Camargo - 35 tasks)_\n\ud83d\udd34 *Q3 Rock: Enterprise Organizer Reports \u2014 Partner-Facing Execution Hubs Live* \u2014 0%  _(Francisco Cazes - 45 tasks)_\n\ud83d\udd34 *Q3 Rock: Lindy Workflows \u2014 Reduce Manual Emails 40%* \u2014 0%  _(Francisco Cazes - 40 tasks)_\n\ud83d\udd34 *Standardize Brand Onboarding & Activation Process + Template Library* \u2014 2%  _(Victoria Newton - 49 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Net Revenue vs Goal*: Q: $12K  \u00b7  YTD: $2.13M / $5.28M (40%)\n\u2022 *NRR*: Q: $12K (1%)  /  YTD: $802K (21%)  \u00b7  target 50%\n\u2022 *Take Rate %*: 48%  \u00b7  target 50%\n\u2022 *Bookings vs Goal*: Q: $0  \u00b7  YTD: $4.54M / $10.77M (42%)\n\u2022 *Pipeline Coverage*: Gap $5.11M  \u00b7  Coverage 0.71x  \u00b7  target $7.57M (2.5x)\n\u2022 *Weighted Pipeline $*: $1.98M",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*Sales*\n\ud83d\udccc _Projects_\n\ud83d\udd34 *Q3 Rock: 12 2027 Planning Meetings \u2014 Andy* \u2014 0%  _(Danny Sears - 27 tasks)_\n\ud83d\udd34 *Q3 Rock: 12 2027 Planning Meetings \u2014 Danny* \u2014 0%  _(Danny Sears - 27 tasks)_\n\ud83d\udd34 *Q3 Rock: 12 2027 Planning Meetings \u2014 Katie* \u2014 0%  _(Danny Sears - 27 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Days to First Offer*: 13 days\n\u2022 *Pipeline Coverage*: Gap $5.11M  \u00b7  Coverage 0.71x  \u00b7  target $7.57M (2.5x)\n\u2022 *Weighted Pipeline $*: $1.98M\n\u2022 *New Business Pipeline (Weighted)*: $1.17M\n\u2022 *Renewal Pipeline (Weighted)*: $376K\n\u2022 *Land & Expand Pipeline (Weighted)*: $437K\n\u2022 *Bookings vs Goal*: Q: $0  \u00b7  YTD: $4.54M / $10.77M (42%)\n\u2022 *New Business Bookings*: Q: $0 / $634K (0.0%)  \u00b7  YTD: $2.02M / $2.54M (80%)\n\u2022 *Renewal Bookings*: Q: $0 / $730K (0.0%)  \u00b7  YTD: $1.23M / $2.92M (42%)\n\u2022 *L&E Bookings*: Q: $0 / $996K (0.0%)  \u00b7  YTD: $1.29M / $3.99M (32%)\n\u2022 *Net Revenue vs Goal*: Q: $12K  \u00b7  YTD: $2.13M / $5.28M (40%)\n\u2022 *NRR*: Q: $12K (1%)  /  YTD: $802K (21%)  \u00b7  target 50%",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*Demand AM*\n\ud83d\udccc _Projects_\n\ud83d\udd34 *Q3 Rock: AM Ops Automation - Shipping Sheet, Master Advance, Vendor Reminders* \u2014 0%  _(Claire A - 30 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Days to Fulfill*: 56 days  \u00b7  target 30 days\n\u2022 *Offer Fulfillment Speed (<30 days)*: 35 days  \u00b7  target 30 days\n\u2022 *Offer Acceptance %*: 70%  \u00b7  target 70%\n\u2022 *Contract Spend %*: 66%\n\u2022 *Unresolved PO Net Revenue*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *NPS Score*: 77.7  \u00b7  target 75.0",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*Supply*\n\ud83d\udccc _Projects_\n\ud83d\udd34 *Achieve Q3 Key Supply Target Moment Goals* \u2014 12%  _(Ian Hong - 26 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Sellable Inventory*: 192.5M\n\u2022 *Net-New Supply Added (monthly)*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Weekly Outreach Attempts + Contacts Added*: 0 / 600 (0%)  \u00b7  week Jul 6\n\u2022 *Supply Types at Goal*: \ud83d\udd28 Needs Build  \u00b7  target 5\n\u2022 *Organizers Losing Core Action >6 Months*: \ud83d\udd28 Needs Build\n\u2022 *Organizers Losing Core Action >9 Months*: \ud83d\udd28 Needs Build",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*BizDev (Jack)*\n\ud83d\udcca _Metrics_\n\u2022 *Retailer Deals Closed Won*: 0  \u00b7  target 2\n\u2022 *Retailer Closed Won $ Attribution*: $0\n\u2022 *Retailer Deals in Pipeline*: 52\n\u2022 *Retailer Deals Closed Won YTD*: 2  \u00b7  target 8",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*Marketing*\n\ud83d\udccc _Projects_\n\ud83d\udd34 *Customer Advisory Board (Marketing Rock \u2014 Q3 2026)* \u2014 0%  _(Courtney Cook - 49 tasks)_\n\ud83d\udd34 *Q3 Rock: Test Influencer Content Capture at 10 Events \u2014 Build the Playbook* \u2014 0%  _(Charlene Short - 54 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *MQL \u2192 SQL Conversion*: 44%\n\u2022 *Demand Mktg Pipeline QTD (FT+LT)*: $2.51M\n\u2022 *Demand Mktg Closed Won QTD (FT+LT)*: $0\n\u2022 *Supply Mktg Pipeline QTD (FT+LT)*: $755K\n\u2022 *Supply Mktg Closed Won QTD (FT+LT)*: $0\n\u2022 *Retailer Pipeline $ (Closed Won)*: \ud83d\udd28 Needs Build",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*AI Automations (Leo)*\n\ud83d\udcca _Metrics_\n\u2022 *L/XL Projects Completed (QTD)*: \ud83d\udd28 Needs Build\n\u2022 *L/XL Projects in Progress*: \ud83d\udd28 Needs Build",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*Operations (Deuce)*\n\ud83d\udcca _Metrics_\n\u2022 *Take Rate %*: 48%  \u00b7  target 50%",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*Engineering*\n\ud83d\udccc _Projects_\n\ud83d\udd34 *Fast-Track Harness : Asana Task \u2014> Preview (Engineering 2026-Q3)* \u2014 0%  _(Arbind Thakur - 39 tasks)_\n\ud83d\udd34 *Feature-Branch Previews \u2014 QA & UAT (Engineering 2026-Q3)* \u2014 0%  _(Arbind Thakur - 24 tasks)_\n\ud83d\udd34 *Set Up API Hosting Service \u2014 Off Heroku (Engineering 2026-Q3)* \u2014 0%  _(Arbind Thakur - 22 tasks)_\n\ud83d\udcca _Metrics_\n\u2022 *Features Fully Scoped*: 23\n\u2022 *PRDs Generated*: 49\n\u2022 *FSDs Generated*: 36\n\u2022 *Discovery Funnel: In Discovery*: 5\n\u2022 *Discovery Funnel: Discovery Complete*: 9\n\u2022 *Discovery Funnel: Ready for PRD*: 19\n\u2022 *Discovery Funnel: PRD In Progress*: 0\n\u2022 *Discovery Funnel: PRD Proposed*: 3\n\u2022 *Discovery Funnel: PRD Accepted*: 23",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "text": {
+        "text": "*Accounting*\n\ud83d\udcca _Metrics_\n\u2022 *Invoice Collection %*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Avg Days to Collection*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Invoice % Paid Within 7 days*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Overdue Invoices (count)*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Overdue Amount ($)*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Bill Payment Timeliness*: 9.5%\n\u2022 *Overdue Bill Count*: \u2014  _(per-page data \u2014 Batch 3 will wire)_\n\u2022 *Overdue Bill $*: \u2014",
+        "type": "mrkdwn"
+      },
+      "type": "section"
+    },
+    {
+      "type": "divider"
+    }
+  ]
+}

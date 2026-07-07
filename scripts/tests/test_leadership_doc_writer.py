@@ -39,6 +39,23 @@ def _row(name, sensitivity="public", display="$1"):
     )
 
 
+def _rr(rendered_per_dept):
+    """P2.3 shim: permissive routing + a registry mirroring each row's legacy
+    sensitivity as its metric-level ceiling. Reproduces the old
+    max_sensitivity="leadership" filtering (doc surface ceiling == leadership)
+    through the Metric Routing resolver."""
+    routing = {"metrics": {}, "rocks": {}}
+    registry = {}
+    for payload in rendered_per_dept.values():
+        for r in payload.get("scorecard_rows", []):
+            routing["metrics"].setdefault(r.dept_id, []).append(
+                {"metric": r.metric_name, "slack": True, "deck": True,
+                 "doc": True, "l10": True})
+            registry[r.metric_name] = (
+                {"sensitivity": r.sensitivity} if r.sensitivity != "public" else {})
+    return {"routing": routing, "registry": registry}
+
+
 def _doc_with_sentinels(content_between=""):
     """Build a fake Google Docs response with the sentinel pair at known indexes.
 
@@ -144,7 +161,7 @@ def test_apply_replaces_span_with_delete_then_insert():
         rocks_by_dept=rocks,
         doc_id="DOC_X",
         docs_service=service,
-        max_sensitivity="leadership",
+        **_rr(rendered),
     )
 
     assert occurrences == 1
@@ -171,7 +188,7 @@ def test_apply_skips_delete_for_empty_span():
         rocks_by_dept=rocks,
         doc_id="DOC_X",
         docs_service=service,
-        max_sensitivity="leadership",
+        **_rr(rendered),
     )
 
     body = service.documents.return_value.batchUpdate.call_args.kwargs["body"]
@@ -202,7 +219,7 @@ def test_apply_fails_loud_when_sentinels_missing(monkeypatch):
             rocks_by_dept=rocks,
             doc_id="DOC_X",
             docs_service=service,
-            max_sensitivity="leadership",
+            **_rr(rendered),
         )
 
     assert captured_alerts
@@ -363,7 +380,7 @@ def test_apply_to_tabbed_doc_threads_tab_id_in_batch_request():
         rocks_by_dept=rocks,
         doc_id="DOC_TABBED",
         docs_service=service,
-        max_sensitivity="leadership",
+        **_rr(rendered),
     )
 
     # The get() call must include includeTabsContent=True
@@ -393,7 +410,7 @@ def test_apply_to_legacy_body_doc_omits_tab_id():
         rocks_by_dept=rocks,
         doc_id="DOC_LEGACY",
         docs_service=service,
-        max_sensitivity="leadership",
+        **_rr(rendered),
     )
 
     body = service.documents.return_value.batchUpdate.call_args.kwargs["body"]
@@ -426,7 +443,7 @@ def test_apply_filters_founders_only_at_leadership_max():
         rocks_by_dept=rocks,
         doc_id="DOC_X",
         docs_service=service,
-        max_sensitivity="leadership",
+        **_rr(rendered),
     )
 
     body = service.documents.return_value.batchUpdate.call_args.kwargs["body"]

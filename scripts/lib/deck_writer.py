@@ -52,16 +52,29 @@ def build_payloads_for_deck(
     return build_metric_payloads(meeting, snapshot_row, snapshot_timestamp)
 
 
-def _filter_visible_rows(rows: Iterable, max_sensitivity: str) -> List:
-    """Drop rows whose sensitivity exceeds `max_sensitivity`.
+def _filter_visible_rows(rows: Iterable, surface, routing, registry) -> List:
+    """Keep rows the Metric Routing resolver deems visible on `surface`.
+
+    P2.3: visibility = is_visible(routing, row.dept_id, row.metric_name,
+    surface, registry) — toggle AND registry ceiling; a lying toggle can never
+    leak past the ceiling. `surface=None` is an explicit pass-through for the
+    ROCKS slides: rock rows are not metrics (their metric_name is the rock
+    name, absent from the registry) and their visibility was already applied
+    upstream via rock_visible in monday_kpi_update._bucket_rocks_by_dept.
 
     Imported lazily so this module doesn't pull in the dashboard repo at
     module-load — keeps the deck writer importable in environments that
     only need build_table_row_count_fetcher.
     """
-    from post_monday_pulse import _sensitivity_allowed  # type: ignore
+    if surface is None:
+        return list(rows)
 
-    return [r for r in rows if _sensitivity_allowed(r.sensitivity, max_sensitivity)]
+    from data.metric_routing import is_visible  # type: ignore
+
+    return [
+        r for r in rows
+        if is_visible(routing, r.dept_id, r.metric_name, surface, registry)
+    ]
 
 
 def _resolve_table_object(
@@ -111,12 +124,18 @@ def _cell_is_empty(table: Dict[str, Any], row_idx: int, col_idx: int) -> bool:
 def apply_via_slides_api(
     *,
     rendered_per_dept: Dict[str, Dict[str, Any]],
-    max_sensitivity: str,
+    surface: Optional[str],
+    routing: Dict[str, Any],
+    registry: Dict[str, Any],
     slides_service: Any,
     presentation_id: str,
     presentation: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Write each dept's RenderedRow.display values into its scorecard slide table.
+
+    P2.3: row visibility comes from the Metric Routing resolver — `surface` is
+    "deck" for the scorecard slides and None for the rocks slides (rock rows
+    were already routing-filtered upstream; see _filter_visible_rows).
 
     `presentation` may be passed pre-fetched (e.g., from preflight's row-count
     fetcher) to avoid re-fetching. Otherwise the function fetches it once
@@ -142,7 +161,7 @@ def apply_via_slides_api(
             )
             continue
 
-        rows = _filter_visible_rows(payload.get("scorecard_rows", []), max_sensitivity)
+        rows = _filter_visible_rows(payload.get("scorecard_rows", []), surface, routing, registry)
 
         try:
             slide = slides[slide_idx]

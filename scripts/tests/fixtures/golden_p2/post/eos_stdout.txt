@@ -1,0 +1,17 @@
+Pre-flight PASS — pinned today=2026-07-06 for run.
+============================================================
+SENSITIVITY GATE — confirm before writing to deck/Slack/leadership doc
+============================================================
+🟢 public (60 rows):
+   leadership: Net Revenue Quota Attainment
+   leadership: Demand NRR
+   leadership: Take Rate %
+   leadership: Bookings Goal Attainment
+   leadership: Pipeline Coverage
+   ... +55 more
+🟡 leadership (0 rows):
+🔴 founders_only (0 rows):
+
+Surface defaults: deck=public, Slack=public, leadership-doc=leadership
+Founders-only rows will be FILTERED on all 3 surfaces.
+

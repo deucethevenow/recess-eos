@@ -30,3 +30,13 @@ context/
 # OS
 .DS_Store
 _dashboard_src/
+
+# Python
+__pycache__/
+scripts/.venv
+
+# Golden-gate freeze file — contains exec-boundary values (cash position,
+# factoring). NEVER commit; regenerate locally via capture_all_surfaces.py
+# --freeze before running the parity gate. Rendered captures (pre/, post/)
+# are verified clean of exec values and ARE committed.
+scripts/tests/fixtures/golden_p2/frozen_inputs.json

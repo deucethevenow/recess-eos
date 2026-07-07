@@ -66,14 +66,18 @@ def test_main_skip_deck_true_still_posts_slack(monkeypatch):
         },
     )
     # One dept with one metric so render loop has something to do.
+    # P2.3: membership/order come from the routing store + registry.
     monkeypatch.setattr(
         monday_kpi_update,
-        "get_scorecard_metrics_for_dept",
-        lambda dept_id: (
-            [{"key": "Net Revenue YTD", "scorecard_status": "needs_build"}]
-            if dept_id == "leadership"
-            else []
-        ),
+        "load_routing",
+        lambda: {"metrics": {"leadership": [
+            {"metric": "Net Revenue YTD", "slack": True, "deck": True,
+             "doc": True, "l10": True}]}, "rocks": {}},
+    )
+    monkeypatch.setattr(
+        monday_kpi_update,
+        "_load_registry_for_routing",
+        lambda: {"Net Revenue YTD": {"scorecard_status": "needs_build"}},
     )
 
     # Slack post: fake post_fn skips real httpx
@@ -130,12 +134,15 @@ def test_main_aborts_at_sensitivity_gate_on_n_response(monkeypatch):
     )
     monkeypatch.setattr(
         monday_kpi_update,
-        "get_scorecard_metrics_for_dept",
-        lambda dept_id: (
-            [{"key": "X", "scorecard_status": "needs_build"}]
-            if dept_id == "leadership"
-            else []
-        ),
+        "load_routing",
+        lambda: {"metrics": {"leadership": [
+            {"metric": "X", "slack": True, "deck": True, "doc": True, "l10": True}]},
+            "rocks": {}},
+    )
+    monkeypatch.setattr(
+        monday_kpi_update,
+        "_load_registry_for_routing",
+        lambda: {"X": {"scorecard_status": "needs_build"}},
     )
 
     with pytest.raises(SystemExit):
@@ -166,12 +173,15 @@ def test_main_skip_deck_false_with_fakes_runs_end_to_end(monkeypatch):
     )
     monkeypatch.setattr(
         monday_kpi_update,
-        "get_scorecard_metrics_for_dept",
-        lambda dept_id: (
-            [{"key": "Y", "scorecard_status": "needs_build"}]
-            if dept_id == "sales"
-            else []
-        ),
+        "load_routing",
+        lambda: {"metrics": {"sales": [
+            {"metric": "Y", "slack": True, "deck": True, "doc": True, "l10": True}]},
+            "rocks": {}},
+    )
+    monkeypatch.setattr(
+        monday_kpi_update,
+        "_load_registry_for_routing",
+        lambda: {"Y": {"scorecard_status": "needs_build"}},
     )
 
     # Fake Slides presentation: sales slide at index 0 with a 4-row table.

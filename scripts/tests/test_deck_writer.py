@@ -33,6 +33,23 @@ def _row(name, sensitivity="public", display="$1", target_display=None):
     )
 
 
+def _rr(rendered_per_dept):
+    """P2.3 shim: permissive routing + a registry mirroring each row's legacy
+    sensitivity as its metric-level ceiling. Reproduces the exact filtering the
+    old max_sensitivity param gave these tests (deck surface ceiling == public),
+    now expressed through the Metric Routing resolver."""
+    routing = {"metrics": {}, "rocks": {}}
+    registry = {}
+    for payload in rendered_per_dept.values():
+        for r in payload.get("scorecard_rows", []):
+            routing["metrics"].setdefault(r.dept_id, []).append(
+                {"metric": r.metric_name, "slack": True, "deck": True,
+                 "doc": True, "l10": True})
+            registry[r.metric_name] = (
+                {"sensitivity": r.sensitivity} if r.sensitivity != "public" else {})
+    return {"routing": routing, "registry": registry}
+
+
 def _fake_slide_with_table(table_id):
     return {
         "objectId": f"slide_{table_id}",
@@ -86,7 +103,8 @@ def test_apply_writes_three_cells_per_row_metric_actual_status():
 
     apply_via_slides_api(
         rendered_per_dept=rendered,
-        max_sensitivity="public",
+        surface="deck",
+        **_rr(rendered),
         slides_service=service,
         presentation_id="DECK_X",
         presentation=pres,
@@ -170,7 +188,8 @@ def test_apply_clears_stale_cells_beyond_data_rows():
 
     apply_via_slides_api(
         rendered_per_dept=rendered,
-        max_sensitivity="public",
+        surface="deck",
+        **_rr(rendered),
         slides_service=service,
         presentation_id="DECK_X",
         presentation=pres,
@@ -240,7 +259,8 @@ def test_apply_emits_delete_text_for_populated_cells():
 
     apply_via_slides_api(
         rendered_per_dept=rendered,
-        max_sensitivity="public",
+        surface="deck",
+        **_rr(rendered),
         slides_service=service,
         presentation_id="DECK_X",
         presentation=pres,
@@ -273,7 +293,8 @@ def test_apply_skips_founders_only_rows():
 
     apply_via_slides_api(
         rendered_per_dept=rendered,
-        max_sensitivity="public",
+        surface="deck",
+        **_rr(rendered),
         slides_service=service,
         presentation_id="DECK_X",
         presentation=pres,
@@ -308,7 +329,8 @@ def test_apply_skips_dept_with_no_slide_idx():
 
     apply_via_slides_api(
         rendered_per_dept=rendered,
-        max_sensitivity="public",
+        surface="deck",
+        **_rr(rendered),
         slides_service=service,
         presentation_id="DECK_X",
         presentation=pres,
@@ -354,7 +376,8 @@ def test_apply_per_slide_failure_does_not_block_other_depts(monkeypatch):
 
     apply_via_slides_api(
         rendered_per_dept=rendered,
-        max_sensitivity="public",
+        surface="deck",
+        **_rr(rendered),
         slides_service=service,
         presentation_id="DECK_X",
         presentation=pres,
@@ -390,7 +413,8 @@ def test_apply_alerts_when_slide_has_no_table(monkeypatch):
 
     apply_via_slides_api(
         rendered_per_dept=rendered,
-        max_sensitivity="public",
+        surface="deck",
+        **_rr(rendered),
         slides_service=service,
         presentation_id="DECK_X",
         presentation=pres,

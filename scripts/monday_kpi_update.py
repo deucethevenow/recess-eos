@@ -22,10 +22,10 @@ Phase 11 cron transition (decided 2026-05-04):
     the existing weekly-digest-monday cron via:
       gcloud scheduler jobs pause weekly-digest-monday --location us-central1
 
-Defaults per memory rule "easier to downgrade than leak":
-  - deck:           max_sensitivity = "public"      (all-hands audience)
-  - Slack:          max_sensitivity = "public"      (company-wide channel)
-  - leadership doc: max_sensitivity = "leadership"  (dept leads only)
+Surface visibility (P2.3, Metric Routing): every writer filters through the
+resolver's is_visible on its own surface — deck/slack (ceiling public), doc
+(ceiling leadership) — so a routing toggle can never widen a metric past its
+registry ceiling ("easier to downgrade than leak" now enforced structurally).
 """
 from __future__ import annotations
 
@@ -49,16 +49,29 @@ for _p in (DASHBOARD_REPO, DASHBOARD_REPO / "dashboard", DASHBOARD_REPO / "scrip
 # Imports below intentionally come AFTER the sys.path mutations above. The
 # dashboard repo path must already be on sys.path before these resolve.
 from post_monday_pulse import (  # type: ignore
-    DEPT_METRIC_ORDER,
     OWNER_EMAIL_TO_DEPT,
     _format_rock_line,
-    _sensitivity_allowed,
 )
 from dashboard.data.data_layer import (  # type: ignore
     get_company_metrics,
     get_rock_project_progress,
 )
-from dashboard.data.metric_registry import get_scorecard_metrics_for_dept  # type: ignore
+from data.metric_routing import (  # type: ignore
+    dept_rows,
+    is_visible,
+    rock_visible,
+    validate_routing,
+)
+from data.routing_manager import load_routing  # type: ignore  (errors propagate to callers)
+
+_SURFACES = ("slack", "deck", "doc", "l10")
+
+
+def _load_registry_for_routing() -> Dict[str, Any]:
+    """The resolver needs the registry dict (ceilings). Wrapped for testability."""
+    from dashboard.data.metric_registry import METRIC_REGISTRY  # type: ignore
+
+    return METRIC_REGISTRY
 
 _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
@@ -136,8 +149,9 @@ def _build_founders_rendered_rows(
     config/recess_os.yml, calls build_payloads_for_founders_preread, then
     runs each payload through _payload_to_rendered_row.
 
-    Today this branch isn't exercised in production (DEPT_METRIC_ORDER excludes
-    'founders' — the founders pre-read is a Phase 3 placeholder in
+    Today this branch isn't exercised in production (the founders routing rows
+    seed all-False on every surface, so main()'s all-dark dept skip rule
+    excludes founders — the founders pre-read is a Phase 3 placeholder in
     recess_os_daily.sh). The wiring exists so Phase 3 has a single blessed
     code path: any future founders pre-read MUST route through the adapter,
     not introduce a parallel render_one_row-based pipeline. Test #7 in
@@ -173,10 +187,22 @@ def _build_founders_rendered_rows(
 # --------------------------------------------------------------------------- #
 
 
-def _bucket_rocks_by_dept(rock_data: Dict[str, Any]) -> Dict[str, Dict[str, list]]:
+def _bucket_rocks_by_dept(
+    rock_data: Dict[str, Any],
+    routing: Dict[str, Any],
+    surface: str,
+) -> Dict[str, Dict[str, list]]:
+    """Group rocks/projects by dept, filtered for ONE surface via rock_visible.
+
+    P2.3: the routing filter lives HERE — upstream, while `asana_project_id`
+    is still on each item (RenderedRow drops it). Rock toggles are per-surface,
+    so each surface gets its own bucket; unknown GIDs default ON.
+    """
     by_dept: Dict[str, Dict[str, list]] = {}
     for kind in ("rocks", "projects"):
         for item in rock_data.get(kind, []) or []:
+            if not rock_visible(routing, item.get("asana_project_id"), surface):
+                continue
             owner_email = (item.get("owner_email") or "").lower()
             dept = OWNER_EMAIL_TO_DEPT.get(owner_email, "leadership")
             slot = by_dept.setdefault(dept, {"rocks": [], "projects": []})
@@ -247,10 +273,15 @@ def build_dept_section_for_slack(
     dept_id: str,
     rendered_rows: Iterable[RenderedRow],
     rocks_section: Dict[str, list],
-    max_sensitivity: str,
+    routing: Dict[str, Any],
+    registry: Dict[str, Any],
 ) -> list:
     rows = list(rendered_rows)
-    visible = [r for r in rows if _sensitivity_allowed(r.sensitivity, max_sensitivity)]
+    # P2.3: visibility = the resolver on the "slack" surface (toggle AND ceiling).
+    visible = [
+        r for r in rows
+        if is_visible(routing, r.dept_id, r.metric_name, "slack", registry)
+    ]
     skipped = len(rows) - len(visible)
 
     lines = [f"*{dept_id}*"]  # dept label is keyed by id; pretty-label TBD downstream
@@ -344,10 +375,27 @@ def main(
 
     today = _date.today()
 
+    # Routing store loads ONCE per run, BEFORE any render/write. Unavailable or
+    # malformed routing ABORTS the whole run (fail-loud contract: a Monday
+    # update must never silently post everything).
+    routing = load_routing()
+    registry = _load_registry_for_routing()
+    orphans = validate_routing(routing, registry)
+    if orphans:
+        print(
+            f"[monday-kpi-update] WARNING: routing rows for metrics no longer in "
+            f"the registry (rendered nowhere; prune via the Metric Routing page): {orphans}",
+            file=sys.stderr,
+        )
+
     company_metrics = get_company_metrics()
 
     rock_data = get_rock_project_progress() or {"available": False}
-    rocks_by_dept = _bucket_rocks_by_dept(rock_data)
+    # Rock toggles are per-surface: each surface consumes its own bucket,
+    # filtered upstream while asana_project_id is still on the items.
+    rocks_by_dept_slack = _bucket_rocks_by_dept(rock_data, routing, "slack")
+    rocks_by_dept_doc = _bucket_rocks_by_dept(rock_data, routing, "doc")
+    rocks_by_dept_deck = _bucket_rocks_by_dept(rock_data, routing, "deck")
 
     dept_to_slide = (
         resolve_dept_slide_map(deck_id, fetch_presentation=fetch_presentation)
@@ -362,38 +410,70 @@ def main(
 
     rendered_per_dept: Dict[str, Dict[str, Any]] = {}
     rendered_rocks_per_dept: Dict[str, Dict[str, Any]] = {}
-    for dept_id in DEPT_METRIC_ORDER.keys():
-        entries = get_scorecard_metrics_for_dept(dept_id) or []
-        rocks_for_dept = rocks_by_dept.get(dept_id, {})
-        if not entries and not rocks_for_dept.get("rocks") and not rocks_for_dept.get("projects"):
+    # P2.3: the dept loop walks the ROUTING store — membership + row order both
+    # come from the doc (store row order == display order on every surface).
+    # Dept SECTION order comes from SCORECARD_DEPT_NAMES (canonical display
+    # order) — Firestore maps deserialize alphabetically, never trust that.
+    from dashboard.data.metric_registry import SCORECARD_DEPT_NAMES  # type: ignore
+
+    routing_depts = routing.get("metrics") or {}
+    ordered_depts = [d for d in SCORECARD_DEPT_NAMES if d in routing_depts]
+    ordered_depts += [d for d in routing_depts if d not in SCORECARD_DEPT_NAMES]
+    for dept_id in ordered_depts:
+        routing_rows = dept_rows(routing, dept_id)
+        entries = [
+            {**registry[r["metric"]], "key": r["metric"]}
+            for r in routing_rows
+            if r["metric"] in registry  # orphans warned above; never rendered
+        ]
+        rocks_for_dept = {
+            "rocks": rocks_by_dept_slack.get(dept_id, {}).get("rocks", []),
+            "projects": rocks_by_dept_slack.get(dept_id, {}).get("projects", []),
+        }
+        any_rocks = any(
+            (b.get(dept_id, {}).get("rocks") or b.get(dept_id, {}).get("projects"))
+            for b in (rocks_by_dept_slack, rocks_by_dept_doc, rocks_by_dept_deck)
+        )
+        # Skip depts that are fully dark: no row visible on ANY surface and no
+        # rocks anywhere. (This is how founders — seeded all-False — stays off
+        # every surface exactly as today, while flipping any founders toggle ON
+        # later makes the dept appear with no code change.)
+        any_row_lit = any(row.get(s) for row in routing_rows for s in _SURFACES)
+        if not (any_row_lit and entries) and not any_rocks:
             continue
         # Phase B+ — founders pre-read consumes the canonical MetricPayload
         # pipeline (closes the dual-pipeline loophole flagged by Phase 0
         # reviewers). Other depts continue on render_one_row until Phase C+E
         # migrates them. Today this branch is forward-looking infrastructure:
-        # DEPT_METRIC_ORDER excludes 'founders', so the branch doesn't fire
-        # in current runs — the founders pre-read is a Phase 3 placeholder
-        # in recess_os_daily.sh. When Phase 3 lands, this is the only blessed
-        # code path; Test #7 enforces structurally.
+        # founders' routing rows seed all-False on every surface, so the
+        # all-dark skip rule above excludes founders in current runs — the
+        # founders pre-read is a Phase 3 placeholder in recess_os_daily.sh.
+        # When Phase 3 lands, this is the only blessed code path; Test #7
+        # enforces structurally.
         if dept_id == "founders":
             rows = _build_founders_rendered_rows(company_metrics)
         else:
             rows = [render_one_row(e, dept_id, company_metrics, today) for e in entries]
         rendered_per_dept[dept_id] = {
             "scorecard_rows": rows,
+            # NOTE: write-only in production since P2.3 — surface writers take
+            # per-surface rock buckets as parameters; this mirrors the SLACK
+            # bucket for debugging/audit only. Do not consume for deck/doc.
             "rocks_section": rocks_for_dept,
             "slide_idx": dept_to_slide.get(dept_id),
         }
         # Build a parallel "scorecard_rows" payload from rocks+projects for
         # the rocks deck writer. The deck writer consumes any payload with a
         # `scorecard_rows` list + `slide_idx`, so we reuse the same shape.
+        # DECK bucket here — rock visibility is per-surface (P2.3).
+        deck_rocks_for_dept = rocks_by_dept_deck.get(dept_id, {})
         rock_rows = [
             render_rock_or_project_row(item, dept_id)
-            for item in (rocks_for_dept.get("rocks") or [])
+            for item in (deck_rocks_for_dept.get("rocks") or [])
         ]
         project_rows = [
             render_rock_or_project_row(item, dept_id)
-            for item in (rocks_for_dept.get("projects") or [])
+            for item in (deck_rocks_for_dept.get("projects") or [])
         ]
         if rock_rows or project_rows:
             rendered_rocks_per_dept[dept_id] = {
@@ -424,7 +504,9 @@ def main(
             from lib.deck_writer import apply_via_slides_api  # noqa: E402
             apply_via_slides_api(
                 rendered_per_dept=rendered_per_dept,
-                max_sensitivity="public",
+                surface="deck",
+                routing=routing,
+                registry=registry,
                 slides_service=slides_service,
                 presentation_id=deck_id,
             )
@@ -438,13 +520,14 @@ def main(
     if not skip_deck and not skip_rocks_deck and rendered_rocks_per_dept:
         try:
             from lib.deck_writer import apply_via_slides_api  # noqa: E402
-            # max_sensitivity="leadership" because rocks/projects are typically
-            # not appropriate for public-channel rendering (they reflect ongoing
-            # internal initiatives). The deck audience IS leadership-tier,
-            # so this is the right scope.
+            # surface=None: rock rows are not metrics — their deck visibility
+            # was applied upstream via rock_visible (deck bucket). The writer
+            # must not re-filter them against the metric registry.
             apply_via_slides_api(
                 rendered_per_dept=rendered_rocks_per_dept,
-                max_sensitivity="leadership",
+                surface=None,
+                routing=routing,
+                registry=registry,
                 slides_service=slides_service,
                 presentation_id=deck_id,
             )
@@ -460,10 +543,11 @@ def main(
             from lib.slack_writer import post_pulse  # noqa: E402
             post_pulse(
                 rendered_per_dept=rendered_per_dept,
-                rocks_by_dept=rocks_by_dept,
+                rocks_by_dept=rocks_by_dept_slack,
                 channel_id=slack_channel,
                 run_date=today,
-                max_sensitivity="public",
+                routing=routing,
+                registry=registry,
                 post_fn=slack_post_fn,
                 firestore_client=firestore_client,
             )
@@ -479,10 +563,11 @@ def main(
             from lib.leadership_doc_writer import apply_to_leadership_doc  # noqa: E402
             apply_to_leadership_doc(
                 rendered_per_dept=rendered_per_dept,
-                rocks_by_dept=rocks_by_dept,
+                rocks_by_dept=rocks_by_dept_doc,
                 doc_id=leadership_doc_id,
                 docs_service=docs_service,
-                max_sensitivity="leadership",
+                routing=routing,
+                registry=registry,
             )
         except Exception as e:  # noqa: BLE001
             emit_failure_alert(
