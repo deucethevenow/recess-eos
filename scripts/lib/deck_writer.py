@@ -52,7 +52,7 @@ def build_payloads_for_deck(
     return build_metric_payloads(meeting, snapshot_row, snapshot_timestamp)
 
 
-def _filter_visible_rows(rows: Iterable, surface, routing, registry) -> List:
+def filter_visible_rows(rows: Iterable, surface, routing, registry) -> List:
     """Keep rows the Metric Routing resolver deems visible on `surface`.
 
     P2.3: visibility = is_visible(routing, row.dept_id, row.metric_name,
@@ -69,12 +69,21 @@ def _filter_visible_rows(rows: Iterable, surface, routing, registry) -> List:
     if surface is None:
         return list(rows)
 
-    from data.metric_routing import is_visible  # type: ignore
+    from data.metric_routing import dept_row_map, is_visible  # type: ignore
 
-    return [
-        r for r in rows
-        if is_visible(routing, r.dept_id, r.metric_name, surface, registry)
-    ]
+    row_maps: Dict[str, Dict[str, Any]] = {}
+    out = []
+    for r in rows:
+        rm = row_maps.get(r.dept_id)
+        if rm is None:
+            rm = row_maps[r.dept_id] = dept_row_map(routing, r.dept_id)
+        if is_visible(routing, r.dept_id, r.metric_name, surface, registry, row_map=rm):
+            out.append(r)
+    return out
+
+
+# Back-compat alias (existing tests import the underscore name).
+_filter_visible_rows = filter_visible_rows
 
 
 def _resolve_table_object(

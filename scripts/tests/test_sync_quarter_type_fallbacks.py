@@ -12,6 +12,7 @@ from lib.sync_projects import (
     asana_project_to_bq_row,
     derive_quarter_from_portfolio_name,
     derive_project_type_from_name,
+    normalize_quarter_value,
 )
 
 
@@ -79,6 +80,39 @@ class TestProjectTypeFromName:
     def test_whole_word_only_no_rockstar_matches(self):
         assert derive_project_type_from_name("RockStar Hiring Sprint") == "project"
         assert derive_project_type_from_name("Rockets & Rollouts") == "project"
+
+
+class TestQuarterValueNormalization:
+    """kpi-critic 2026-07-07: a human-entered 'Q3 2026' in the Asana Quarter
+    field must normalize to the canonical 'YYYY-Qn' the dashboard filter
+    compares against — otherwise the rock is silently dropped (the exact
+    0-rocks failure class this phase exists to kill)."""
+
+    def test_canonical_passes_through(self):
+        assert normalize_quarter_value("2026-Q3") == "2026-Q3"
+
+    def test_human_orderings_normalize(self):
+        assert normalize_quarter_value("Q3 2026") == "2026-Q3"
+        assert normalize_quarter_value("q3-2026") == "2026-Q3"
+        assert normalize_quarter_value("2026 Q3") == "2026-Q3"
+        assert normalize_quarter_value(" Q4 2027 ") == "2027-Q4"
+
+    def test_garbage_returns_none_so_fallback_applies(self):
+        assert normalize_quarter_value("next quarter") is None
+        assert normalize_quarter_value("Q5 2026") is None
+        assert normalize_quarter_value("") is None
+        assert normalize_quarter_value(None) is None
+
+    def test_row_stamping_normalizes_field_and_falls_back_on_garbage(self):
+        proj = {"gid": "g", "name": "Some Project", "owner": None,
+                "custom_fields": [{"name": "Quarter", "gid": "cf", "text_value": "Q3 2026"}],
+                "_task_count": 0, "_completion_percent": 0.0,
+                "modified_at": "2026-07-07T00:00:00Z"}
+        row = asana_project_to_bq_row(proj, quarter_fallback="2026-Q1")
+        assert row["quarter"] == "2026-Q3"  # normalized field wins
+        proj["custom_fields"][0]["text_value"] = "sometime soon"
+        row = asana_project_to_bq_row(proj, quarter_fallback="2026-Q1")
+        assert row["quarter"] == "2026-Q1"  # garbage -> fallback, never verbatim
 
 
 class TestRowFallbackStamping:

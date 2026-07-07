@@ -1,4 +1,4 @@
-Pre-flight PASS — pinned today=2026-07-06 for run.
+Pre-flight PASS — pinned today=2026-07-07 for run.
 ============================================================
 SENSITIVITY GATE — confirm before writing to deck/Slack/leadership doc
 ============================================================
@@ -10,7 +10,11 @@ SENSITIVITY GATE — confirm before writing to deck/Slack/leadership doc
    leadership: Pipeline Coverage
    ... +55 more
 🟡 leadership (0 rows):
-🔴 founders_only (0 rows):
+🔴 founders_only (4 rows):
+   founders: Net Revenue YTD
+   founders: Take Rate %
+   founders: Bank Cash (Available)
+   founders: Conservative Runway
 
 Surface defaults: deck=public, Slack=public, leadership-doc=leadership
 Founders-only rows will be FILTERED on all 3 surfaces.

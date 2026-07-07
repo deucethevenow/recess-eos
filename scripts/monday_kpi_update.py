@@ -57,14 +57,12 @@ from dashboard.data.data_layer import (  # type: ignore
     get_rock_project_progress,
 )
 from data.metric_routing import (  # type: ignore
+    SURFACES as _SURFACES,
     dept_rows,
-    is_visible,
     rock_visible,
     validate_routing,
 )
 from data.routing_manager import load_routing  # type: ignore  (errors propagate to callers)
-
-_SURFACES = ("slack", "deck", "doc", "l10")
 
 
 def _load_registry_for_routing() -> Dict[str, Any]:
@@ -278,10 +276,11 @@ def build_dept_section_for_slack(
 ) -> list:
     rows = list(rendered_rows)
     # P2.3: visibility = the resolver on the "slack" surface (toggle AND ceiling).
-    visible = [
-        r for r in rows
-        if is_visible(routing, r.dept_id, r.metric_name, "slack", registry)
-    ]
+    # Shared filter (simplify pass 2026-07-07): one leak-prevention predicate,
+    # not three hand-rolled copies across the writers.
+    from lib.deck_writer import filter_visible_rows
+
+    visible = filter_visible_rows(rows, "slack", routing, registry)
     skipped = len(rows) - len(visible)
 
     lines = [f"*{dept_id}*"]  # dept label is keyed by id; pretty-label TBD downstream
@@ -393,9 +392,11 @@ def main(
     rock_data = get_rock_project_progress() or {"available": False}
     # Rock toggles are per-surface: each surface consumes its own bucket,
     # filtered upstream while asana_project_id is still on the items.
-    rocks_by_dept_slack = _bucket_rocks_by_dept(rock_data, routing, "slack")
-    rocks_by_dept_doc = _bucket_rocks_by_dept(rock_data, routing, "doc")
-    rocks_by_dept_deck = _bucket_rocks_by_dept(rock_data, routing, "deck")
+    rock_buckets = {s: _bucket_rocks_by_dept(rock_data, routing, s)
+                    for s in ("slack", "doc", "deck")}
+    rocks_by_dept_slack = rock_buckets["slack"]
+    rocks_by_dept_doc = rock_buckets["doc"]
+    rocks_by_dept_deck = rock_buckets["deck"]
 
     dept_to_slide = (
         resolve_dept_slide_map(deck_id, fetch_presentation=fetch_presentation)
@@ -412,27 +413,21 @@ def main(
     rendered_rocks_per_dept: Dict[str, Dict[str, Any]] = {}
     # P2.3: the dept loop walks the ROUTING store — membership + row order both
     # come from the doc (store row order == display order on every surface).
-    # Dept SECTION order comes from SCORECARD_DEPT_NAMES (canonical display
-    # order) — Firestore maps deserialize alphabetically, never trust that.
+    # Dept SECTION order comes from the resolver's ordered_depts helper
+    # (Firestore maps deserialize alphabetically — never trust store key order).
     from dashboard.data.metric_registry import SCORECARD_DEPT_NAMES  # type: ignore
+    from data.metric_routing import ordered_depts  # type: ignore
 
-    routing_depts = routing.get("metrics") or {}
-    ordered_depts = [d for d in SCORECARD_DEPT_NAMES if d in routing_depts]
-    ordered_depts += [d for d in routing_depts if d not in SCORECARD_DEPT_NAMES]
-    for dept_id in ordered_depts:
+    for dept_id in ordered_depts(routing, SCORECARD_DEPT_NAMES):
         routing_rows = dept_rows(routing, dept_id)
         entries = [
             {**registry[r["metric"]], "key": r["metric"]}
             for r in routing_rows
             if r["metric"] in registry  # orphans warned above; never rendered
         ]
-        rocks_for_dept = {
-            "rocks": rocks_by_dept_slack.get(dept_id, {}).get("rocks", []),
-            "projects": rocks_by_dept_slack.get(dept_id, {}).get("projects", []),
-        }
         any_rocks = any(
             (b.get(dept_id, {}).get("rocks") or b.get(dept_id, {}).get("projects"))
-            for b in (rocks_by_dept_slack, rocks_by_dept_doc, rocks_by_dept_deck)
+            for b in rock_buckets.values()
         )
         # Skip depts that are fully dark: no row visible on ANY surface and no
         # rocks anywhere. (This is how founders — seeded all-False — stays off
@@ -454,12 +449,11 @@ def main(
             rows = _build_founders_rendered_rows(company_metrics)
         else:
             rows = [render_one_row(e, dept_id, company_metrics, today) for e in entries]
+        # rocks_section deleted (simplify pass 2026-07-07): it mirrored the
+        # slack bucket, had zero readers, and existed only with a do-not-use
+        # warning — surface writers take per-surface buckets as parameters.
         rendered_per_dept[dept_id] = {
             "scorecard_rows": rows,
-            # NOTE: write-only in production since P2.3 — surface writers take
-            # per-surface rock buckets as parameters; this mirrors the SLACK
-            # bucket for debugging/audit only. Do not consume for deck/doc.
-            "rocks_section": rocks_for_dept,
             "slide_idx": dept_to_slide.get(dept_id),
         }
         # Build a parallel "scorecard_rows" payload from rocks+projects for

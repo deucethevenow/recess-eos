@@ -16,6 +16,7 @@ field is renamed, fields_by_gid still works; fields_by_name silently breaks.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -29,6 +30,14 @@ from typing import Any, Optional
 # module vars (no backslashes inside f-string braces — py3.9 house rule).
 _PORTFOLIO_QUARTER_RE = re.compile(r"^Q([1-4]) (\d{4}) Rocks \+ Projects$")
 _ROCK_WORD_RE = re.compile(r"\brock\b", re.IGNORECASE)
+# Human-entered Asana "Quarter" fields come in both orders — normalize BOTH to
+# the canonical "YYYY-Qn" the dashboard filter compares against (kpi-critic
+# 2026-07-07: an unnormalized "Q3 2026" would be silently dropped downstream —
+# the exact 0-rocks failure class this phase exists to kill).
+_QUARTER_VALUE_RES = (
+    re.compile(r"^\s*(\d{4})\s*[-/ ]\s*Q([1-4])\s*$", re.IGNORECASE),  # 2026-Q3 / 2026 Q3
+    re.compile(r"^\s*Q([1-4])\s*[-/ ]\s*(\d{4})\s*$", re.IGNORECASE),  # Q3 2026 / Q3-2026
+)
 
 
 def derive_quarter_from_portfolio_name(portfolio_name: Optional[str]) -> Optional[str]:
@@ -39,6 +48,24 @@ def derive_quarter_from_portfolio_name(portfolio_name: Optional[str]) -> Optiona
     if not m:
         return None
     return f"{m.group(2)}-Q{m.group(1)}"
+
+
+def normalize_quarter_value(value: Optional[str]) -> Optional[str]:
+    """Canonicalize a human-entered quarter string to 'YYYY-Qn'.
+
+    Accepts '2026-Q3', '2026 Q3', 'Q3 2026', 'q3-2026', etc. Returns None for
+    anything unparseable — the caller then applies the portfolio fallback (and
+    warns), so a typo degrades to the derived stamp instead of a silently
+    dropped rock."""
+    if not value or not isinstance(value, str):
+        return None
+    m = _QUARTER_VALUE_RES[0].match(value)
+    if m:
+        return f"{m.group(1)}-Q{m.group(2)}"
+    m = _QUARTER_VALUE_RES[1].match(value)
+    if m:
+        return f"{m.group(2)}-Q{m.group(1)}"
+    return None
 
 
 def derive_project_type_from_name(name: Optional[str]) -> str:
@@ -111,7 +138,13 @@ def asana_project_to_bq_row(project: dict, quarter_fallback: Optional[str] = Non
     project_type = _custom_field_value_by_name(custom_fields, "Project Type")
     if not project_type:
         project_type = derive_project_type_from_name(name)
-    quarter = _custom_field_value_by_name(custom_fields, "Quarter")
+    quarter_raw = _custom_field_value_by_name(custom_fields, "Quarter")
+    quarter = normalize_quarter_value(quarter_raw)
+    if quarter_raw and not quarter:
+        logging.getLogger(__name__).warning(
+            "Unparseable Asana Quarter field %r on %r — using portfolio fallback %r",
+            quarter_raw, name, quarter_fallback,
+        )
     if not quarter:
         quarter = quarter_fallback
 
@@ -147,9 +180,10 @@ def sync_projects_to_bq(asana_client, bq_client, portfolio_gid: str) -> int:
     # P3: derive the quarter fallback ONCE from the portfolio name ("Q3 2026
     # Rocks + Projects" -> "2026-Q3"). Because load_snapshot is WRITE_TRUNCATE,
     # the stamps reach ALL rows on every sync — no backfill step needed.
-    portfolio_name = None
-    if hasattr(asana_client, "get_portfolio_name"):
-        portfolio_name = asana_client.get_portfolio_name(portfolio_gid)
+    # Direct call — a mis-wired client should fail LOUD (AttributeError), not
+    # silently skip quarter stamping; API failures already degrade to None
+    # inside get_portfolio_name (simplify pass 2026-07-07).
+    portfolio_name = asana_client.get_portfolio_name(portfolio_gid)
     quarter_fallback = derive_quarter_from_portfolio_name(portfolio_name)
 
     # Enrich each project with task + milestone completion data
@@ -172,7 +206,6 @@ def sync_projects_to_bq(asana_client, bq_client, portfolio_gid: str) -> int:
                 else:
                     p["_completion_percent"] = 0.0
             except Exception as e:
-                import logging
                 logging.getLogger(__name__).warning(
                     "Failed to fetch tasks for project %s: %s", gid, e
                 )

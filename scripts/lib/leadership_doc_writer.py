@@ -193,19 +193,17 @@ def _build_section_text(
 
     Local imports avoid pulling the dashboard repo at module-load.
     """
-    from data.metric_routing import is_visible  # type: ignore
     from post_monday_pulse import _format_rock_line  # type: ignore
+
+    from .deck_writer import filter_visible_rows  # shared leak-prevention filter
 
     lines: List[str] = []
     for dept_id, payload in rendered_per_dept.items():
         lines.append("")
         lines.append(f"{dept_id.replace('_', ' ').title()}")
         lines.append("-" * max(len(dept_id), 6))
-        rows = [
-            r
-            for r in payload.get("scorecard_rows", [])
-            if is_visible(routing, r.dept_id, r.metric_name, "doc", registry)
-        ]
+        rows = filter_visible_rows(payload.get("scorecard_rows", []), "doc",
+                                   routing, registry)
         for r in rows:
             lines.append(f"• {r.display_label}: {r.display}")
         rocks_section = rocks_by_dept.get(dept_id, {})

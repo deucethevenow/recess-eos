@@ -10,50 +10,6 @@
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Days to First Offer"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 1,
-              "rowIndex": 1
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "30 days"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 2,
-              "rowIndex": 1
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "13 days"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 3,
-              "rowIndex": 1
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "\u26aa"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 0,
-              "rowIndex": 2
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
             "text": "Pipeline Coverage"
           }
         },
@@ -61,7 +17,7 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 1,
-              "rowIndex": 2
+              "rowIndex": 1
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -72,18 +28,18 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 2,
-              "rowIndex": 2
+              "rowIndex": 1
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Gap $5.11M  \u00b7  Coverage 0.71x"
+            "text": "Gap $5.00M  \u00b7  Coverage 0.75x"
           }
         },
         {
           "insertText": {
             "cellLocation": {
               "columnIndex": 3,
-              "rowIndex": 2
+              "rowIndex": 1
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -94,7 +50,7 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 0,
-              "rowIndex": 3
+              "rowIndex": 2
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -105,18 +61,18 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 2,
-              "rowIndex": 3
+              "rowIndex": 2
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "$1.98M"
+            "text": "$2.10M"
           }
         },
         {
           "insertText": {
             "cellLocation": {
               "columnIndex": 3,
-              "rowIndex": 3
+              "rowIndex": 2
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -127,40 +83,7 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 0,
-              "rowIndex": 4
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "New Business Pipeline (Weighted)"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 2,
-              "rowIndex": 4
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "$1.17M"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 3,
-              "rowIndex": 4
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "\u26aa"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 0,
-              "rowIndex": 5
+              "rowIndex": 3
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -171,7 +94,7 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 2,
-              "rowIndex": 5
+              "rowIndex": 3
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -182,6 +105,72 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 3,
+              "rowIndex": 3
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
+            "text": "\u26aa"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 4
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
+            "text": "Bookings vs Goal"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 4
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
+            "text": "Q: $0  \u00b7  YTD: $4.54M / $10.77M (42%)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
+              "rowIndex": 4
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
+            "text": "\u26aa"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 0,
+              "rowIndex": 5
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
+            "text": "Net Revenue vs Goal"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 2,
+              "rowIndex": 5
+            },
+            "insertionIndex": 0,
+            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
+            "text": "Q: $12K  \u00b7  YTD: $2.13M / $5.28M (40%)"
+          }
+        },
+        {
+          "insertText": {
+            "cellLocation": {
+              "columnIndex": 3,
               "rowIndex": 5
             },
             "insertionIndex": 0,
@@ -197,204 +186,6 @@
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Land & Expand Pipeline (Weighted)"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 2,
-              "rowIndex": 6
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "$437K"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 3,
-              "rowIndex": 6
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "\u26aa"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 0,
-              "rowIndex": 7
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Bookings vs Goal"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 2,
-              "rowIndex": 7
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Q: $0  \u00b7  YTD: $4.54M / $10.77M (42%)"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 3,
-              "rowIndex": 7
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "\u26aa"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 0,
-              "rowIndex": 8
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "New Business Bookings"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 2,
-              "rowIndex": 8
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Q: $0 / $634K (0.0%)  \u00b7  YTD: $2.02M / $2.54M (80%)"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 3,
-              "rowIndex": 8
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "\u26aa"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 0,
-              "rowIndex": 9
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Renewal Bookings"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 2,
-              "rowIndex": 9
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Q: $0 / $730K (0.0%)  \u00b7  YTD: $1.23M / $2.92M (42%)"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 3,
-              "rowIndex": 9
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "\u26aa"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 0,
-              "rowIndex": 10
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "L&E Bookings"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 2,
-              "rowIndex": 10
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Q: $0 / $996K (0.0%)  \u00b7  YTD: $1.29M / $3.99M (32%)"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 3,
-              "rowIndex": 10
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "\u26aa"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 0,
-              "rowIndex": 11
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Net Revenue vs Goal"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 2,
-              "rowIndex": 11
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "Q: $12K  \u00b7  YTD: $2.13M / $5.28M (40%)"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 3,
-              "rowIndex": 11
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
-            "text": "\u26aa"
-          }
-        },
-        {
-          "insertText": {
-            "cellLocation": {
-              "columnIndex": 0,
-              "rowIndex": 12
-            },
-            "insertionIndex": 0,
-            "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
             "text": "NRR"
           }
         },
@@ -402,7 +193,7 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 1,
-              "rowIndex": 12
+              "rowIndex": 6
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -413,7 +204,7 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 2,
-              "rowIndex": 12
+              "rowIndex": 6
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -424,7 +215,7 @@
           "insertText": {
             "cellLocation": {
               "columnIndex": 3,
-              "rowIndex": 12
+              "rowIndex": 6
             },
             "insertionIndex": 0,
             "objectId": "table::Sales \u00b7 Auto-Updated Scorecard",
@@ -772,7 +563,7 @@
             },
             "insertionIndex": 0,
             "objectId": "table::Supply \u00b7 Auto-Updated Scorecard",
-            "text": "0 / 600 (0%)  \u00b7  week Jul 6"
+            "text": "56 / 600 (9%)  \u00b7  week Jul 6"
           }
         },
         {
@@ -1105,7 +896,7 @@
             },
             "insertionIndex": 0,
             "objectId": "table::Marketing \u00b7 Auto-Updated Scorecard",
-            "text": "$2.51M"
+            "text": "$2.55M"
           }
         },
         {

@@ -96,6 +96,14 @@ def do_freeze(out_path: Path) -> int:
         if entry.get("scorecard_status") == "asana_goal" and gid:
             goals[str(gid)] = pulse.fetch_asana_goal(str(gid))
     frozen["asana_goals"] = goals
+    # Routing doc frozen too (kpi-critic 2026-07-07): otherwise a routing edit
+    # between captures masquerades as a code diff — the scenario workflow
+    # DELIBERATELY leaves routing live only when the routing edit IS the
+    # experiment; parity gates must pin it.
+    from data.routing_manager import load_routing as _load_routing
+
+    frozen["routing"] = {k: v for k, v in _load_routing().items()
+                         if k in ("metrics", "rocks")}
     frozen["frozen_on"] = today.isoformat()
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -212,7 +220,7 @@ def build_fake_presentation() -> Dict[str, Any]:
 # --------------------------------------------------------------------------- #
 
 
-def do_capture(inputs_path: Path, out_dir: Path) -> int:
+def do_capture(inputs_path: Path, out_dir: Path, live_routing: bool = False) -> int:
     frozen = json.loads(inputs_path.read_text())
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -252,6 +260,19 @@ def do_capture(inputs_path: Path, out_dir: Path) -> int:
         lambda period="quarter", **kw: frozen["pipeline_by_owner"][period]
     )
     tm.get_team_quota = lambda year=None, quarter=None, **kw: frozen["team_quota"]["value"]
+
+    # Routing doc (kpi-critic 2026-07-07): frozen by DEFAULT so parity gates
+    # can't be faked/broken by a concurrent routing edit. Scenario captures —
+    # where the routing edit IS the experiment — pass --live-routing.
+    if not live_routing:
+        import data.routing_manager as rman_flat
+
+        rman_flat.load_routing = lambda: frozen["routing"]
+        try:
+            from dashboard.data import routing_manager as rman_ns
+            rman_ns.load_routing = lambda: frozen["routing"]
+        except ImportError:
+            pass  # namespaced identity not importable in this env — flat covers the pulse
 
     import post_monday_pulse as pulse  # noqa: E402  (binds patched fns)
 
@@ -310,7 +331,6 @@ def do_capture(inputs_path: Path, out_dir: Path) -> int:
 
     from lib.deck_writer import build_table_row_count_fetcher
 
-    n_scorecard_updates_before = 0
     with contextlib.redirect_stdout(io.StringIO()) as eos_out:
         mku.main(
             skip_deck=False,
@@ -387,13 +407,17 @@ def main() -> int:
     mode.add_argument("--freeze", type=Path, help="capture live inputs to this JSON path")
     mode.add_argument("--inputs", type=Path, help="frozen inputs JSON to replay")
     ap.add_argument("--out", type=Path, help="output dir for surface captures (with --inputs)")
+    ap.add_argument("--live-routing", action="store_true",
+                    help="read routing LIVE from Firestore (scenario captures where "
+                         "the routing edit is the experiment); default uses the "
+                         "frozen routing doc so parity gates can't drift")
     args = ap.parse_args()
 
     if args.freeze:
         return do_freeze(args.freeze)
     if not args.out:
         ap.error("--inputs requires --out")
-    return do_capture(args.inputs, args.out)
+    return do_capture(args.inputs, args.out, live_routing=args.live_routing)
 
 
 if __name__ == "__main__":
