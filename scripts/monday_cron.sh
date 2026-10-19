@@ -16,6 +16,16 @@
 #
 #   No image rebuild required — pure config change.
 #
+# Dept all-hands slides: `post_monday_pulse.py --post` refreshes them after the
+# Slack post (dashboard scripts/dept_slides.py, baked into the image). That is
+# separate from the legacy DECK_ENABLED step below.
+#
+# PULSE_SKIP_SLACK=1 (one-off test runs): the pulse renders a preview only (no
+# Slack post), then dept_slides.py --apply refreshes the slides directly. A
+# failed dept fails the job. The legacy deck step is skipped.
+#     gcloud run jobs execute monday-jobs --update-env-vars=PULSE_SKIP_SLACK=1 \
+#       --region=us-central1 --project=stitchdata-384118
+#
 # `update-all-hands-deck --check-cadence` exits 0 silently on projects-weeks
 # (see update_all_hands_deck_cmd in scripts/recess_os.py). On goals-weeks it
 # would attempt the real write path, which is the path that currently raises
@@ -27,14 +37,26 @@ echo "[Monday cron] Starting at $(date --iso-8601=seconds)"
 
 echo "[Monday cron] Step 1/2: Monday Pulse"
 # 360s = generous buffer over local cron times (~30-60s) for cold start + BQ snapshot read.
-timeout --kill-after=15s 360s python /app/scripts/post_monday_pulse.py --post
+if [ "${PULSE_SKIP_SLACK:-0}" = "1" ]; then
+  echo "[Monday cron] PULSE_SKIP_SLACK=1: preview only, no Slack post"
+  timeout --kill-after=15s 360s python /app/scripts/post_monday_pulse.py
+else
+  timeout --kill-after=15s 360s python /app/scripts/post_monday_pulse.py --post
+fi
 PULSE_EXIT=$?
 [ $PULSE_EXIT -eq 124 ] \
   && echo "[Monday cron] Pulse TIMED OUT (360s)" \
   || echo "[Monday cron] Pulse exit: $PULSE_EXIT"
 
 echo "[Monday cron] Step 2/2: Update All-Hands deck (DECK_ENABLED=${DECK_ENABLED:-0})"
-if [ "${DECK_ENABLED:-0}" = "1" ]; then
+if [ "${PULSE_SKIP_SLACK:-0}" = "1" ]; then
+  echo "[Monday cron] PULSE_SKIP_SLACK=1: refreshing dept slides directly"
+  timeout --kill-after=15s 240s python /app/scripts/dept_slides.py --apply
+  DECK_EXIT=$?
+  [ $DECK_EXIT -eq 124 ] \
+    && echo "[Monday cron] Dept slides TIMED OUT (240s)" \
+    || echo "[Monday cron] Dept slides exit: $DECK_EXIT"
+elif [ "${DECK_ENABLED:-0}" = "1" ]; then
   timeout --kill-after=15s 240s python /app/scripts/recess_os.py update-all-hands-deck --check-cadence
   DECK_EXIT=$?
   [ $DECK_EXIT -eq 124 ] \

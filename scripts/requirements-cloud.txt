@@ -17,17 +17,16 @@ slack_sdk>=3.0.0
 # === Dashboard pulse (post_monday_pulse.py — primary Monday path post-Batch-3) ===
 google-cloud-firestore>=2.16.0
 httpx>=0.24.0
+# dept_slides.py (dept all-hands slides, run by post_monday_pulse.py --post)
+google-api-python-client>=2.100.0
 
 # === Phase H.2 cross-repo pin ===
 # H-adapter cross-repo pin: dashboard `_render_metric_line` API stable as of
 # company-kpi-dashboard SHA 2f2e885296843d99d2aed259eb045b45917f88a4
 
 # === Notes on intentional omissions ===
-# - google-api-python-client / google-auth-oauthlib: NOT needed.
-#   `update-all-hands-deck` references MCP integration only (see all_hands_deck.py:155-159).
-#   apply_deck_updates(dry_run=False) raises NotImplementedError — has never written to
-#   the Slides deck from local cron either. If Slides API is wired later (replacing MCP),
-#   add google-api-python-client + google-auth-oauthlib here at that time.
+# - google-auth-oauthlib: NOT needed. dept_slides.py uses the job's service
+#   account through google.auth.default(); no user OAuth flow runs in the cron.
 #
 # - python-dotenv: NOT needed. Local cron sources .env via bash; Cloud Run uses
 #   Secret Manager mounted as env vars (see Tasks 6-8 --set-secrets flags).
