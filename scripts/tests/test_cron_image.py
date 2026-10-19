@@ -22,7 +22,8 @@ def test_image_copies_dept_slides():
 
 
 def test_image_build_fails_if_dept_slides_cannot_import():
-    assert 'python -c "import dept_slides"' in DOCKERFILE.read_text()
+    text = DOCKERFILE.read_text()
+    assert 'python -c "import dept_slides, googleapiclient.discovery, google.auth"' in text
 
 
 def test_requirements_include_slides_client():
@@ -38,7 +39,9 @@ def _run_cron(tmp_path, env_extra):
     stubs = {
         # timeout --kill-after=15s 360s <cmd...>  ->  exec <cmd...>
         "timeout": '#!/bin/bash\nshift 2\nexec "$@"\n',
-        "python": f'#!/bin/bash\necho "$*" >> "{log}"\nexit "${{STUB_EXIT:-0}}"\n',
+        # Exits STUB_EXIT only for the slide step, so its exit code is tested alone.
+        "python": (f'#!/bin/bash\necho "$*" >> "{log}"\n'
+                   'case "$*" in *dept_slides*) exit "${STUB_EXIT:-0}";; esac\n'),
     }
     for name, body in stubs.items():
         p = bin_dir / name
@@ -68,9 +71,12 @@ def test_skip_slack_never_posts_and_refreshes_slides(tmp_path):
 
 def test_skip_slack_ignores_old_deck_step(tmp_path):
     proc, calls = _run_cron(tmp_path, {"PULSE_SKIP_SLACK": "1", "DECK_ENABLED": "1"})
+    assert proc.returncode == 0, proc.stdout + proc.stderr
     assert not any("update-all-hands-deck" in c for c in calls)
+    assert "/app/scripts/dept_slides.py --apply" in calls
 
 
 def test_skip_slack_slide_failure_fails_the_job(tmp_path):
     proc, _ = _run_cron(tmp_path, {"PULSE_SKIP_SLACK": "1", "STUB_EXIT": "1"})
     assert proc.returncode == 1
+    assert "pulse=0 deck=1" in proc.stdout

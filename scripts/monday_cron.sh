@@ -18,11 +18,12 @@
 #
 # Dept all-hands slides: `post_monday_pulse.py --post` refreshes them after the
 # Slack post (dashboard scripts/dept_slides.py, baked into the image). That is
-# separate from the legacy DECK_ENABLED step below.
+# separate from the legacy DECK_ENABLED step below. On that normal run a failed
+# slide refresh only posts a Slack warning; the job still exits 0.
 #
 # PULSE_SKIP_SLACK=1 (one-off test runs): the pulse renders a preview only (no
-# Slack post), then dept_slides.py --apply refreshes the slides directly. A
-# failed dept fails the job. The legacy deck step is skipped.
+# Slack post), then dept_slides.py --apply refreshes the slides directly. Here
+# a failed dept fails the job. The legacy deck step is skipped.
 #     gcloud run jobs execute monday-jobs --update-env-vars=PULSE_SKIP_SLACK=1 \
 #       --region=us-central1 --project=stitchdata-384118
 #
@@ -48,24 +49,26 @@ PULSE_EXIT=$?
   && echo "[Monday cron] Pulse TIMED OUT (360s)" \
   || echo "[Monday cron] Pulse exit: $PULSE_EXIT"
 
-echo "[Monday cron] Step 2/2: Update All-Hands deck (DECK_ENABLED=${DECK_ENABLED:-0})"
 if [ "${PULSE_SKIP_SLACK:-0}" = "1" ]; then
-  echo "[Monday cron] PULSE_SKIP_SLACK=1: refreshing dept slides directly"
+  echo "[Monday cron] Step 2/2: Refresh dept slides (PULSE_SKIP_SLACK=1)"
   timeout --kill-after=15s 240s python /app/scripts/dept_slides.py --apply
   DECK_EXIT=$?
   [ $DECK_EXIT -eq 124 ] \
     && echo "[Monday cron] Dept slides TIMED OUT (240s)" \
     || echo "[Monday cron] Dept slides exit: $DECK_EXIT"
-elif [ "${DECK_ENABLED:-0}" = "1" ]; then
-  timeout --kill-after=15s 240s python /app/scripts/recess_os.py update-all-hands-deck --check-cadence
-  DECK_EXIT=$?
-  [ $DECK_EXIT -eq 124 ] \
-    && echo "[Monday cron] Deck TIMED OUT (240s)" \
-    || echo "[Monday cron] Deck exit: $DECK_EXIT"
 else
-  echo "[Monday cron] Deck step DISABLED — pending MCP integration (Batch 7)"
-  echo "[Monday cron] To re-enable: gcloud run jobs update monday-jobs --update-env-vars=DECK_ENABLED=1"
-  DECK_EXIT=0
+  echo "[Monday cron] Step 2/2: Update All-Hands deck (DECK_ENABLED=${DECK_ENABLED:-0})"
+  if [ "${DECK_ENABLED:-0}" = "1" ]; then
+    timeout --kill-after=15s 240s python /app/scripts/recess_os.py update-all-hands-deck --check-cadence
+    DECK_EXIT=$?
+    [ $DECK_EXIT -eq 124 ] \
+      && echo "[Monday cron] Deck TIMED OUT (240s)" \
+      || echo "[Monday cron] Deck exit: $DECK_EXIT"
+  else
+    echo "[Monday cron] Deck step DISABLED — pending MCP integration (Batch 7)"
+    echo "[Monday cron] To re-enable: gcloud run jobs update monday-jobs --update-env-vars=DECK_ENABLED=1"
+    DECK_EXIT=0
+  fi
 fi
 
 if [ $PULSE_EXIT -ne 0 ] || [ $DECK_EXIT -ne 0 ]; then
