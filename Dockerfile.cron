@@ -34,6 +34,11 @@ COPY config/ ./config/
 # silently no-op and imports would resolve only via PYTHONPATH — fragile.
 COPY _dashboard_src/dashboard/ ./dashboard/
 COPY _dashboard_src/scripts/post_monday_pulse.py ./scripts/post_monday_pulse.py
+# post_monday_pulse.py --post refreshes the dept all-hands slides with this module.
+COPY _dashboard_src/scripts/dept_slides.py ./scripts/dept_slides.py
+
+# Fail the build if the slide writer or anything it imports is missing.
+RUN cd /app/scripts && python -c "import dept_slides, googleapiclient.discovery, google.auth"
 
 RUN chmod +x ./scripts/monday_cron.sh \
              ./scripts/daily_sync_cron.sh \
